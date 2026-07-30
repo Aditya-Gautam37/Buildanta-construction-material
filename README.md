@@ -11,18 +11,17 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open the URL printed by Vinext (normally `http://localhost:3000`).
 
 ## Current implementation
 
-- Responsive public storefront
-- Product search and category filters
-- Quote request and confirmation states
-- Initial D1 schema for products, quotes, and inventory history
-- R2 binding reserved for durable product images
-- Deployment, security, testing, and data documentation
-
-The next vertical slice connects quote submission to D1 and transactional email, followed by authenticated inventory management.
+- Faithful responsive Buildanta homepage using the authorised reference assets
+- Stage, room and category discovery with search, filters, sorting and empty states
+- Product detail pages and pre-filled bulk quote requests
+- Durable D1 quote, supplier-submission and inventory-audit records
+- Durable R2 product-image uploads
+- Platform-authenticated inventory and quote workspaces
+- Desktop/mobile navigation, validation, success and error states
 
 ## Documentation
 

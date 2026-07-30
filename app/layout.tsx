@@ -1,29 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { headers } from "next/headers";
+import { Sora } from "next/font/google";
+import { Footer, Header } from "./site-chrome";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const sora = Sora({ variable: "--font-sora", subsets: ["latin"] });
 
-export async function generateMetadata(): Promise<Metadata> {
-  const requestHeaders = await headers();
-  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
-  const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  const metadataBase = new URL(`${protocol}://${host}`);
-  const title = "Buildanta — Construction materials, sourced smarter";
-  const description = "Source verified construction materials with live availability, transparent pricing and dependable delivery support.";
-
-  return {
-    metadataBase,
-    title,
-    description,
-    icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
-    openGraph: { title, description, type: "website", images: [{ url: "/og.png", width: 1733, height: 908, alt: "Buildanta — Build better. Source smarter." }] },
-    twitter: { card: "summary_large_image", title, description, images: ["/og.png"] },
-  };
-}
+export const metadata: Metadata = {
+  title: { default: "Buildanta — Every Build Detail in One Place", template: "%s | Buildanta" },
+  description: "Discover trusted construction materials by stage, room and category. Compare products, request bulk quotes and manage supplier inventory.",
+  icons: { icon: "/logo.png" },
+  openGraph: {
+    title: "Buildanta — Every Build Detail in One Place",
+    description: "Your all-in-one source for construction materials, product discovery and project quotes.",
+    images: [{ url: "/homepage_img.png", alt: "Buildanta home renovation journey" }],
+  },
+};
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body className={`${geistSans.variable} ${geistMono.variable}`}>{children}</body></html>;
+  return <html lang="en"><body className={sora.variable}><Header />{children}<Footer /></body></html>;
 }

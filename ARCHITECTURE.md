@@ -1,12 +1,16 @@
 # Architecture
 
-Buildanta uses a Vinext application deployed as a Cloudflare Worker.
+Buildanta uses two separate applications connected through the catalogue API.
 
-- Public storefront: server-rendered React routes with client-side search, filters and sorting
+- Public storefront: this Vinext/Cloudflare Worker application, with server-rendered catalogue data and client-side search, filters and sorting
+- Inventory management: the separate Next.js application in `inventory-platform/apps/inventory-management`
+- Shared catalogue: the inventory NestJS API is the source of truth for products, variants, durable image URLs, brands, categories, stages and rooms
 - Structured records: D1 (`DB`) for products, quotes, supplier submissions, inventory overrides and audit history
 - Product images: R2 (`PRODUCT_IMAGES`); uploaded images must never be written to deployment storage
 - Database access: Drizzle schema in `db/schema.ts`, with prepared statements at runtime
-- Authentication: public catalogue; inventory routes use dispatch-owned sign-in and server-verified identity
+- Authentication: the storefront catalogue is public; inventory management owns its own protected login and authorization
 - Monitoring: provider configuration is environment-driven and must be enabled in staging and production
 
-Every inventory mutation is written to an audit table with the authenticated actor. Supplier image bytes are stored in R2 while searchable submission metadata remains in D1.
+The storefront uses uncached server-side API reads, so a saved inventory change is visible on the next storefront request. `/inventory` is only a compatibility redirect to the separate inventory application; the private dashboard is never embedded in the storefront.
+
+Every inventory mutation is authenticated and remains the responsibility of the inventory application. Uploaded product images use durable object-storage URLs and are never written to temporary application deployment storage.

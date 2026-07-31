@@ -15,10 +15,24 @@ test("Buildanta reference homepage and primary routes are present", async () => 
   assert.match(home, /Browse Building Categories/);
   assert.match(home, /For Professionals/);
   assert.match(chrome, /Search products, brands, categories/);
-  assert.match(chrome, /Inventory Portal/);
+  assert.match(chrome, /Inventory Management/);
   assert.match(layout, /Every Build Detail in One Place/);
   assert.match(data, /Foundation & Structure/);
   assert.match(data, /Sanitaryware & Bathware/);
+});
+
+test("public storefront reads the separate inventory catalogue without caching", async () => {
+  const [catalog, inventoryPage, home] = await Promise.all([
+    readFile(new URL("../app/live-catalog.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/inventory/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(catalog, /INVENTORY_API_URL/);
+  assert.match(catalog, /cache: "no-store"/);
+  assert.match(catalog, /product-variants/);
+  assert.match(inventoryPage, /NEXT_PUBLIC_INVENTORY_MANAGEMENT_URL/);
+  assert.match(inventoryPage, /redirect/);
+  assert.match(home, /Live catalogue powered by Buildanta Inventory/);
 });
 
 test("quote, supplier upload, and inventory workflows use durable services", async () => {

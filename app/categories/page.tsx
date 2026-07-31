@@ -1,22 +1,21 @@
-import { categories } from "../data";
+import { childrenOf, getCatalogSnapshot, rootNodes } from "../live-catalog";
 
-const taxonomy: Record<string, string[]> = {
-  "Cement & Structure": ["PPC & OPC Cement", "Ready-Mix Concrete", "AAC Blocks", "Red Bricks", "Aggregates", "Construction Chemicals"],
-  "Steel & TMT": ["TMT Bars", "Structural Steel", "Binding Wire", "MS Pipes", "Reinforcement Mesh", "Fabricated Steel"],
-  Electrical: ["House Wires", "Modular Switches", "MCB & Distribution", "Lighting", "Fans", "Conduits & Accessories"],
-  Paints: ["Interior Paints", "Exterior Paints", "Primers", "Wood Finishes", "Metal Paints", "Putty & Textures"],
-  "Tiles & Flooring": ["Vitrified Tiles", "Ceramic Tiles", "Natural Stone", "Wooden Flooring", "Tile Adhesives", "Grout"],
-  "Sanitaryware & Bathware": ["Water Closets", "Wash Basins", "Faucets", "Showers", "Bathtubs", "Bathroom Accessories"],
-  Waterproofing: ["Terrace Waterproofing", "Bathroom Systems", "Sealants", "Membranes", "Crack Fillers", "Protective Coatings"],
-  "Doors & Windows": ["uPVC Windows", "Aluminium Windows", "Wooden Doors", "Flush Doors", "Glass", "Architectural Hardware"],
-  "False Ceiling & Drywall": ["Gypsum Boards", "Ceiling Channels", "Drywall Systems", "Acoustic Ceilings", "Mineral Fibre Tiles", "Accessories"],
-};
+const categoryIcons = ["ϟ", "◐", "▦", "♧", "▧", "Ⅱ", "◒", "▤", "⌂", "▱"];
 
 export default async function Categories({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const { q = "" } = await searchParams;
-  const filtered = categories.filter((category) => !q || `${category.name} ${taxonomy[category.name].join(" ")}`.toLowerCase().includes(q.toLowerCase()));
-  return <main className="taxonomy-page"><div className="page-intro"><p>EXPLORE THE CATALOGUE</p><h1>Building Categories</h1><span>Discover products, materials and trusted brands across the complete construction journey.</span></div>
-    <form className="taxonomy-search"><span>⌕</span><input name="q" defaultValue={q} placeholder="Search categories, products or brands..." /><button>Search</button></form>
-    <section><h2>Featured Categories</h2><div className="taxonomy-grid">{filtered.map((category) => <article key={category.slug}><a className="taxonomy-icon" href={`/categories/${category.slug}`}>{category.icon}</a><div><a href={`/categories/${category.slug}`}><h3>{category.name}</h3></a><p>{category.blurb}</p><ul>{taxonomy[category.name].map((item) => <li key={item}><a href={`/categories/${category.slug}?q=${encodeURIComponent(item)}`}>{item}<span>›</span></a></li>)}</ul></div></article>)}</div></section>
+  const [{ q = "" }, catalog] = await Promise.all([searchParams, getCatalogSnapshot()]);
+  const needle = q.trim().toLowerCase();
+  const roots = rootNodes(catalog.categories);
+  const filtered = roots.filter((category) => {
+    const children = childrenOf(catalog.categories, category.id);
+    return !needle || `${category.name} ${children.map((item) => item.name).join(" ")} ${catalog.brands.map((brand) => brand.name).join(" ")}`.toLowerCase().includes(needle);
+  });
+
+  return <main className="taxonomy-page"><div className="page-intro"><p>EXPLORE THE LIVE CATALOGUE</p><h1>Building Categories</h1><span>Products, categories and brands on this page are read directly from Buildanta Inventory.</span></div>
+    <form className="taxonomy-search"><span>⌕</span><input name="q" defaultValue={q} placeholder="Search categories or brands..." /><button>Search</button></form>
+    <section><h2>Featured Categories</h2><div className="taxonomy-grid">{filtered.map((category, index) => {
+      const children = childrenOf(catalog.categories, category.id);
+      return <article key={category.id}><a className="taxonomy-icon" href={`/categories/${category.slug}`}>{categoryIcons[index % categoryIcons.length]}</a><div><a href={`/categories/${category.slug}`}><h3>{category.name}</h3></a><p>Explore products and request project pricing from the live supplier catalogue.</p>{children.length > 0 && <ul>{children.slice(0, 6).map((item) => <li key={item.id}><a href={`/categories/${item.slug}`}>{item.name}<span>›</span></a></li>)}</ul>}</div></article>;
+    })}</div></section>
   </main>;
 }

@@ -31,15 +31,20 @@ export async function POST(request: Request) {
     const extension = image.type === "image/png" ? "png" : image.type === "image/webp" ? "webp" : "jpg";
     const imageKey = `supplier-products/${reference}.${extension}`;
     await bindings.PRODUCT_IMAGES.put(imageKey, image.stream(), { httpMetadata: { contentType: image.type }, customMetadata: { reference, company } });
-    await bindings.DB.prepare(`CREATE TABLE IF NOT EXISTS supplier_submissions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT, reference TEXT NOT NULL UNIQUE, contact_name TEXT NOT NULL,
-      email TEXT NOT NULL, phone TEXT NOT NULL, company TEXT NOT NULL, product_name TEXT NOT NULL,
-      brand TEXT NOT NULL, category TEXT NOT NULL, unit TEXT NOT NULL, price REAL NOT NULL,
-      stock INTEGER NOT NULL, description TEXT NOT NULL, image_key TEXT NOT NULL,
-      status TEXT NOT NULL DEFAULT 'pending', created_at INTEGER NOT NULL
-    )`).run();
-    await bindings.DB.prepare("INSERT INTO supplier_submissions (reference, contact_name, email, phone, company, product_name, brand, category, unit, price, stock, description, image_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-      .bind(reference, contactName, email, phone, company, productName, brand, category, unit, price, stock, description, imageKey, Date.now()).run();
+    const imageUrl = new URL(`/api/supplier-images/${reference}.${extension}`, request.url).toString();
+    const apiUrl = (process.env.INVENTORY_API_URL || (process.env.NODE_ENV === "development" ? "http://localhost:5173" : "https://buildanta-monorepo-nest-api.vercel.app")).replace(/\/$/, "");
+    const apiResponse = await fetch(`${apiUrl}/supplier-submissions`, {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({ reference, contactName, email, phone, company, productName, brand, category, unit, price, stock, description, imageUrl }),
+      cache: "no-store",
+    });
+    if (!apiResponse.ok) {
+      await bindings.PRODUCT_IMAGES.delete(imageKey);
+      const failure = await apiResponse.json().catch(() => null) as { message?: string | string[] } | null;
+      const message = Array.isArray(failure?.message) ? failure.message.join(" ") : failure?.message;
+      return Response.json({ error: message || "Unable to save this listing for review." }, { status: apiResponse.status });
+    }
     return Response.json({ reference }, { status: 201 });
   } catch {
     return Response.json({ error: "The listing service is temporarily unavailable. Please try again." }, { status: 500 });

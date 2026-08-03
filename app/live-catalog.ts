@@ -8,7 +8,9 @@ import {
   stages as fallbackStages,
 } from "./data";
 
-const DEFAULT_API_URL = "https://buildanta-monorepo-nest-api.vercel.app";
+const DEFAULT_API_URL = process.env.NODE_ENV === "development"
+  ? "http://localhost:5173"
+  : "https://buildanta-monorepo-nest-api.vercel.app";
 
 type ApiTreeNode = { id: string; name: string; slug: string; parentId: string | null };
 type ApiBrand = {
@@ -23,12 +25,19 @@ type ApiProduct = {
   id: string;
   name: string;
   brand: string;
+  description?: string | null;
+  unit?: string;
+  minimumOrderQuantity?: number;
+  sellingPrice?: number | string;
+  bulkPrice?: number | string | null;
+  gstPercent?: number | string | null;
+  deliveryInfo?: string | null;
   keySpecifications?: string[];
   stage?: string[];
   room?: string[];
   updatedAt: string;
   categories?: { name: string }[];
-  variants?: { sku: string; price: number | string; supplier?: { name: string } | null }[];
+  variants?: { sku: string; price: number | string; unit?: string; stockQuantity?: number; reservedQuantity?: number; lowStockThreshold?: number; stockTracked?: boolean; supplier?: { name: string } | null }[];
 };
 type ApiVariant = {
   id: string;
@@ -36,6 +45,11 @@ type ApiVariant = {
   supplierId: string;
   sku: string;
   price?: number | string | null;
+  unit?: string;
+  stockQuantity?: number;
+  reservedQuantity?: number;
+  lowStockThreshold?: number;
+  stockTracked?: boolean;
   attributes?: unknown;
   product?: { id: string; name: string };
   supplier?: { id: string; name: string };
@@ -69,6 +83,11 @@ export type StoreProduct = {
   imageAlt: string;
   sku: string;
   supplier: string | null;
+  availability: "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK" | "ENQUIRY";
+  availableStock: number | null;
+  minimumOrderQuantity: number;
+  gstPercent: number | null;
+  deliveryInfo: string | null;
   updatedAt: string;
 };
 export type CatalogSnapshot = {
@@ -147,6 +166,20 @@ function mapProducts(products: ApiProduct[], variants: ApiVariant[], categories:
     const sku = firstDetailedVariant?.sku || firstSummaryVariant?.sku || "Made to order";
     const supplier = firstDetailedVariant?.supplier?.name || firstSummaryVariant?.supplier?.name || null;
     const specs = (product.keySpecifications || []).filter(Boolean);
+    const stockVariants = detailedVariants.length > 0 ? detailedVariants : (product.variants || []);
+    const trackedVariants = stockVariants.filter((variant) => variant.stockTracked);
+    const availableStock = trackedVariants.length
+      ? trackedVariants.reduce((sum, variant) => sum + (variant.stockQuantity ?? 0) - (variant.reservedQuantity ?? 0), 0)
+      : null;
+    const lowStockThreshold = trackedVariants.reduce((sum, variant) => sum + (variant.lowStockThreshold ?? 0), 0);
+    const availability: StoreProduct["availability"] = availableStock == null
+      ? "ENQUIRY"
+      : availableStock <= 0
+        ? "OUT_OF_STOCK"
+        : availableStock <= lowStockThreshold
+          ? "LOW_STOCK"
+          : "IN_STOCK";
+    const gstPercent = product.gstPercent == null ? null : priceNumber(product.gstPercent);
 
     return {
       id: product.id,
@@ -158,14 +191,19 @@ function mapProducts(products: ApiProduct[], variants: ApiVariant[], categories:
       categorySlug: categoryNode?.slug || slugify(primaryCategory),
       stages: stageNames,
       rooms: roomNames,
-      unit: attributeUnit(firstDetailedVariant?.attributes) || sku,
-      price,
-      description: specs.length > 0 ? specs.join(" · ") : `${product.name} by ${product.brand}, available for project pricing and supplier enquiry.`,
+      unit: firstDetailedVariant?.unit || firstSummaryVariant?.unit || product.unit || attributeUnit(firstDetailedVariant?.attributes) || "unit",
+      price: price || priceNumber(product.sellingPrice),
+      description: product.description?.trim() || (specs.length > 0 ? specs.join(" · ") : `${product.name} by ${product.brand}, available for project pricing and supplier enquiry.`),
       specs: specs.length > 0 ? specs : [`SKU: ${sku}`, supplier ? `Supplier: ${supplier}` : "Supplier quote available"],
       image: image?.src || null,
       imageAlt: image?.alt || product.name,
       sku,
       supplier,
+      availability,
+      availableStock,
+      minimumOrderQuantity: product.minimumOrderQuantity ?? 1,
+      gstPercent,
+      deliveryInfo: product.deliveryInfo?.trim() || null,
       updatedAt: product.updatedAt,
     };
   });
@@ -200,6 +238,11 @@ function fallbackSnapshot(): CatalogSnapshot {
       imageAlt: product.name,
       sku: "Catalogue item",
       supplier: null,
+      availability: "ENQUIRY",
+      availableStock: null,
+      minimumOrderQuantity: 1,
+      gstPercent: null,
+      deliveryInfo: null,
       updatedAt: new Date(0).toISOString(),
     })),
   };
@@ -239,4 +282,11 @@ export function rootNodes(nodes: CatalogNode[]) {
 
 export function childrenOf(nodes: CatalogNode[], parentId: string) {
   return nodes.filter((node) => node.parentId === parentId);
+}
+
+export function availabilityLabel(product: StoreProduct) {
+  if (product.availability === "IN_STOCK") return "In stock";
+  if (product.availability === "LOW_STOCK") return "Limited stock";
+  if (product.availability === "OUT_OF_STOCK") return "Request availability";
+  return "Available for enquiry";
 }

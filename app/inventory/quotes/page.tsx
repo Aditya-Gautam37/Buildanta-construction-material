@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function InventoryQuotesRedirect() {
-  redirect(process.env.NEXT_PUBLIC_INVENTORY_MANAGEMENT_URL || "https://buildanta-monorepo-inventory-manage.vercel.app/dashboard");
+  redirect(process.env.NEXT_PUBLIC_INVENTORY_MANAGEMENT_URL || (process.env.NODE_ENV === "development" ? "http://localhost:3002/dashboard" : "https://buildanta-monorepo-inventory-manage.vercel.app/dashboard"));
 }

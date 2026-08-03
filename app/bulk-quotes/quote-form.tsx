@@ -1,14 +1,17 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 
 export function QuoteForm({ product = "" }: { product?: string }) {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [message, setMessage] = useState("");
   const [reference, setReference] = useState("");
+  const submitting = useRef(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
     setStatus("sending");
     setMessage("");
     const form = new FormData(event.currentTarget);
@@ -22,6 +25,8 @@ export function QuoteForm({ product = "" }: { product?: string }) {
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to submit this quote.");
       setStatus("error");
+    } finally {
+      submitting.current = false;
     }
   }
 

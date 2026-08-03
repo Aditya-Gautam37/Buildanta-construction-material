@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Sora } from "next/font/google";
 import { getCatalogSnapshot, rootNodes } from "./live-catalog";
+import { getCustomerUser } from "./customer-auth";
 import { Footer, Header } from "./site-chrome";
 import "./globals.css";
 
@@ -18,12 +19,13 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const catalog = await getCatalogSnapshot();
+  const [catalog, customer] = await Promise.all([getCatalogSnapshot(), getCustomerUser()]);
   const chrome = {
     categories: rootNodes(catalog.categories).map(({ name, slug }) => ({ name, slug })),
     rooms: rootNodes(catalog.rooms).map((room) => room.name),
     stages: rootNodes(catalog.stages).map((stage) => stage.name),
-    inventoryHref: process.env.NEXT_PUBLIC_INVENTORY_MANAGEMENT_URL || "https://buildanta-monorepo-inventory-manage.vercel.app/dashboard",
+    inventoryHref: process.env.NEXT_PUBLIC_INVENTORY_MANAGEMENT_URL || (process.env.NODE_ENV === "development" ? "http://localhost:3002/dashboard" : "https://buildanta-monorepo-inventory-manage.vercel.app/dashboard"),
+    customerName: customer?.firstName ?? customer?.displayName,
   };
   return <html lang="en"><body className={sora.variable}><Header {...chrome} />{children}<Footer {...chrome} /></body></html>;
 }

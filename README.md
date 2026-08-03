@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Open the URL printed by Vinext (normally `http://localhost:3000`).
+Open the storefront at `http://localhost:3003` when using the Buildanta local service setup.
 
 ## Current implementation
 
@@ -23,12 +23,15 @@ Open the URL printed by Vinext (normally `http://localhost:3000`).
 - Durable R2 product-image uploads
 - A clear hand-off to the separate, authenticated inventory-management application
 - Desktop/mobile navigation, validation, success and error states
+- Published-only public catalogue with truthful stock/enquiry availability
 
 ## Storefront and inventory
 
 - Storefront: this repository and its Sites deployment
 - Inventory management: `inventory-platform/apps/inventory-management`
 - Shared source of truth: `INVENTORY_API_URL`
+- Catalogue publishing control: `http://localhost:3002/catalog-control`
+- Stock and reservation control: `http://localhost:3002/stock`
 
 The storefront fetches catalogue collections with `cache: "no-store"`. Product, brand, category, room, stage, variant, price and image changes made in the inventory dashboard therefore appear on subsequent storefront requests. If the inventory API is temporarily unavailable, the storefront renders its built-in fallback catalogue instead of failing.
 

@@ -1,21 +1,66 @@
-import { childrenOf, getCatalogSnapshot, rootNodes } from "../live-catalog";
+import { childrenOf, getCatalogSnapshot, rootNodes, type StoreProduct } from "../live-catalog";
+import { ProductCard } from "../product-browser";
 
-const categoryIcons = ["ϟ", "◐", "▦", "♧", "▧", "Ⅱ", "◒", "▤", "⌂", "▱"];
+const categoryFallbacks = [
+  { terms: ["electrical", "wire", "switch"], src: "/demo/products/copper-wire.png" },
+  { terms: ["paint", "finish"], src: "/demo/hero/finish-selection.png" },
+  { terms: ["tile", "floor"], src: "/demo/products/porcelain-tile.png" },
+  { terms: ["sanitary", "bath", "plumbing", "faucet"], src: "/demo/products/basin-faucet.png" },
+  { terms: ["cement", "structure", "brick", "sand"], src: "/demo/products/cement.png" },
+  { terms: ["steel", "tmt"], src: "/demo/products/tmt-steel.png" },
+  { terms: ["waterproof", "roof"], src: "/demo/hero/build-journey.png" },
+  { terms: ["door", "window", "glass"], src: "/homepage_img.png" },
+  { terms: ["ceiling", "drywall", "gypsum"], src: "/demo/hero/project-planning.png" },
+] as const;
+
+function fallbackImage(name: string) {
+  const normalized = name.toLowerCase();
+  return categoryFallbacks.find((item) => item.terms.some((term) => normalized.includes(term)))?.src ?? "/demo/hero/build-journey.png";
+}
+
+function categoryProducts(products: StoreProduct[], categoryName: string) {
+  return products.filter((product) => product.categories.includes(categoryName));
+}
 
 export default async function Categories({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const [{ q = "" }, catalog] = await Promise.all([searchParams, getCatalogSnapshot()]);
   const needle = q.trim().toLowerCase();
   const roots = rootNodes(catalog.categories);
+  const matchedProducts = needle ? catalog.products.filter((product) => `${product.name} ${product.brand} ${product.category} ${product.description} ${product.specs.join(" ")}`.toLowerCase().includes(needle)) : [];
   const filtered = roots.filter((category) => {
     const children = childrenOf(catalog.categories, category.id);
-    return !needle || `${category.name} ${children.map((item) => item.name).join(" ")} ${catalog.brands.map((brand) => brand.name).join(" ")}`.toLowerCase().includes(needle);
+    const products = categoryProducts(catalog.products, category.name);
+    return !needle || `${category.name} ${children.map((item) => item.name).join(" ")} ${products.map((product) => `${product.name} ${product.brand}`).join(" ")}`.toLowerCase().includes(needle);
   });
+  const liveHeroImages = catalog.products.filter((product) => product.image).slice(0, 3);
+  const heroImages = [
+    liveHeroImages[0]?.image ?? "/demo/products/cement.png",
+    liveHeroImages[1]?.image ?? "/demo/products/porcelain-tile.png",
+    liveHeroImages[2]?.image ?? "/demo/products/basin-faucet.png",
+  ];
 
-  return <main className="taxonomy-page"><div className="page-intro"><p>EXPLORE THE LIVE CATALOGUE</p><h1>Building Categories</h1><span>Products, categories and brands on this page are read directly from Buildanta Inventory.</span></div>
-    <form className="taxonomy-search"><span>⌕</span><input name="q" defaultValue={q} placeholder="Search categories or brands..." /><button>Search</button></form>
-    <section><h2>Featured Categories</h2><div className="taxonomy-grid">{filtered.map((category, index) => {
-      const children = childrenOf(catalog.categories, category.id);
-      return <article key={category.id}><a className="taxonomy-icon" href={`/categories/${category.slug}`}>{categoryIcons[index % categoryIcons.length]}</a><div><a href={`/categories/${category.slug}`}><h3>{category.name}</h3></a><p>Explore products and request project pricing from the live supplier catalogue.</p>{children.length > 0 && <ul>{children.slice(0, 6).map((item) => <li key={item.id}><a href={`/categories/${item.slug}`}>{item.name}<span>›</span></a></li>)}</ul>}</div></article>;
-    })}</div></section>
+  return <main className="taxonomy-page">
+    <section className="category-hero">
+      <div className="category-hero-copy"><p>EXPLORE THE LIVE CATALOGUE</p><h1>Everything your project needs, organized clearly.</h1><span>Browse materials by category, compare current products and send one clear quotation request. Product names, images and availability are read directly from Buildanta Inventory.</span><div><b>{roots.length}</b><small>material categories</small><b>{catalog.products.length}</b><small>published products</small></div></div>
+      <div className="category-hero-gallery" aria-label="Construction material catalogue preview">{heroImages.map((src, index) => <figure key={`${src}-${index}`}><img src={src} alt={index === 0 ? "Structural construction material" : index === 1 ? "Finishing material" : "Fixture and fitting"} /></figure>)}</div>
+    </section>
+    <form className="taxonomy-search"><span aria-hidden="true">⌕</span><label className="sr-only" htmlFor="category-search">Search categories or brands</label><input id="category-search" name="q" defaultValue={q} placeholder="Search products, categories or brands..." /><button>Search</button></form>
+    {needle && <section className="search-product-results"><div className="section-heading-row"><div><p>Search results</p><h2>{matchedProducts.length ? `${matchedProducts.length} matching products` : "No matching products"}</h2><span>{matchedProducts.length ? "Live published products from Buildanta Inventory." : "Try a product, brand, category or specification."}</span></div></div>{matchedProducts.length > 0 && <div className="products-grid">{matchedProducts.map((product) => <ProductCard key={product.id} product={product} />)}</div>}</section>}
+    <section className="category-directory"><div className="section-heading-row"><div><p>Browse the catalogue</p><h2>{needle ? "Matching categories" : "Construction material categories"}</h2><span>Open any category to see its live products, prices and quotation options.</span></div><a className="view-all" href="/bulk-quotes">Request a bulk quote <span>→</span></a></div>
+      {filtered.length ? <div className="taxonomy-grid">{filtered.map((category) => {
+        const children = childrenOf(catalog.categories, category.id);
+        const products = categoryProducts(catalog.products, category.name);
+        const livePreview = products.find((product) => product.image);
+        const previewImage = livePreview?.image ?? fallbackImage(category.name);
+        const brands = [...new Set(products.map((product) => product.brand))].slice(0, 3);
+        return <article key={category.id} className="taxonomy-card">
+          <a className="taxonomy-card-visual" href={`/categories/${category.slug}`}><img src={previewImage} alt={`${category.name} materials`} loading="lazy" /><span>{products.length} {products.length === 1 ? "product" : "products"}</span>{livePreview && <i>Live Inventory image</i>}</a>
+          <div className="taxonomy-card-copy"><p>Construction category</p><a href={`/categories/${category.slug}`}><h3>{category.name}</h3></a><span>{products.length ? `Featuring ${products.slice(0, 2).map((product) => product.name).join(" and ")}.` : "Products can be published here from Buildanta Inventory."}</span>{brands.length > 0 && <small>{brands.join(" · ")}</small>}
+            {children.length > 0 && <ul>{children.slice(0, 5).map((item) => <li key={item.id}><a href={`/categories/${item.slug}`}>{item.name}<span>›</span></a></li>)}</ul>}
+            <a className="taxonomy-card-action" href={`/categories/${category.slug}`}>Explore {category.name} <span>→</span></a>
+          </div>
+        </article>;
+      })}</div> : <div className="category-empty"><h2>No matching categories</h2><p>Try another product, category or brand name.</p><a href="/categories">Clear search</a></div>}
+    </section>
   </main>;
 }

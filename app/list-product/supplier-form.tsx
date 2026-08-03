@@ -1,25 +1,38 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { categories } from "../data";
 
 export function SupplierForm() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [message, setMessage] = useState("");
+  const submitting = useRef(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
     setStatus("sending");
     const form = new FormData(event.currentTarget);
+    const image = form.get("image");
+    if (!(image instanceof File) || image.size > 5_000_000) {
+      setMessage("Upload a PNG, JPG or WebP image smaller than 5 MB.");
+      setStatus("error");
+      submitting.current = false;
+      return;
+    }
     try {
       const response = await fetch("/api/suppliers", { method: "POST", body: form });
-      const data = await response.json() as { reference?: string; error?: string };
+      const raw = await response.text();
+      const data = (() => { try { return JSON.parse(raw) as { reference?: string; error?: string }; } catch { return { error: response.status === 413 ? "The image is too large. Choose a file smaller than 5 MB." : "The listing service returned an invalid response." }; } })();
       if (!response.ok) throw new Error(data.error || "Unable to submit your listing.");
       setMessage(data.reference || "");
       setStatus("sent");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to submit your listing.");
       setStatus("error");
+    } finally {
+      submitting.current = false;
     }
   }
 

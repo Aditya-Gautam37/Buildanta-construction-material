@@ -8,9 +8,10 @@ type ChromeProps = {
   rooms: string[];
   stages: string[];
   inventoryHref: string;
+  customerName?: string;
 };
 
-export function Header({ categories, rooms, stages, inventoryHref }: ChromeProps) {
+export function Header({ categories, rooms, stages, inventoryHref, customerName }: ChromeProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const router = useRouter();
@@ -29,19 +30,19 @@ export function Header({ categories, rooms, stages, inventoryHref }: ChromeProps
         <div className="nav-group"><a href="/by-stage">By Stage <span>⌄</span></a><div className="nav-dropdown">{stages.slice(0, 8).map((name) => <a href={`/by-stage?stage=${encodeURIComponent(name)}`} key={name}>{name}</a>)}</div></div>
         <div className="nav-group"><a href="/by-room">By Room <span>⌄</span></a><div className="nav-dropdown">{rooms.map((name) => <a href={`/by-room?room=${encodeURIComponent(name)}`} key={name}>{name}</a>)}</div></div>
         <div className="nav-group"><a href="/categories">Categories <span>⌄</span></a><div className="nav-dropdown">{categories.slice(0, 8).map((category) => <a href={`/categories/${category.slug}`} key={category.slug}>{category.name}</a>)}</div></div>
-        <div className="nav-group"><a href="/more">More <span>⌄</span></a><div className="nav-dropdown compact"><a href="/bulk-quotes">Get Bulk Quotes</a><a href="/list-product">List your Products</a><a href={inventoryHref}>Inventory Management ↗</a></div></div>
+        <div className="nav-group"><a href="/more">More <span>⌄</span></a><div className="nav-dropdown compact"><a href="/professionals">Find Professionals</a><a href="/bulk-quotes">Get Bulk Quotes</a><a href="/list-product">List your Products</a><a href={inventoryHref}>Inventory Management ↗</a></div></div>
       </nav>
       <form className="header-search" onSubmit={submitSearch}>
         <label className="sr-only" htmlFor="global-search">Search products</label>
         <input id="global-search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search products, brands, categories..." />
         <button aria-label="Search" type="submit">⌕</button>
       </form>
-      <div className="account-links"><a href="/login">Customer Login</a><a className="signup-button" href="/signup">Sign Up</a></div>
+      <div className="account-links">{customerName ? <a className="signup-button" href="/account">My Account</a> : <><a href="/login">Customer Login</a><a className="signup-button" href="/signup">Sign Up</a></>}</div>
       <button className="menu-button" aria-label="Open menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}><i /><i /><i /></button>
       {menuOpen && <div className="mobile-drawer" onClick={(event) => { if ((event.target as HTMLElement).closest("a")) setMenuOpen(false); }}>
         <form className="mobile-search" onSubmit={submitSearch}><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search products..." /><button>Search</button></form>
-        <a href="/by-stage">By Stage</a><a href="/by-room">By Room</a><a href="/categories">Categories</a><a href="/bulk-quotes">Get Bulk Quotes</a><a href="/list-product">List your Products</a><a href={inventoryHref}>Inventory Management ↗</a>
-        <div><a href="/login">Customer Login</a><a className="signup-button" href="/signup">Sign Up</a></div>
+        <a href="/by-stage">By Stage</a><a href="/by-room">By Room</a><a href="/categories">Categories</a><a href="/professionals">Find Professionals</a><a href="/bulk-quotes">Get Bulk Quotes</a><a href="/list-product">List your Products</a><a href={inventoryHref}>Inventory Management ↗</a>
+        <div>{customerName ? <a className="signup-button" href="/account">My Account</a> : <><a href="/login">Customer Login</a><a className="signup-button" href="/signup">Sign Up</a></>}</div>
       </div>}
     </header>
   );
@@ -50,12 +51,15 @@ export function Header({ categories, rooms, stages, inventoryHref }: ChromeProps
 export function Footer({ categories, rooms, stages, inventoryHref }: ChromeProps) {
   return (
     <footer className="site-footer">
-      <div className="footer-brand"><a className="wordmark" href="/"><img src="/logo.png" alt="" /><strong>Buildanta</strong></a><p>Your all-in-one source for every build detail. Catalogue data is managed separately in Buildanta Inventory.</p></div>
-      <FooterColumn title="By Stage" links={stages.slice(0, 6).map((name) => ({ label: name, href: `/by-stage?stage=${encodeURIComponent(name)}` }))} />
-      <FooterColumn title="By Room" links={rooms.slice(0, 6).map((name) => ({ label: name, href: `/by-room?room=${encodeURIComponent(name)}` }))} />
-      <FooterColumn title="Categories" links={categories.slice(0, 6).map((item) => ({ label: item.name, href: `/categories/${item.slug}` }))} />
-      <FooterColumn title="More" links={[{ label: "Get Bulk Quotes", href: "/bulk-quotes" }, { label: "List your Product", href: "/list-product" }, { label: "Inventory Management ↗", href: inventoryHref }, { label: "Preview My Reno (Coming soon)", href: "/more" }]} />
-      <p className="copyright">© 2026 Buildanta. All rights reserved.</p>
+      <section className="footer-cta"><div><p>PLANNING A BUILD OR RENOVATION?</p><h2>Turn your material list into one clear quotation.</h2></div><div><a className="button orange" href="/bulk-quotes">Request project pricing <span>→</span></a><a className="footer-cta-link" href="/categories">Browse the catalogue</a></div></section>
+      <div className="footer-main">
+        <div className="footer-brand"><a className="wordmark" href="/"><img src="/logo.png" alt="" /><strong>Buildanta</strong></a><p>Construction materials, professional discovery and quotation support in one connected platform.</p><span className="footer-live"><i /> Catalogue synchronized with Inventory</span><small>Serving project enquiries with delivery confirmation by PIN code.</small></div>
+        <FooterColumn title="Shop materials" links={categories.slice(0, 6).map((item) => ({ label: item.name, href: `/categories/${item.slug}` }))} />
+        <FooterColumn title="Plan your project" links={[...stages.slice(0, 3).map((name) => ({ label: name, href: `/by-stage?stage=${encodeURIComponent(name)}` })), ...rooms.slice(0, 3).map((name) => ({ label: name, href: `/by-room?room=${encodeURIComponent(name)}` }))]} />
+        <FooterColumn title="Buildanta services" links={[{ label: "Get Bulk Quotes", href: "/bulk-quotes" }, { label: "Find Professionals", href: "/professionals" }, { label: "List your Product", href: "/list-product" }, { label: "Customer Account", href: "/account" }]} />
+        <div className="footer-column footer-staff"><span className="footer-title">For your team</span><p>Manage published products, images, stock and enquiries in the separate operations workspace.</p><a href={inventoryHref}>Open Inventory Management <span>↗</span></a></div>
+      </div>
+      <div className="footer-bottom"><p>© 2026 Buildanta Private Limited. All rights reserved.</p><p>Product pricing and delivery are confirmed in the final quotation.</p></div>
     </footer>
   );
 }

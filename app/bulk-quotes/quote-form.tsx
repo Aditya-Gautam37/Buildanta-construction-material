@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import type { StoreProduct } from "../live-catalog";
 
 type BasketItem = { key: string; productId: string; variantId: string; description: string; quantity: number; unitCode: string };
@@ -18,8 +18,10 @@ export function QuoteForm({ products, product = "" }: { products: StoreProduct[]
   const [reference, setReference] = useState("");
   const [items, setItems] = useState<BasketItem[]>(() => [makeItem(products, product)]);
   const [contact, setContact] = useState<Contact | null>(null);
+  const [deliveryPincode,setDeliveryPincode]=useState("");
   const submitting = useRef(false);
   const productMap = useMemo(() => new Map(products.map((item) => [item.id, item])), [products]);
+  useEffect(()=>{const saved=window.localStorage.getItem("buildanta-delivery-pincode")||"";if(!/^\d{6}$/.test(saved))return;const timer=window.setTimeout(()=>setDeliveryPincode(saved),0);return()=>window.clearTimeout(timer)},[])
 
   function updateItem(key: string, patch: Partial<BasketItem>) { setItems((current) => current.map((item) => item.key === key ? { ...item, ...patch } : item)); }
   function chooseProduct(key: string, productId: string) {
@@ -83,7 +85,7 @@ export function QuoteForm({ products, product = "" }: { products: StoreProduct[]
     <div className="field-grid"><label>Phone number<input name="phone" inputMode="tel" minLength={7} placeholder="+91 98765 43210" required /></label><label>Company / project<input name="company" placeholder="Company or project name" /></label></div>
     <div className="quote-basket-heading"><div><p className="form-kicker">MATERIAL BASKET</p><h3>Add every product required for this quotation</h3></div><button type="button" onClick={() => setItems((current) => [...current, makeItem(products)])}>+ Add product</button></div>
     <div className="quote-basket">{items.map((item, index) => { const selected = productMap.get(item.productId); return <fieldset key={item.key}><legend>Item {index + 1}</legend><div className="field-grid"><label>Product<select value={item.productId} onChange={(event) => chooseProduct(item.key, event.target.value)} required>{products.map((entry) => <option value={entry.id} key={entry.id}>{entry.name} / {entry.brand}</option>)}</select></label><label>Variant<select value={item.variantId} onChange={(event) => chooseVariant(item.key, item.productId, event.target.value)} required>{selected?.variants.map((variant) => <option value={variant.id} key={variant.id}>{variant.label} / {variant.sku}</option>)}</select></label></div><div className="field-grid"><label>Quantity<input type="number" min="0.001" step="0.001" value={item.quantity} onChange={(event) => updateItem(item.key, { quantity: Number(event.target.value) })} required /></label><label>Unit<input value={item.unitCode} readOnly /></label></div>{items.length > 1 && <button className="quote-remove" type="button" onClick={() => setItems((current) => current.filter((entry) => entry.key !== item.key))}>Remove item</button>}</fieldset>})}</div>
-    <div className="field-grid"><label>Delivery pincode<input name="deliveryPincode" inputMode="numeric" pattern="[0-9]{6}" placeholder="208001" required /></label><label>Required by<input name="requiredBy" type="date" /></label></div>
+    <div className="field-grid"><label>Delivery pincode<input name="deliveryPincode" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={deliveryPincode} onChange={event=>setDeliveryPincode(event.target.value.replace(/\D/g,""))} placeholder="208001" required /></label><label>Required by<input name="requiredBy" type="date" /></label></div>
     <div className="field-grid"><label>Project type<select name="projectType"><option>Residential construction</option><option>Commercial project</option><option>Renovation</option><option>Dealer / reseller</option></select></label><label>Project notes<input name="customerNotes" placeholder="Brands, schedule or specifications" /></label></div>
     {status === "error" && <p className="form-error" role="alert">{message}</p>}
     <button className="button navy wide">Review quotation summary<span>-&gt;</span></button>

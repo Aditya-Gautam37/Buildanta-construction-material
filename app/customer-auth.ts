@@ -70,7 +70,7 @@ export async function clearCustomerSession() {
 }
 
 export async function getCustomerUser(): Promise<CustomerUser | null> {
-  const token = (await cookies()).get(ACCESS_COOKIE)?.value;
+  const token = await getCustomerAccessToken();
   if (!token) return null;
 
   const response = await supabaseAuthFetch("/auth/v1/user", { method: "GET" }, token);
@@ -91,6 +91,10 @@ export async function getCustomerUser(): Promise<CustomerUser | null> {
     lastName,
     displayName: [firstName, lastName].filter(Boolean).join(" ") || user.email,
   };
+}
+
+export async function getCustomerAccessToken() {
+  return (await cookies()).get(ACCESS_COOKIE)?.value ?? null;
 }
 
 export function isSameOriginRequest(request: Request) {

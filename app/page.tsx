@@ -21,7 +21,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 export default async function Home() {
   const [catalog, professionals, homepageContent] = await Promise.all([getCatalogSnapshot(), getProfessionals(), getHomepageContent()]);
-  const stages = rootNodes(catalog.stages);
+  const stages = rootNodes(catalog.stages).filter((stage) => catalog.products.some((product) => product.stages.includes(stage.name)));
   const rooms = rootNodes(catalog.rooms);
   const categories = rootNodes(catalog.categories);
   const repeatedBrands = [...catalog.brands, ...catalog.brands];

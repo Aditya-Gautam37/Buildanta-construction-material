@@ -223,6 +223,17 @@ function mapProducts(products: ApiProduct[], variants: ApiVariant[], categories:
 
 function fallbackSnapshot(): CatalogSnapshot {
   const node = (id:string,name:string,slug:string):CatalogNode => ({ id,name,slug,parentId:null,description:null,imageUrl:null,icon:null,sortOrder:0,featured:false,published:true,seoTitle:null,seoDescription:null,childCount:0,productCount:0 });
+  const fallbackImageByCategory: Record<string,string> = {
+    "Cement & Structure": "/demo/products/real/cement.jpg",
+    "Steel & TMT": "/demo/products/real/steel.jpg",
+    Waterproofing: "/demo/products/real/waterproofing.jpg",
+    Electrical: "/demo/products/real/electrical.jpg",
+    "Sanitaryware & Bathware": "/demo/products/real/bath.jpg",
+    "Doors & Windows": "/demo/products/real/openings.jpg",
+    "False Ceiling & Drywall": "/demo/products/real/ceiling.jpg",
+    "Tiles & Flooring": "/demo/products/real/tiles.jpg",
+    Paints: "/demo/products/real/paint.jpg",
+  };
   const categories: CatalogNode[] = fallbackCategories.map((item, index) => node(`fallback-category-${index}`,item.name,item.slug));
   const stages: CatalogNode[] = fallbackStages.map(([, name], index) => node(`fallback-stage-${index}`,name,slugify(name)));
   const rooms: CatalogNode[] = fallbackRooms.map((item, index) => node(`fallback-room-${index}`,item.name,slugify(item.name)));
@@ -248,9 +259,9 @@ function fallbackSnapshot(): CatalogSnapshot {
       bulkPrice: null,
       description: product.description,
       specs: product.specs,
-      image: null,
+      image: fallbackImageByCategory[product.category] || null,
       imageAlt: product.name,
-      images: [],
+      images: fallbackImageByCategory[product.category] ? [{ src:fallbackImageByCategory[product.category], alt:product.name }] : [],
       variants: [],
       sku: "Catalogue item",
       supplier: null,

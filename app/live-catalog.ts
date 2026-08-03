@@ -21,6 +21,7 @@ type ApiBrand = {
   description?: string | null;
   website?: string | null;
 };
+type PublicAvailability = "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK" | "ENQUIRY";
 type ApiProduct = {
   id: string;
   name: string;
@@ -36,23 +37,21 @@ type ApiProduct = {
   stage?: string[];
   room?: string[];
   updatedAt: string;
+  availabilityStatus?: PublicAvailability;
   categories?: { id?: string; name: string; slug?: string }[];
-  variants?: { sku: string; price: number | string; unit?: string; stockQuantity?: number; reservedQuantity?: number; lowStockThreshold?: number; stockTracked?: boolean; supplier?: { name: string } | null }[];
+  variants?: { sku: string; price: number | string; unit?: string; availabilityStatus?: PublicAvailability }[];
+  images?: { id?: string; src: string; alt?: string; sortOrder?: number; primary?: boolean }[];
 };
 type ApiVariant = {
   id: string;
   productId: string;
-  supplierId: string;
   sku: string;
   price?: number | string | null;
   unit?: string;
-  stockQuantity?: number;
-  reservedQuantity?: number;
-  lowStockThreshold?: number;
-  stockTracked?: boolean;
+  minimumOrderQuantity?: number;
+  availabilityStatus?: PublicAvailability;
   attributes?: unknown;
   product?: { id: string; name: string };
-  supplier?: { id: string; name: string };
   images?: { id?: string; src: string; alt?: string; sortOrder?: number; primary?: boolean }[];
 };
 
@@ -83,11 +82,9 @@ export type StoreProduct = {
   image: string | null;
   imageAlt: string;
   images: { src: string; alt: string }[];
-  variants: { id: string; sku: string; label: string; price: number; unit: string; availableStock: number | null; attributes: Record<string, string> }[];
+  variants: { id: string; sku: string; label: string; price: number; unit: string; availability: PublicAvailability; attributes: Record<string, string> }[];
   sku: string;
-  supplier: string | null;
-  availability: "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK" | "ENQUIRY";
-  availableStock: number | null;
+  availability: PublicAvailability;
   minimumOrderQuantity: number;
   gstPercent: number | null;
   deliveryInfo: string | null;
@@ -146,6 +143,13 @@ function attributeUnit(attributes: unknown) {
   return null;
 }
 
+function aggregateAvailability(statuses: Array<PublicAvailability | undefined>): PublicAvailability {
+  if (statuses.includes("IN_STOCK")) return "IN_STOCK";
+  if (statuses.includes("LOW_STOCK")) return "LOW_STOCK";
+  if (statuses.includes("OUT_OF_STOCK")) return "OUT_OF_STOCK";
+  return "ENQUIRY";
+}
+
 function mapProducts(products: ApiProduct[], variants: ApiVariant[], categories: CatalogNode[], stages: CatalogNode[], rooms: CatalogNode[]) {
   const variantsByProduct = new Map<string, ApiVariant[]>();
   for (const variant of variants) {
@@ -164,25 +168,17 @@ function mapProducts(products: ApiProduct[], variants: ApiVariant[], categories:
     const roomNames = expandWithAncestors(product.room || [], rooms);
     const primaryCategory = rawCategories[0] || categoryNames[0] || "Construction Materials";
     const categoryNode = categories.find((item) => item.name === primaryCategory);
-    const images = detailedVariants.flatMap((variant) => variant.images || []).sort((a,b) => Number(Boolean(b.primary))-Number(Boolean(a.primary)) || (a.sortOrder ?? 0)-(b.sortOrder ?? 0));
+    const images = [...(product.images || []), ...detailedVariants.flatMap((variant) => variant.images || [])]
+      .filter((image, index, all) => all.findIndex((candidate) => candidate.src === image.src) === index)
+      .sort((a,b) => Number(Boolean(b.primary))-Number(Boolean(a.primary)) || (a.sortOrder ?? 0)-(b.sortOrder ?? 0));
     const image = images[0];
     const price = priceNumber(firstDetailedVariant?.price ?? firstSummaryVariant?.price);
     const sku = firstDetailedVariant?.sku || firstSummaryVariant?.sku || "Made to order";
-    const supplier = firstDetailedVariant?.supplier?.name || firstSummaryVariant?.supplier?.name || null;
     const specs = (product.keySpecifications || []).filter(Boolean);
-    const stockVariants = detailedVariants.length > 0 ? detailedVariants : (product.variants || []);
-    const trackedVariants = stockVariants.filter((variant) => variant.stockTracked);
-    const availableStock = trackedVariants.length
-      ? trackedVariants.reduce((sum, variant) => sum + (variant.stockQuantity ?? 0) - (variant.reservedQuantity ?? 0), 0)
-      : null;
-    const lowStockThreshold = trackedVariants.reduce((sum, variant) => sum + (variant.lowStockThreshold ?? 0), 0);
-    const availability: StoreProduct["availability"] = availableStock == null
-      ? "ENQUIRY"
-      : availableStock <= 0
-        ? "OUT_OF_STOCK"
-        : availableStock <= lowStockThreshold
-          ? "LOW_STOCK"
-          : "IN_STOCK";
+    const availability = product.availabilityStatus ?? aggregateAvailability([
+      ...detailedVariants.map((variant) => variant.availabilityStatus),
+      ...(product.variants || []).map((variant) => variant.availabilityStatus),
+    ]);
     const gstPercent = product.gstPercent == null ? null : priceNumber(product.gstPercent);
 
     return {
@@ -198,21 +194,18 @@ function mapProducts(products: ApiProduct[], variants: ApiVariant[], categories:
       unit: firstDetailedVariant?.unit || firstSummaryVariant?.unit || product.unit || attributeUnit(firstDetailedVariant?.attributes) || "unit",
       price: price || priceNumber(product.sellingPrice),
       bulkPrice: product.bulkPrice == null ? null : priceNumber(product.bulkPrice),
-      description: product.description?.trim() || (specs.length > 0 ? specs.join(" · ") : `${product.name} by ${product.brand}, available for project pricing and supplier enquiry.`),
-      specs: specs.length > 0 ? specs : [`SKU: ${sku}`, supplier ? `Supplier: ${supplier}` : "Supplier quote available"],
+      description: product.description?.trim() || (specs.length > 0 ? specs.join(" / ") : `${product.name} by ${product.brand}, available for project pricing and fulfilment confirmation.`),
+      specs: specs.length > 0 ? specs : [`SKU: ${sku}`, "Supply confirmed with quotation"],
       image: image?.src || null,
       imageAlt: image?.alt || product.name,
       images: images.length ? images.map((item)=>({src:item.src,alt:item.alt||product.name})) : [],
       variants: detailedVariants.map((variant) => {
         const record = variant.attributes && typeof variant.attributes === "object" && !Array.isArray(variant.attributes) ? variant.attributes as Record<string, unknown> : {};
         const attributes = Object.fromEntries(Object.entries(record).flatMap(([key,value]) => typeof value === "string" || typeof value === "number" ? [[key,String(value)]] : []));
-        const available = variant.stockTracked ? (variant.stockQuantity ?? 0) - (variant.reservedQuantity ?? 0) : null;
-        return { id:variant.id, sku:variant.sku, label:Object.values(attributes).join(" / ") || variant.sku, price:priceNumber(variant.price) || priceNumber(product.sellingPrice), unit:variant.unit || product.unit || "unit", availableStock:available, attributes };
+        return { id:variant.id, sku:variant.sku, label:Object.values(attributes).join(" / ") || variant.sku, price:priceNumber(variant.price) || priceNumber(product.sellingPrice), unit:variant.unit || product.unit || "unit", availability:variant.availabilityStatus || "ENQUIRY", attributes };
       }),
       sku,
-      supplier,
       availability,
-      availableStock,
       minimumOrderQuantity: product.minimumOrderQuantity ?? 1,
       gstPercent,
       deliveryInfo: product.deliveryInfo?.trim() || null,
@@ -264,9 +257,7 @@ function fallbackSnapshot(): CatalogSnapshot {
       images: fallbackImageByCategory[product.category] ? [{ src:fallbackImageByCategory[product.category], alt:product.name }] : [],
       variants: [],
       sku: "Catalogue item",
-      supplier: null,
       availability: "ENQUIRY",
-      availableStock: null,
       minimumOrderQuantity: 1,
       gstPercent: null,
       deliveryInfo: null,
@@ -313,8 +304,12 @@ export function childrenOf(nodes: CatalogNode[], parentId: string) {
 }
 
 export function availabilityLabel(product: StoreProduct) {
-  if (product.availability === "IN_STOCK") return "In stock";
-  if (product.availability === "LOW_STOCK") return "Limited stock";
-  if (product.availability === "OUT_OF_STOCK") return "Request availability";
+  return availabilityStatusLabel(product.availability);
+}
+
+export function availabilityStatusLabel(status: PublicAvailability) {
+  if (status === "IN_STOCK") return "In stock";
+  if (status === "LOW_STOCK") return "Limited stock";
+  if (status === "OUT_OF_STOCK") return "Request availability";
   return "Available for enquiry";
 }

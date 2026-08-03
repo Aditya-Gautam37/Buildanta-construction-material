@@ -34,6 +34,8 @@ test("public storefront reads the separate inventory catalogue without caching",
   assert.match(catalog, /INVENTORY_API_URL/);
   assert.match(catalog, /cache: "no-store"/);
   assert.match(catalog, /product-variants/);
+  assert.match(catalog, /availabilityStatus/);
+  assert.doesNotMatch(catalog, /stockQuantity|reservedQuantity|lowStockThreshold/);
   assert.match(inventoryPage, /NEXT_PUBLIC_INVENTORY_MANAGEMENT_URL/);
   assert.match(inventoryPage, /redirect/);
   assert.match(homepageContent, /homepage-content/);
@@ -41,7 +43,7 @@ test("public storefront reads the separate inventory catalogue without caching",
   assert.match(hero, /Live catalogue powered by Buildanta Inventory/);
 });
 
-test("quote, supplier upload, and inventory workflows use durable services", async () => {
+test("quote and supplier workflows use durable services while storefront stock mutation is retired", async () => {
   const [quoteForm, quoteRoute, supplierRoute, inventoryRoute, hosting] = await Promise.all([
     readFile(new URL("../app/bulk-quotes/quote-form.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/quotes/route.ts", import.meta.url), "utf8"),
@@ -53,8 +55,9 @@ test("quote, supplier upload, and inventory workflows use durable services", asy
   assert.match(quoteRoute, /quote-requests/);
   assert.match(supplierRoute, /PRODUCT_IMAGES\.put/);
   assert.match(supplierRoute, /supplier-submissions/);
-  assert.match(inventoryRoute, /getChatGPTUser/);
-  assert.match(inventoryRoute, /inventory_audit/);
+  assert.match(inventoryRoute, /STOREFRONT_INVENTORY_RETIRED/);
+  assert.match(inventoryRoute, /status: 410/);
+  assert.doesNotMatch(inventoryRoute, /D1Database|inventory_overrides|inventory_audit/);
   assert.match(hosting, /"d1": "DB"/);
   assert.match(hosting, /"r2": "PRODUCT_IMAGES"/);
   for (const asset of ["logo.png", "homepage_img.png", "forprofessionalsbanner.png", "whyus.png"]) {

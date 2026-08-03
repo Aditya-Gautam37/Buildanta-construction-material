@@ -28,5 +28,5 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     inventoryHref: process.env.NEXT_PUBLIC_INVENTORY_MANAGEMENT_URL || (process.env.NODE_ENV === "development" ? "http://localhost:3002/dashboard" : "https://buildanta-monorepo-inventory-manage.vercel.app/dashboard"),
     customerName: customer?.firstName ?? customer?.displayName,
   };
-  return <html lang="en"><body className={sora.variable}><Header {...chrome} />{children}<Footer {...chrome} /></body></html>;
+  return <html lang="en"><body className={sora.variable}><Header {...chrome} />{catalog.source === "fallback" && <div className="catalog-status-notice" role="status"><strong>Live catalogue temporarily unavailable.</strong><span>Showing a limited browsing catalogue. Current pricing and availability require confirmation.</span></div>}{children}<Footer {...chrome} /></body></html>;
 }

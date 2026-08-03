@@ -78,3 +78,16 @@ test("PIN-code serviceability is proxied through the public Inventory API contra
   assert.match(checker, /buildanta-delivery-pincode/);
   assert.match(productDetail, /ServiceabilityChecker/);
 });
+
+test("quotation workflow submits a reviewed multi-item basket through the Inventory API", async () => {
+  const [form, route] = await Promise.all([
+    readFile(new URL("../app/bulk-quotes/quote-form.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/quotes/route.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(form, /items: items\.map/);
+  assert.match(form, /REVIEW BEFORE SUBMISSION/);
+  assert.match(form, /variantId/);
+  assert.match(form, /deliveryPincode/);
+  assert.match(route, /\/quote-requests/);
+  assert.doesNotMatch(route, /DATABASE_URL|SUPABASE_SERVICE/);
+});

@@ -8,8 +8,13 @@ const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
 
 const { d1, r2 } = hostingConfig;
 
-// macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
+// macOS Seatbelt blocks FSEvents, while OneDrive on Windows can briefly lock
+// catalogue images and crash Node's native watcher with EBUSY. Polling keeps
+// local development stable in both environments.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
+const isWindowsOneDriveWorkspace =
+  process.platform === "win32" && process.cwd().toLowerCase().includes("\\onedrive\\");
+const shouldUsePolling = isCodexSeatbeltSandbox || isWindowsOneDriveWorkspace;
 
 const localBindingConfig = {
   main: "./worker/index.ts",
@@ -44,7 +49,7 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
-    server: isCodexSeatbeltSandbox
+    server: shouldUsePolling
       ? { watch: { useFsEvents: false, usePolling: true } }
       : undefined,
     plugins: [

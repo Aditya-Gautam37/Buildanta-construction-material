@@ -9,9 +9,10 @@ export function CustomerAuthForm({ mode }: { mode: "login" | "signup" }) {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formElement = event.currentTarget;
     setError("");
     setSuccess("");
-    const form = new FormData(event.currentTarget);
+    const form = new FormData(formElement);
     const password = String(form.get("password") ?? "");
     if (mode === "signup" && password !== String(form.get("confirmPassword") ?? "")) {
       setError("Passwords do not match.");
@@ -31,7 +32,7 @@ export function CustomerAuthForm({ mode }: { mode: "login" | "signup" }) {
       if (!response.ok) throw new Error(data.error ?? "Authentication failed.");
       if (data.requiresConfirmation) {
         setSuccess("Account created. Open the confirmation link sent to your email, then sign in.");
-        event.currentTarget.reset();
+        formElement.reset();
         return;
       }
       const requested = new URLSearchParams(window.location.search).get("redirect");

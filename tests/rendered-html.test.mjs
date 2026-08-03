@@ -91,3 +91,11 @@ test("quotation workflow submits a reviewed multi-item basket through the Invent
   assert.match(route, /\/quote-requests/);
   assert.doesNotMatch(route, /DATABASE_URL|SUPABASE_SERVICE/);
 });
+
+test("customer signup keeps a stable form reference across the Supabase request", async () => {
+  const form = await readFile(new URL("../app/customer-auth-form.tsx", import.meta.url), "utf8");
+  assert.match(form, /const formElement = event\.currentTarget/);
+  assert.match(form, /formElement\.reset\(\)/);
+  assert.doesNotMatch(form, /event\.currentTarget\.reset\(\)/);
+  assert.match(form, /Account created\. Open the confirmation link sent to your email/);
+});

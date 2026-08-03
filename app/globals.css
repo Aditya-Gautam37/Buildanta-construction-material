@@ -51,6 +51,11 @@ img { max-width: 100%; display: block; }
 .mobile-drawer { display: none; }
 .catalog-status-notice { min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 8px 16px; padding: 10px 20px; border-bottom: 1px solid #ead7b6; background: #fff8e9; color: #684819; font-size: 11px; text-align: center; }
 .catalog-status-notice strong { color: #51370f; }
+.serviceability-checker { display: grid; gap: 12px; margin: 16px 0; padding: 15px; border: 1px solid var(--border); border-radius: 12px; background: #f7f9fc; }
+.serviceability-checker b { color: var(--navy); font-size: 13px; }.serviceability-checker p { margin: 3px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.serviceability-checker form { display: flex; }.serviceability-checker input { min-width: 0; flex: 1; border: 1px solid var(--border); border-right: 0; border-radius: 8px 0 0 8px; padding: 10px 12px; font: inherit; }.serviceability-checker button { border: 0; border-radius: 0 8px 8px 0; padding: 0 18px; background: var(--navy); color: white; font-weight: 650; }
+.serviceability-checker.success { border-color: #a7d7c5; background: #f0faf6; }.serviceability-checker.error { border-color: #e6c7bf; background: #fff7f4; }
+.taxonomy-serviceability { width: min(950px, calc(100% - 32px)); margin: 24px auto; }
 
 .button { min-height: 46px; display: inline-flex; justify-content: center; align-items: center; gap: 22px; padding: 11px 22px; border-radius: 8px; font-size: 14px; font-weight: 650; border: 1px solid white; box-shadow: 0 6px 16px rgba(24,40,65,.13); }
 .button.navy { background: var(--navy); color: #fff; }

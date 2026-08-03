@@ -64,3 +64,17 @@ test("quote and supplier workflows use durable services while storefront stock m
     await access(new URL(`../public/${asset}`, import.meta.url));
   }
 });
+
+test("PIN-code serviceability is proxied through the public Inventory API contract", async () => {
+  const [route, checker, productDetail] = await Promise.all([
+    readFile(new URL("../app/api/serviceability/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/serviceability-checker.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/product-detail-client.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(route, /inventory-locations\/public\/availability/);
+  assert.match(route, /cache: "no-store"/);
+  assert.doesNotMatch(route, /SUPABASE_SERVICE|DATABASE_URL|stockQuantity|reservedQuantity/);
+  assert.match(checker, /Not serviceable at this PIN code/);
+  assert.match(checker, /buildanta-delivery-pincode/);
+  assert.match(productDetail, /ServiceabilityChecker/);
+});

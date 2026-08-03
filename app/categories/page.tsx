@@ -1,5 +1,6 @@
 import { childrenOf, getCatalogSnapshot, rootNodes, type StoreProduct } from "../live-catalog";
 import { ProductCard } from "../product-browser";
+import { ServiceabilityChecker } from "../serviceability-checker";
 
 const categoryFallbacks = [
   { terms: ["electrical", "wire", "switch"], src: "/demo/products/copper-wire.png" },
@@ -39,7 +40,7 @@ export default async function Categories({ searchParams }: { searchParams: Promi
     liveHeroImages[2]?.image ?? "/demo/products/basin-faucet.png",
   ];
 
-  return <main className="taxonomy-page">
+  return <main className="taxonomy-page"><div className="taxonomy-serviceability"><ServiceabilityChecker /></div>
     <section className="category-hero">
       <div className="category-hero-copy"><p>EXPLORE THE LIVE CATALOGUE</p><h1>Everything your project needs, organized clearly.</h1><span>Browse materials by category, compare current products and send one clear quotation request. Product names, images and availability are read directly from Buildanta Inventory.</span><div><b>{roots.length}</b><small>material categories</small><b>{catalog.products.length}</b><small>published products</small></div></div>
       <div className="category-hero-gallery" aria-label="Construction material catalogue preview">{heroImages.map((src, index) => <figure key={`${src}-${index}`}><img src={src} alt={index === 0 ? "Structural construction material" : index === 1 ? "Finishing material" : "Fixture and fitting"} /></figure>)}</div>

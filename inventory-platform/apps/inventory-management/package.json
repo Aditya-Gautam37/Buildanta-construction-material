@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack -p 3002",
+    "prebuild": "pnpm --filter @workspace/db db:generate",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

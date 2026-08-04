@@ -20,12 +20,12 @@ const DEFAULT_API_URL = process.env.NODE_ENV === "development"
 
 const apiUrl = (process.env.INVENTORY_API_URL || DEFAULT_API_URL).replace(/\/$/, "");
 
-export async function getPublicCalculators(): Promise<PublicCalculator[]> {
+export async function getPublicCalculators(): Promise<PublicCalculator[] | null> {
   try {
     const response = await fetch(`${apiUrl}/calculators/public`, { headers: { accept: "application/json" }, cache: "no-store" });
-    return response.ok ? await response.json() as PublicCalculator[] : [];
+    return response.ok ? await response.json() as PublicCalculator[] : null;
   } catch {
-    return [];
+    return null;
   }
 }
 

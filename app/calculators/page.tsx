@@ -33,7 +33,8 @@ function CalculatorCard({ calculator }: { calculator: PublicCalculator }) {
 }
 
 export default async function CalculatorsPage() {
-  const calculators = await getPublicCalculators();
+  const calculatorResponse = await getPublicCalculators();
+  const calculators = calculatorResponse ?? [];
   const planner = calculators.find((calculator) => calculator.type === "BUILDING_BUDGET");
 
   return <main className={styles.page}>
@@ -54,7 +55,10 @@ export default async function CalculatorsPage() {
       {calculators.length ? groups.map((group) => {
         const entries = calculators.filter((calculator) => group.types.includes(calculator.type));
         return entries.length ? <section className={styles.calculatorGroup} key={group.title}><header><h3>{group.title}</h3><p>{group.description}</p></header><div className={styles.grid}>{entries.map((calculator) => <CalculatorCard calculator={calculator} key={calculator.id} />)}</div></section> : null;
-      }) : <div className={styles.empty}><h2>Calculators are temporarily unavailable</h2><p>Please try again after the Inventory API is running.</p></div>}
+      }) : <div className={styles.empty}>{calculatorResponse === null
+        ? <><h2>Calculators are temporarily unavailable</h2><p>The Inventory API could not be reached. Please try again shortly.</p></>
+        : <><h2>Calculators are being configured</h2><p>Add real products and publish calculator mappings from Buildanta Inventory to make these tools available.</p></>}
+      </div>}
     </section>
   </main>;
 }

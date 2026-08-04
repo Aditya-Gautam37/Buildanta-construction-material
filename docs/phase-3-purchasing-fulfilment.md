@@ -41,19 +41,23 @@ All 27 Phase 3 tables have RLS enabled and no grants for Supabase `anon` or `aut
 
 ## Verified vertical data
 
-The connected browser workflow created and completed:
+The idempotent development seed now creates and connects:
 
+- two labelled Kanpur demonstration yards and one fulfilment partner
 - an approved purchase requisition
 - a closed supplier RFQ with supplier response
 - a received purchase order
-- a posted goods receipt
+- a posted goods receipt with accepted, rejected and damaged quantities
 - a picking list from an accepted sales order
 - a delivered dispatch with delivery challan and proof of delivery
 - a resolved customer return that passed through quarantine and inspection
+- an approved replacement linked to the returned order line
+
+All seeded operational records use deterministic `DEMO-*` references and invalid example email domains. Rerunning the seed preserves operational stock buckets and does not duplicate orders, reservations, ledger entries, dispatches or returns.
 
 The `/fulfilment` workspace fits a 360 px viewport without horizontal overflow and produced no browser console errors.
 
-Run `pnpm db:verify-phase3` from `inventory-platform` to verify the operational document chain, business-ledger types, non-negative balances, RLS and browser-role grants.
+Run `pnpm db:verify-phase3` from `inventory-platform` to verify the exact demonstration document chain, ledger before/after reconciliation, non-negative balances, RLS and browser-role grants.
 
 ## Rollback
 

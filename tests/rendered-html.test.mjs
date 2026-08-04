@@ -53,7 +53,7 @@ test("quote and supplier workflows use durable services while storefront stock m
   ]);
   assert.match(quoteForm, /fetch\("\/api\/quotes"/);
   assert.match(quoteRoute, /quote-requests/);
-  assert.match(supplierRoute, /PRODUCT_IMAGES\.put/);
+  assert.match(supplierRoute, /PutObjectCommand/);
   assert.match(supplierRoute, /supplier-submissions/);
   assert.match(inventoryRoute, /STOREFRONT_INVENTORY_RETIRED/);
   assert.match(inventoryRoute, /status: 410/);
@@ -98,4 +98,14 @@ test("customer signup keeps a stable form reference across the Supabase request"
   assert.match(form, /formElement\.reset\(\)/);
   assert.doesNotMatch(form, /event\.currentTarget\.reset\(\)/);
   assert.match(form, /Account created\. Open the confirmation link sent to your email/);
+});
+
+test("calculator defaults are valid and each recalculation receives a fresh estimate reference", async () => {
+  const wizard = await readFile(new URL("../app/calculators/[slug]/calculator-wizard.tsx", import.meta.url), "utf8");
+  assert.match(wizard, /name="wallThicknessM"[\s\S]*?step="0\.005"[\s\S]*?defaultValue="0\.115"/);
+  assert.match(wizard, /submissionReference\.current = `calc-\$\{crypto\.randomUUID\(\)\}`/);
+  assert.match(wizard, /constructionScope: String\(data\.get\("constructionScope"\)\)/);
+  assert.match(wizard, /qualityTier: String\(data\.get\("qualityTier"\)\)/);
+  assert.match(wizard, /name="constructionScope" defaultValue="FULL_FINISH"/);
+  assert.match(wizard, /Calculate all stages/);
 });

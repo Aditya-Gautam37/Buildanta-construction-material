@@ -1,0 +1,12 @@
+-- Phase 3 operational ledger and order states. PostgreSQL enum additions are
+-- additive and preserve every existing value and row.
+ALTER TYPE "InventoryLedgerType" ADD VALUE IF NOT EXISTS 'GOODS_RECEIPT';
+ALTER TYPE "InventoryLedgerType" ADD VALUE IF NOT EXISTS 'DISPATCH';
+ALTER TYPE "InventoryLedgerType" ADD VALUE IF NOT EXISTS 'CUSTOMER_RETURN';
+ALTER TYPE "InventoryLedgerType" ADD VALUE IF NOT EXISTS 'SUPPLIER_RETURN';
+
+ALTER TYPE "SalesOrderStatus" ADD VALUE IF NOT EXISTS 'FULFILLING';
+ALTER TYPE "SalesOrderStatus" ADD VALUE IF NOT EXISTS 'PARTIALLY_DISPATCHED';
+ALTER TYPE "SalesOrderStatus" ADD VALUE IF NOT EXISTS 'DISPATCHED';
+ALTER TYPE "SalesOrderStatus" ADD VALUE IF NOT EXISTS 'DELIVERED';
+ALTER TYPE "SalesOrderStatus" ADD VALUE IF NOT EXISTS 'RETURNED';

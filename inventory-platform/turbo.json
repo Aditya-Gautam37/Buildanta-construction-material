@@ -1,0 +1,68 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "globalEnv": [
+    "NODE_ENV",
+    "DATABASE_URL",
+    "DIRECT_URL",
+    "SHADOW_DATABASE_URL",
+    "PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK",
+    "NEXT_PUBLIC_API_URL",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_URL",
+    "SUPABASE_PUBLISHABLE_KEY",
+    "SUPABASE_ANON_KEY",
+    "CORS_ORIGINS",
+    "ADMIN_EMAIL_ALLOWLIST",
+    "DATA_ENTRY_EMAIL_ALLOWLIST",
+    "PORT",
+    "SUPABASE_SECRET_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_PRODUCT_IMAGES_BUCKET",
+    "SUPABASE_BRAND_LOGOS_BUCKET",
+    "SUPABASE_PROFESSIONAL_PHOTOS_BUCKET",
+    "SUPABASE_HOMEPAGE_IMAGES_BUCKET",
+    "MAX_UPLOAD_BYTES",
+    "ALLOW_DEMO_SEED",
+    "CONFIRM_REAL_DATA_RESET"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build", "^db:generate"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "format": {
+      "dependsOn": ["^format"]
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck"]
+    },
+    "test": {
+      "dependsOn": ["^db:generate"]
+    },
+    "test:unit": {
+      "dependsOn": ["^db:generate"]
+    },
+    "dev": {
+      "dependsOn": ["^db:generate"],
+      "cache": false,
+      "persistent": true
+    },
+    "db:generate": {
+      "cache": false
+    },
+    "db:migrate": {
+      "cache": false,
+      "interactive": true
+    },
+    "db:deploy": {
+      "cache": false
+    }
+  }
+}

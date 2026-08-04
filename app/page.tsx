@@ -61,6 +61,24 @@ export default async function Home() {
         {featuredProducts.length ? <div className="homepage-products-grid">{featuredProducts.map(({ product, badge }) => <HomepageProductCard product={product} badge={badge} key={product.id} />)}</div> : <div className="homepage-products-empty"><h3>Featured products are being prepared.</h3><p>Add products in Inventory, then select them under Homepage.</p></div>}
       </section>
 
+      <section className="home-section project-planner-section">
+        <div className="project-planner-card">
+          <div className="project-planner-copy">
+            <p>COMPLETE CONSTRUCTION MATERIAL PLANNER</p>
+            <h2>Start with your area. Leave with a connected material plan.</h2>
+            <span>Enter your project name, location, plot and built-up area, floors, rooms and construction scope. Buildanta prepares a preliminary stage-wise schedule using managed calculation profiles and products published from Inventory.</span>
+            <div className="project-planner-actions"><a className="button orange" href="/calculators/complete-construction-material">Get full construction material info</a><a href="/calculators">View all calculators -&gt;</a></div>
+          </div>
+          <div className="project-planner-features" aria-label="Construction planner features">
+            <article><b>01</b><div><strong>Choose the scope</strong><span>Foundation only, structural shell or full-finish planning.</span></div></article>
+            <article><b>02</b><div><strong>Review stage-wise quantities</strong><span>See raw requirements, wastage and rounded purchase quantities.</span></div></article>
+            <article><b>03</b><div><strong>Use connected products</strong><span>Products, variants, indicative prices and PIN-code status come from Inventory.</span></div></article>
+            <article><b>04</b><div><strong>Request one quotation</strong><span>Send every selected material to the existing multi-item quote workflow.</span></div></article>
+          </div>
+        </div>
+        <p className="project-planner-disclaimer">Preliminary planning only. Final quantities require architectural, structural and MEP drawings reviewed by qualified professionals.</p>
+      </section>
+
       <section className="home-section">
         <SectionTitle>Shop by Construction Stage</SectionTitle>
         <div className="stage-panel">

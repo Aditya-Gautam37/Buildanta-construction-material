@@ -1,6 +1,5 @@
-import { env } from "cloudflare:workers";
-
-type Bindings = { DB: D1Database; PRODUCT_IMAGES: R2Bucket };
+import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { r2BucketName, r2Client } from "../../r2-client";
 
 function clean(value: FormDataEntryValue | null) {
   return typeof value === "string" ? value.trim() : "";
@@ -8,7 +7,6 @@ function clean(value: FormDataEntryValue | null) {
 
 export async function POST(request: Request) {
   try {
-    const bindings = env as unknown as Bindings;
     const form = await request.formData();
     const email = clean(form.get("email")).toLowerCase();
     const contactName = clean(form.get("contactName"));
@@ -30,7 +28,13 @@ export async function POST(request: Request) {
     const reference = `LP-${new Date().toISOString().slice(2, 10).replaceAll("-", "")}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
     const extension = image.type === "image/png" ? "png" : image.type === "image/webp" ? "webp" : "jpg";
     const imageKey = `supplier-products/${reference}.${extension}`;
-    await bindings.PRODUCT_IMAGES.put(imageKey, image.stream(), { httpMetadata: { contentType: image.type }, customMetadata: { reference, company } });
+    await r2Client().send(new PutObjectCommand({
+      Bucket: r2BucketName(),
+      Key: imageKey,
+      Body: new Uint8Array(await image.arrayBuffer()),
+      ContentType: image.type,
+      Metadata: { reference, company },
+    }));
     const imageUrl = new URL(`/api/supplier-images/${reference}.${extension}`, request.url).toString();
     const apiUrl = (process.env.INVENTORY_API_URL || (process.env.NODE_ENV === "development" ? "http://localhost:5173" : "https://buildanta-monorepo-nest-api.vercel.app")).replace(/\/$/, "");
     const apiResponse = await fetch(`${apiUrl}/supplier-submissions`, {
@@ -40,7 +44,7 @@ export async function POST(request: Request) {
       cache: "no-store",
     });
     if (!apiResponse.ok) {
-      await bindings.PRODUCT_IMAGES.delete(imageKey);
+      await r2Client().send(new DeleteObjectCommand({ Bucket: r2BucketName(), Key: imageKey }));
       const failure = await apiResponse.json().catch(() => null) as { message?: string | string[] } | null;
       const message = Array.isArray(failure?.message) ? failure.message.join(" ") : failure?.message;
       return Response.json({ error: message || "Unable to save this listing for review." }, { status: apiResponse.status });

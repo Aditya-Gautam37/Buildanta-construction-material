@@ -1,0 +1,39 @@
+{
+    "name": "@workspace/db",
+    "version": "0.0.1",
+    "types": "./index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./index.d.ts",
+            "import": "./index.mjs",
+            "require": "./index.cjs",
+            "default": "./index.mjs"
+        }
+    },
+    "scripts": {
+        "db:generate": "prisma generate",
+        "db:migrate": "prisma migrate dev",
+        "db:deploy": "prisma migrate deploy",
+        "db:seed": "tsx src/seed.ts",
+        "db:seed-calculators": "tsx src/seed-calculators.ts",
+        "db:verify-phase2": "tsx src/verify-phase2.ts",
+        "db:verify-phase3": "tsx src/verify-phase3.ts",
+        "db:migrate-old-catalog": "tsx src/migrate-old-catalog.ts",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@prisma/adapter-pg": "^7.7.0",
+        "@prisma/client": "latest",
+        "dotenv": "^16.6.1",
+        "pg": "^8.20.0"
+    },
+    "devDependencies": {
+        "@types/pg": "^8.15.5",
+        "prisma": "latest",
+        "tsx": "^4.21.0",
+        "typescript": "^5.9.3"
+    },
+    "prisma": {
+        "seed": "tsx src/seed.ts"
+    }
+}

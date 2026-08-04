@@ -1,0 +1,1 @@
+import{n as e,r as t}from"./framework-B8WyT5R3.js";var n=e(),r=t();function i({children:e,pendingText:t,className:i}){let{pending:a}=(0,n.useFormStatus)();return(0,r.jsx)(`button`,{className:i,type:`submit`,disabled:a,children:a?t:e})}export{i as SubmitButton};

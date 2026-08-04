@@ -5,9 +5,8 @@ Buildanta uses two separate applications connected through the catalogue API.
 - Public storefront: this Vinext/Cloudflare Worker application, with server-rendered catalogue data and client-side search, filters and sorting
 - Inventory management: the separate Next.js application in `inventory-platform/apps/inventory-management`
 - Shared catalogue: the inventory NestJS API is the business-control layer and source of truth for publishing, products, variants, stock, reservations, durable image URLs, suppliers, brands, categories, stages and rooms
-- Structured records: D1 (`DB`) for products, quotes, supplier submissions, inventory overrides and audit history
+- Structured records: the inventory NestJS/Prisma API (`inventory-platform/apps/nest-api`) owns quotes, supplier submissions and inventory audit history; the storefront reaches it through `INVENTORY_API_URL`
 - Product images: R2 (`PRODUCT_IMAGES`); uploaded images must never be written to deployment storage
-- Database access: Drizzle schema in `db/schema.ts`, with prepared statements at runtime
 - Authentication: the storefront catalogue is public; inventory management owns its own protected login and authorization
 - Monitoring: provider configuration is environment-driven and must be enabled in staging and production
 

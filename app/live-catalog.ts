@@ -150,7 +150,7 @@ function aggregateAvailability(statuses: Array<PublicAvailability | undefined>):
   return "ENQUIRY";
 }
 
-function mapProducts(products: ApiProduct[], variants: ApiVariant[], categories: CatalogNode[], stages: CatalogNode[], rooms: CatalogNode[]) {
+export function mapProducts(products: ApiProduct[], variants: ApiVariant[], categories: CatalogNode[], stages: CatalogNode[], rooms: CatalogNode[]) {
   const variantsByProduct = new Map<string, ApiVariant[]>();
   for (const variant of variants) {
     const current = variantsByProduct.get(variant.productId) || [];
@@ -214,7 +214,7 @@ function mapProducts(products: ApiProduct[], variants: ApiVariant[], categories:
   });
 }
 
-function fallbackSnapshot(): CatalogSnapshot {
+export function fallbackSnapshot(): CatalogSnapshot {
   const node = (id:string,name:string,slug:string):CatalogNode => ({ id,name,slug,parentId:null,description:null,imageUrl:null,icon:null,sortOrder:0,featured:false,published:true,seoTitle:null,seoDescription:null,childCount:0,productCount:0 });
   const fallbackImageByCategory: Record<string,string> = {
     "Cement & Structure": "/demo/products/real/cement.jpg",

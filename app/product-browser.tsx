@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { availabilityLabel, availabilityStatusLabel, type PublicAvailability, type StoreProduct } from "./live-catalog";
+import { StageQuestionnaire } from "./by-stage/stage-questionnaire";
 
 type Mode = "stage" | "room" | "category";
 
@@ -15,6 +16,8 @@ const stageDescriptions: Record<string, string> = {
   "False Ceiling": "Boards, channels and finishing materials for suspended ceilings and lightweight partitions.",
   "Paint & Finishing": "Primers, interior coatings and exterior finishes for final surface preparation.",
   "Doors, Windows, Railings & Glass": "Door, window and hardware systems for secure, weather-ready openings.",
+  "Kitchen & Wardrobes": "Cabinetry, countertops, wardrobe systems and hardware for fitted residential interiors.",
+  Finishing: "Final accessories, sealants, touch-up work and snagging materials required before handover.",
 };
 
 function matches(product: StoreProduct, mode: Mode, option: string, categoryGroups?: Record<string, string[]>) {
@@ -55,6 +58,7 @@ export function ProductBrowser({ mode, products, options, initial = "", query = 
     });
     return result.sort((a, b) => sort === "low" ? a.price - b.price : sort === "high" ? b.price - a.price : b.updatedAt.localeCompare(a.updatedAt));
   }, [mode, products, selection, term, sort,locationProducts,locationState,availability,fulfilmentMode,brand,maxPrice,categoryGroups]);
+  const stageProducts = useMemo(() => mode === "stage" ? products.filter((product) => product.stages.includes(selection)) : [], [mode, products, selection]);
   const selectionIndex = Math.max(0, options.indexOf(selection));
   const description = mode === "stage" ? stageDescriptions[selection] : mode === "room" ? `Materials currently mapped to ${selection} from the live Inventory catalogue.` : `Published products filed under ${selection}.`;
 
@@ -73,6 +77,7 @@ export function ProductBrowser({ mode, products, options, initial = "", query = 
         <div><p>{mode === "stage" ? "Materials for this phase" : mode === "room" ? "Products for this room" : "Product category"}</p><h1>{selection || "Construction materials"}</h1><span>{description}</span></div>
         <ul><li>Inventory connected</li><li>Real product photography</li><li>Project quotes available</li></ul>
       </div>
+      {mode === "stage" ? <StageQuestionnaire key={selection} stage={selection} products={stageProducts} /> : null}
       <div className="results-toolbar"><label><span aria-hidden="true">Search</span><input value={term} onChange={(event) => setTerm(event.target.value)} placeholder="Search products and brands..." /></label><select value={sort} onChange={(event) => setSort(event.target.value)} aria-label="Sort products"><option value="featured">Recently updated</option><option value="low">Price: Low to High</option><option value="high">Price: High to Low</option></select></div>
       <div className="advanced-filters"><label>Brand<select value={brand} onChange={event=>setBrand(event.target.value)}><option value="all">All brands</option>{brands.map(value=><option value={value} key={value}>{value}</option>)}</select></label><label>Availability<select value={availability} onChange={event=>setAvailability(event.target.value)}><option value="all">All availability</option><option value="IN_STOCK">Available</option><option value="LOW_STOCK">Limited</option><option value="ENQUIRY">On enquiry</option><option value="OUT_OF_STOCK">Request availability</option></select></label><label>Fulfilment<select value={fulfilmentMode} onChange={event=>setFulfilmentMode(event.target.value)}><option value="all">All fulfilment</option><option value="STOCKED">Buildanta stock</option><option value="PARTNER_STOCK">Partner stock</option><option value="ON_REQUEST">On request</option></select></label><label>Maximum indicative price<input type="number" min="0" value={maxPrice} onChange={event=>setMaxPrice(event.target.value)} placeholder="No limit"/></label></div>
       <div className="results-summary"><strong>{visible.length} products</strong><span>Pricing is indicative. Final price, GST and transport are confirmed in your quotation.</span></div>

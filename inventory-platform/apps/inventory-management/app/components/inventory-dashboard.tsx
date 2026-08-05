@@ -56,7 +56,7 @@ export default function InventoryDashboard({
   const router = useRouter()
   const [query, setQuery] = useState("")
   const [activeCategory, setActiveCategory] = useState("All")
-  const [activeTab, setActiveTab] = useState<CatalogTab>("products")
+  const [activeTab, setActiveTab] = useState<CatalogTab>("categories")
   const [categories, setCategories] = useState<CategoryNode[]>(backendCategories)
   const [stages, setStages] = useState<StageNode[]>(backendStages)
   const [rooms, setRooms] = useState<RoomNode[]>(backendRooms)
@@ -1417,12 +1417,12 @@ export default function InventoryDashboard({
   }, [products, brands])
 
   const catalogTabs = [
-    { value: "products" as const, label: "Products", icon: Package, count: totalProducts },
     { value: "categories" as const, label: "Product Categories", icon: Tags, count: totalCategories },
-    { value: "brands" as const, label: "Brands", icon: Sparkles, count: totalBrands },
-    { value: "suppliers" as const, label: "Suppliers", icon: Building2, count: totalSuppliers },
     { value: "stages" as const, label: "Stages", icon: Layers3, count: totalStages },
     { value: "rooms" as const, label: "Rooms", icon: House, count: totalRooms },
+    { value: "brands" as const, label: "Brands", icon: Sparkles, count: totalBrands },
+    { value: "products" as const, label: "Products", icon: Package, count: totalProducts },
+    { value: "suppliers" as const, label: "Suppliers", icon: Building2, count: totalSuppliers },
   ]
 
   return (

@@ -1418,7 +1418,7 @@ export default function InventoryDashboard({
 
   const catalogTabs = [
     { value: "products" as const, label: "Products", icon: Package, count: totalProducts },
-    { value: "categories" as const, label: "Categories", icon: Tags, count: totalCategories },
+    { value: "categories" as const, label: "Product Categories", icon: Tags, count: totalCategories },
     { value: "brands" as const, label: "Brands", icon: Sparkles, count: totalBrands },
     { value: "suppliers" as const, label: "Suppliers", icon: Building2, count: totalSuppliers },
     { value: "stages" as const, label: "Stages", icon: Layers3, count: totalStages },
@@ -1470,7 +1470,7 @@ export default function InventoryDashboard({
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-          <MetricCard label="Categories" value={totalCategories.toString()} icon={Box} />
+          <MetricCard label="Product categories" value={totalCategories.toString()} icon={Box} />
           <MetricCard label="Stages" value={totalStages.toString()} icon={Truck} />
           <MetricCard label="Rooms" value={totalRooms.toString()} icon={House} />
           <MetricCard label="Brands" value={totalBrands.toString()} icon={Sparkles} />
@@ -1486,8 +1486,8 @@ export default function InventoryDashboard({
           </div>
           <button type="button" onClick={() => setActiveTab("categories")} className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-emerald-300 hover:bg-emerald-50/60">
             <span className="flex size-9 items-center justify-center rounded-xl bg-white text-emerald-700 shadow-sm"><Tags className="size-4" /></span>
-            <strong className="mt-4 flex items-center justify-between text-sm text-slate-950">1. Arrange categories <ArrowRight className="size-4 transition group-hover:translate-x-1" /></strong>
-            <small className="mt-1 block leading-5 text-slate-500">Build a clean parent and subcategory hierarchy.</small>
+            <strong className="mt-4 flex items-center justify-between text-sm text-slate-950">1. Product categories <ArrowRight className="size-4 transition group-hover:translate-x-1" /></strong>
+            <small className="mt-1 block leading-5 text-slate-500">Manage departments, categories and every nested product group.</small>
           </button>
           <button type="button" onClick={() => setActiveTab("products")} className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-sky-300 hover:bg-sky-50/60">
             <span className="flex size-9 items-center justify-center rounded-xl bg-white text-sky-700 shadow-sm"><Package className="size-4" /></span>

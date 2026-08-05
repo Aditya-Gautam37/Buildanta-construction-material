@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test \"lib/**/*.test.ts\"",
     "test:unit": "vitest run",
-    "seed:demo": "tsx --env-file=.env.local scripts/seed-demo-catalog.ts",
+    "seed:real-catalogue": "tsx --env-file=.env.local scripts/seed-real-catalogue.ts",
     "verify:catalogue": "tsx --env-file=.env.local scripts/verify-catalogue.ts",
     "cleanup:demo": "tsx --env-file=.env.local scripts/clear-demo-data.ts"
   },

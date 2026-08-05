@@ -61,8 +61,8 @@ export function CategoriesTab({
     <TabsContent value="categories" className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-slate-950">Categories</h2>
-          <p className="text-sm text-slate-600">Category tree with child categories.</p>
+          <h2 className="text-lg font-semibold text-slate-950">Product categories</h2>
+          <p className="text-sm text-slate-600">Departments, categories and nested children used by the storefront.</p>
         </div>
 
         <Button
@@ -71,7 +71,7 @@ export function CategoriesTab({
           onClick={() => openCreateCategoryDialog()}
         >
           <Plus className="size-4" />
-          Create category
+          Create product category
         </Button>
       </div>
 
@@ -88,7 +88,7 @@ export function CategoriesTab({
             itemCounts={categoryItemCounts}
             deletingId={isDeletingCategoryId}
             isCreating={isCreatingCategory}
-            emptyMessage="No categories found from categories service."
+            emptyMessage="No product categories found from the catalogue service."
             onEdit={(node) => handleEditCategory(node as CategoryNode)}
             onAddChild={(node) =>
               openCreateCategoryDialog({ id: node.id, name: node.name })

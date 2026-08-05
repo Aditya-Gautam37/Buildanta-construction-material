@@ -31,12 +31,25 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   };
   collect(category);
   const children = childrenOf(catalog.categories, category.id);
-  const productCount = catalog.products.filter((product) => product.categories.includes(category.name)).length;
+  const categoryGroups = Object.fromEntries(descendants.map((node) => {
+    const names: string[] = [];
+    const collectNames = (current: CatalogNode) => {
+      names.push(current.name);
+      childrenOf(catalog.categories, current.id).forEach(collectNames);
+    };
+    collectNames(node);
+    return [node.name, names];
+  }));
+  const productCountFor = (node: CatalogNode) => {
+    const accepted = categoryGroups[node.name] ?? [node.name];
+    return catalog.products.filter((product) => accepted.some((name) => product.categories.includes(name))).length;
+  };
+  const productCount = productCountFor(category);
 
   return <main className="listing-page">
     <nav className="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/categories">Categories</a>{crumbs.map((item, index) => <span key={item.id} className="breadcrumb-part">› {index === crumbs.length - 1 ? item.name : <a href={`/categories/${item.slug}`}>{item.name}</a>}</span>)}</nav>
     <div className="page-intro category-page-intro"><div><p>BUILDANTA CATEGORY</p><h1>{category.name}</h1><span>{category.description || "Compare live products from approved suppliers and request project pricing."}</span><small>{productCount} published products across this category</small></div>{category.imageUrl && <img src={category.imageUrl} alt={`${category.name} materials`} />}</div>
-    {children.length > 0 && <section className="child-category-section"><div className="section-heading-row"><div><p>Continue browsing</p><h2>Shop {category.name} by type</h2><span>Choose a subcategory before comparing real products.</span></div></div><div className="child-category-grid">{children.map((item) => <a href={`/categories/${item.slug}`} key={item.id}><span>{item.imageUrl ? <img src={item.imageUrl} alt="" /> : <b>{item.name.slice(0, 1)}</b>}</span><div><h3>{item.name}</h3><p>{item.description || "Browse published products."}</p><small>{catalog.products.filter((product) => product.categories.includes(item.name)).length} products →</small></div></a>)}</div></section>}
-    <ProductBrowser mode="category" products={catalog.products} options={descendants.map((item) => item.name)} initial={category.name} query={q} />
+    {children.length > 0 && <section className="child-category-section"><div className="section-heading-row"><div><p>Continue browsing</p><h2>Shop {category.name} by type</h2><span>Choose a subcategory before comparing real products.</span></div></div><div className="child-category-grid">{children.map((item) => <a href={`/categories/${item.slug}`} key={item.id}><span>{item.imageUrl ? <img src={item.imageUrl} alt="" /> : <b>{item.name.slice(0, 1)}</b>}</span><div><h3>{item.name}</h3><p>{item.description || "Browse published products."}</p><small>{productCountFor(item)} products →</small></div></a>)}</div></section>}
+    <ProductBrowser mode="category" products={catalog.products} options={descendants.map((item) => item.name)} initial={category.name} query={q} categoryGroups={categoryGroups} />
   </main>;
 }

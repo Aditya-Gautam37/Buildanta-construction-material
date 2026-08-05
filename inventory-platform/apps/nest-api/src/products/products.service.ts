@@ -211,10 +211,6 @@ export class ProductsService {
             throw new BadRequestException('At least one stage is required.');
         }
 
-        if (roomIds.length === 0) {
-            throw new BadRequestException('At least one room is required.');
-        }
-
         await this.ensureIdsExist('category', categoryIds);
         await this.ensureIdsExist('stage', stageIds);
         await this.ensureIdsExist('room', roomIds);

@@ -10,7 +10,7 @@ import {
 
 const DEFAULT_API_URL = process.env.NODE_ENV === "development"
   ? "http://localhost:5173"
-  : "https://buildanta-monorepo-nest-api.vercel.app";
+  : "https://buildanta-api.vercel.app";
 
 type ApiTreeNode = { id: string; name: string; slug: string; parentId: string | null; description?: string | null; imageUrl?: string | null; icon?: string | null; sortOrder?: number; featured?: boolean; published?: boolean; seoTitle?: string | null; seoDescription?: string | null; _count?: { children: number; products: number } };
 type ApiBrand = {
@@ -21,7 +21,7 @@ type ApiBrand = {
   description?: string | null;
   website?: string | null;
 };
-type PublicAvailability = "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK" | "ENQUIRY";
+export type PublicAvailability = "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK" | "ENQUIRY";
 type ApiProduct = {
   id: string;
   name: string;

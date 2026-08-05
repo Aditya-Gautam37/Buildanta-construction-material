@@ -57,6 +57,27 @@ describe("ProductBrowser", () => {
     expect(screen.queryByText("Emulsion Paint")).not.toBeInTheDocument();
   });
 
+  it("includes products from descendant categories in a parent category", () => {
+    const nestedProduct = makeProduct({
+      id: "general-purpose-cement",
+      slug: "general-purpose-cement",
+      name: "General Purpose Cement",
+      categories: ["General Purpose"],
+    });
+
+    render(
+      <ProductBrowser
+        mode="category"
+        products={[nestedProduct]}
+        options={["Cement", "General Purpose"]}
+        initial="Cement"
+        categoryGroups={{ Cement: ["Cement", "General Purpose"], "General Purpose": ["General Purpose"] }}
+      />,
+    );
+
+    expect(screen.getByText("General Purpose Cement")).toBeInTheDocument();
+  });
+
   it("re-sorts low-to-high by price within a category", () => {
     const sameCategoryProducts = [
       makeProduct({ id: "a", slug: "a", name: "Alpha", categories: ["Cement & Structure"], price: 500 }),

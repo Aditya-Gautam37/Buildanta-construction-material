@@ -91,9 +91,9 @@ export default function InventoryDashboard({
   const [newProductCategoryIds, setNewProductCategoryIds] = useState<string[]>([])
   const [newProductStageIds, setNewProductStageIds] = useState<string[]>([])
   const [newProductRoomIds, setNewProductRoomIds] = useState<string[]>([])
-  const [newProductSku, setNewProductSku] = useState("")
   const [newProductPrice, setNewProductPrice] = useState("")
   const [newProductDescription, setNewProductDescription] = useState("")
+  const [publishNewProduct, setPublishNewProduct] = useState(true)
   const [newProductImages, setNewProductImages] = useState<File[]>([])
   const [newProductVariantSupplierId, setNewProductVariantSupplierId] = useState("")
   const [newProductVariantSku, setNewProductVariantSku] = useState("")
@@ -253,7 +253,6 @@ export default function InventoryDashboard({
     setNewProductCategoryIds([])
     setNewProductStageIds([])
     setNewProductRoomIds([])
-    setNewProductSku("")
     setNewProductPrice("")
     setNewProductDescription("")
     setNewProductImages([])
@@ -880,7 +879,6 @@ export default function InventoryDashboard({
     const categoryIds = Array.from(new Set(newProductCategoryIds.map((value) => value.trim()).filter(Boolean)))
     const stageIds = Array.from(new Set(newProductStageIds.map((value) => value.trim()).filter(Boolean)))
     const roomIds = Array.from(new Set(newProductRoomIds.map((value) => value.trim()).filter(Boolean)))
-    const sku = newProductSku.trim()
     const description = newProductDescription.trim()
     const initialVariantSupplierId = newProductVariantSupplierId.trim()
     const initialVariantSku = newProductVariantSku.trim()
@@ -904,11 +902,6 @@ export default function InventoryDashboard({
 
     if (stageIds.length === 0) {
       setProductError("Please select at least one stage.")
-      return
-    }
-
-    if (roomIds.length === 0) {
-      setProductError("Please select at least one room.")
       return
     }
 
@@ -953,6 +946,7 @@ export default function InventoryDashboard({
     setIsCreatingProduct(true)
 
     try {
+      const shouldPublish = publishNewProduct
       let variantImageUrls: string[] = []
       if (shouldCreateInitialVariant && newProductVariantImages.length > 0) {
         variantImageUrls = await Promise.all(
@@ -971,8 +965,8 @@ export default function InventoryDashboard({
           categoryIds,
           stageIds,
           roomIds,
-          sku: sku || undefined,
           price: parsedPrice,
+          status: "DRAFT",
           createDefaultVariant: shouldCreateInitialVariant,
           defaultVariant: shouldCreateInitialVariant
             ? {
@@ -989,13 +983,31 @@ export default function InventoryDashboard({
 
       let uploadedCount = 0
       if (newProductImages.length > 0) {
-        await Promise.all(
+        const productImageUrls = await Promise.all(
           newProductImages.map(async (file) => {
             const filePath = `${created.id}/${Date.now()}-${sanitizeFileName(file.name)}`
-            await uploadFileToBucket("ProductPhotos", filePath, file)
+            return await uploadFileToBucket("ProductPhotos", filePath, file)
           })
         )
-        uploadedCount = newProductImages.length
+        await runWithAccessToken((accessToken) =>
+          trpcClient.updateProductImages.mutate({
+            productId: created.id,
+            images: productImageUrls.map((src, index) => ({
+              src,
+              alt: `${name} product photo ${index + 1}`,
+              sortOrder: index,
+              primary: index === 0,
+            })),
+            accessToken,
+          })
+        )
+        uploadedCount = productImageUrls.length
+      }
+
+      if (shouldPublish) {
+        await runWithAccessToken((accessToken) =>
+          trpcClient.updateProduct.mutate({ id: created.id, status: "PUBLISHED", accessToken })
+        )
       }
 
       setIsProductDialogOpen(false)
@@ -1004,9 +1016,9 @@ export default function InventoryDashboard({
       setNewProductCategoryIds([])
       setNewProductStageIds([])
       setNewProductRoomIds([])
-      setNewProductSku("")
       setNewProductPrice("")
       setNewProductDescription("")
+      setPublishNewProduct(true)
       setNewProductImages([])
       setNewProductVariantSupplierId("")
       setNewProductVariantSku("")
@@ -1015,8 +1027,8 @@ export default function InventoryDashboard({
 
       toast.success(
         uploadedCount > 0
-          ? `Product created and ${uploadedCount} image${uploadedCount > 1 ? "s" : ""} uploaded.`
-          : "Product created"
+          ? `Product ${shouldPublish ? "published to the storefront" : "saved as a draft"} and ${uploadedCount} image${uploadedCount > 1 ? "s" : ""} uploaded.`
+          : `Product ${shouldPublish ? "published to the storefront" : "saved as a draft"}.`
       )
       router.refresh()
     } catch (error) {
@@ -1643,12 +1655,12 @@ export default function InventoryDashboard({
                 setNewProductStageIds={handleProductStageSelection}
                 newProductRoomIds={newProductRoomIds}
                 setNewProductRoomIds={handleProductRoomSelection}
-                newProductSku={newProductSku}
-                setNewProductSku={setNewProductSku}
                 newProductPrice={newProductPrice}
                 setNewProductPrice={setNewProductPrice}
                 newProductDescription={newProductDescription}
                 setNewProductDescription={setNewProductDescription}
+                publishNewProduct={publishNewProduct}
+                setPublishNewProduct={setPublishNewProduct}
                 setNewProductImages={setNewProductImages}
                 newProductVariantSupplierId={newProductVariantSupplierId}
                 setNewProductVariantSupplierId={setNewProductVariantSupplierId}

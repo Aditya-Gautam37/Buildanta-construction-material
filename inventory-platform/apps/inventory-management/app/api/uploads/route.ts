@@ -3,6 +3,11 @@ import { prisma, UserRole } from "@workspace/db";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
+const uploadRoles = new Set<UserRole>([
+  UserRole.ADMIN,
+  UserRole.CATALOG_MANAGER,
+  UserRole.DATA_ENTRY,
+]);
 
 function safeFileName(value: string) {
   return value.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-").slice(-120);
@@ -22,7 +27,7 @@ export async function POST(request: Request) {
     where: { id: user.id },
     select: { role: true },
   });
-  if (!staff || (staff.role !== UserRole.ADMIN && staff.role !== UserRole.DATA_ENTRY)) {
+  if (!staff || !uploadRoles.has(staff.role)) {
     return Response.json({ error: "Inventory staff access is required." }, { status: 403 });
   }
 

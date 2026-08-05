@@ -4,11 +4,35 @@ import { ProductsService } from "./products.service";
 import { ProductStatus, UserRole, VariantStatus } from "@workspace/db";
 
 describe("ProductsService", () => {
-  it("requires category, stage, and room relationships", async () => {
+  it("requires category and stage relationships", async () => {
     const service = new ProductsService({ client: {} } as PrismaService);
     await expect(
       service.create({ name: "Incomplete", brandId: "brand" }, UserRole.ADMIN),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("allows a structural product without room relationships", async () => {
+    const create = jest.fn().mockResolvedValue({ id: "product-1", name: "Cement", brand: { name: "Buildanta" } });
+    const service = new ProductsService({
+      client: {
+        category: { count: jest.fn().mockResolvedValue(1) },
+        stage: { count: jest.fn().mockResolvedValue(1) },
+        room: { count: jest.fn() },
+        brand: { findUnique: jest.fn().mockResolvedValue({ id: "brand-1" }) },
+        $transaction: jest.fn(async (operation: (tx: unknown) => Promise<unknown>) => operation({ product: { create } })),
+      },
+    } as unknown as PrismaService);
+
+    await expect(service.create({
+      name: "Cement",
+      brandId: "brand-1",
+      categoryIds: ["category-1"],
+      stageIds: ["stage-1"],
+    }, UserRole.ADMIN)).resolves.toEqual({ id: "product-1", name: "Cement", brand: "Buildanta" });
+
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.not.objectContaining({ rooms: expect.anything() }),
+    }));
   });
 
   it("rejects product creation from a role outside the catalogue group", async () => {

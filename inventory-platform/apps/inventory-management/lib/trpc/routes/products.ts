@@ -9,6 +9,8 @@ import {
   nestProductListSchema,
   staffTokenInput,
   updateProductInput,
+  updateProductImagesInput,
+  updateProductImagesResponseSchema,
   updateProductResponseSchema,
 } from '../schemas';
 import { toInventoryProduct } from '../helpers';
@@ -35,8 +37,8 @@ export const productRoutes = {
             categoryIds: input.categoryIds,
             stageIds: input.stageIds,
             roomIds: input.roomIds,
-            sku: input.sku,
             price: input.price,
+            status: input.status,
             createDefaultVariant: input.createDefaultVariant,
             defaultVariant: input.defaultVariant,
           }),
@@ -84,6 +86,7 @@ export const productRoutes = {
             stageIds: input.stageIds,
             roomIds: input.roomIds,
             price: input.price,
+            status: input.status,
           }),
           cache: 'no-store',
         },
@@ -91,6 +94,27 @@ export const productRoutes = {
         failureMessage: 'Product update failed',
         invalidPayloadMessage: 'Update product payload is invalid.',
         schema: updateProductResponseSchema,
+      }),
+    ),
+  updateProductImages: t.procedure
+    .input(updateProductImagesInput)
+    .output(updateProductImagesResponseSchema)
+    .mutation(async ({ input }) =>
+      requestJson({
+        url: `${NEST_API_BASE_URL}/products/${encodeURIComponent(input.productId)}/images`,
+        init: {
+          method: 'PUT',
+          headers: {
+            'content-type': 'application/json',
+            Authorization: `bearer ${input.accessToken}`,
+          },
+          body: JSON.stringify({ images: input.images }),
+          cache: 'no-store',
+        },
+        unreachableMessage: 'Unable to reach product image service.',
+        failureMessage: 'Product image update failed',
+        invalidPayloadMessage: 'Product image payload is invalid.',
+        schema: updateProductImagesResponseSchema,
       }),
     ),
   deleteProduct: t.procedure

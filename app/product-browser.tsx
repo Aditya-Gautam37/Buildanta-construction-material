@@ -17,13 +17,14 @@ const stageDescriptions: Record<string, string> = {
   "Doors, Windows, Railings & Glass": "Door, window and hardware systems for secure, weather-ready openings.",
 };
 
-function matches(product: StoreProduct, mode: Mode, option: string) {
+function matches(product: StoreProduct, mode: Mode, option: string, categoryGroups?: Record<string, string[]>) {
   if (mode === "stage") return product.stages.includes(option);
   if (mode === "room") return product.rooms.includes(option);
-  return product.categories.includes(option);
+  const acceptedCategories = categoryGroups?.[option] ?? [option];
+  return acceptedCategories.some((category) => product.categories.includes(category));
 }
 
-export function ProductBrowser({ mode, products, options, initial = "", query = "" }: { mode: Mode; products: StoreProduct[]; options: string[]; initial?: string; query?: string }) {
+export function ProductBrowser({ mode, products, options, initial = "", query = "", categoryGroups }: { mode: Mode; products: StoreProduct[]; options: string[]; initial?: string; query?: string; categoryGroups?: Record<string, string[]> }) {
   const validInitial = options.includes(initial) ? initial : options[0] || "";
   const [selection, setSelection] = useState(validInitial);
   const [term, setTerm] = useState(query);
@@ -39,7 +40,7 @@ export function ProductBrowser({ mode, products, options, initial = "", query = 
   const brands=useMemo(()=>[...new Set(products.map(product=>product.brand))].sort(),[products]);
   const checkLocation=useCallback(async(value:string)=>{if(!/^\d{6}$/.test(value)){setLocationState("error");return}setLocationState("loading");try{const response=await fetch(`/api/serviceability?pincode=${encodeURIComponent(value)}`,{cache:"no-store"});const result=await response.json() as {serviceable?:boolean;products?:{productId:string;availabilityStatus:PublicAvailability;leadTimeLabel:string;fulfilmentMode:string}[]};if(!response.ok)throw new Error();window.localStorage.setItem("buildanta-delivery-pincode",value);if(!result.serviceable){setLocationProducts(new Map());setLocationState("unsupported");return}setLocationProducts(new Map((result.products||[]).map(product=>[product.productId,product])));setLocationState("serviceable")}catch{setLocationState("error")}},[])
   useEffect(()=>{const saved=window.localStorage.getItem("buildanta-delivery-pincode")||"";if(!/^\d{6}$/.test(saved))return;const timer=window.setTimeout(()=>{setPincode(saved);void checkLocation(saved)},0);return()=>window.clearTimeout(timer)},[checkLocation])
-  const counts = useMemo(() => new Map(options.map((option) => [option, products.filter((product) => matches(product, mode, option)).length])), [mode, options, products]);
+  const counts = useMemo(() => new Map(options.map((option) => [option, products.filter((product) => matches(product, mode, option, categoryGroups)).length])), [categoryGroups, mode, options, products]);
   const visible = useMemo(() => {
     const needle = term.trim().toLowerCase();
     const result = products.filter((product) => {
@@ -50,10 +51,10 @@ export function ProductBrowser({ mode, products, options, initial = "", query = 
       const modeMatch=fulfilmentMode==="all"||local?.fulfilmentMode===fulfilmentMode;
       const brandMatch=brand==="all"||product.brand===brand;
       const priceLimit=Number(maxPrice);const priceMatch=!maxPrice||product.price<=priceLimit;
-      return matches(product, mode, selection) && searched && locationMatch && availabilityMatch && modeMatch && brandMatch && priceMatch;
+      return matches(product, mode, selection, categoryGroups) && searched && locationMatch && availabilityMatch && modeMatch && brandMatch && priceMatch;
     });
     return result.sort((a, b) => sort === "low" ? a.price - b.price : sort === "high" ? b.price - a.price : b.updatedAt.localeCompare(a.updatedAt));
-  }, [mode, products, selection, term, sort,locationProducts,locationState,availability,fulfilmentMode,brand,maxPrice]);
+  }, [mode, products, selection, term, sort,locationProducts,locationState,availability,fulfilmentMode,brand,maxPrice,categoryGroups]);
   const selectionIndex = Math.max(0, options.indexOf(selection));
   const description = mode === "stage" ? stageDescriptions[selection] : mode === "room" ? `Materials currently mapped to ${selection} from the live Inventory catalogue.` : `Published products filed under ${selection}.`;
 

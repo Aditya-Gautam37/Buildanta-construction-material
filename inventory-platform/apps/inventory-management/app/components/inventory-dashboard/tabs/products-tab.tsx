@@ -103,12 +103,12 @@ type ProductsTabProps = {
   setNewProductStageIds: (value: string[]) => void
   newProductRoomIds: string[]
   setNewProductRoomIds: (value: string[]) => void
-  newProductSku: string
-  setNewProductSku: Dispatch<SetStateAction<string>>
   newProductPrice: string
   setNewProductPrice: Dispatch<SetStateAction<string>>
   newProductDescription: string
   setNewProductDescription: Dispatch<SetStateAction<string>>
+  publishNewProduct: boolean
+  setPublishNewProduct: Dispatch<SetStateAction<boolean>>
   setNewProductImages: (files: File[]) => void
   newProductVariantSupplierId: string
   setNewProductVariantSupplierId: Dispatch<SetStateAction<string>>
@@ -189,12 +189,12 @@ export function ProductsTab({
   setNewProductStageIds,
   newProductRoomIds,
   setNewProductRoomIds,
-  newProductSku,
-  setNewProductSku,
   newProductPrice,
   setNewProductPrice,
   newProductDescription,
   setNewProductDescription,
+  publishNewProduct,
+  setPublishNewProduct,
   setNewProductImages,
   newProductVariantSupplierId,
   setNewProductVariantSupplierId,
@@ -891,20 +891,12 @@ export function ProductsTab({
             />
 
             <HierarchyDropdown
-              label="Rooms"
-              placeholder="Select room(s) from hierarchy"
+              label="Rooms (optional)"
+              placeholder="Select rooms only when this product is room-specific"
               options={roomHierarchyOptions}
               selectedIds={newProductRoomIds}
               onChange={setNewProductRoomIds}
               multiple
-            />
-
-            <Input
-              value={newProductSku}
-              onChange={(event) => setNewProductSku(event.target.value)}
-              placeholder="SKU (optional)"
-              aria-label="Product sku"
-              className="h-10 border-slate-300 bg-white"
             />
 
             <Input
@@ -926,8 +918,26 @@ export function ProductsTab({
               className="h-10 border-slate-300 bg-white"
             />
 
+            <label className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-slate-800">
+              <input
+                type="checkbox"
+                checked={publishNewProduct}
+                onChange={(event) => setPublishNewProduct(event.target.checked)}
+                className="mt-0.5 size-4 accent-emerald-700"
+              />
+              <span>
+                <strong className="block font-semibold">Publish on the storefront</strong>
+                <span className="mt-0.5 block text-xs leading-5 text-slate-600">
+                  Enabled products appear in their published category after saving. Turn this off only when the product should remain a draft for later review in Catalog Control.
+                </span>
+              </span>
+            </label>
+
             <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Initial variant (optional)</p>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Purchasable variant (recommended)</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">Add a supplier and SKU together. The variant inherits the product price entered above.</p>
+              </div>
 
               <select
                 value={newProductVariantSupplierId}

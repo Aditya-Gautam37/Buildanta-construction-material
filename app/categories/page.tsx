@@ -19,18 +19,29 @@ function fallbackImage(name: string) {
   return categoryFallbacks.find((item) => item.terms.some((term) => normalized.includes(term)))?.src ?? "/demo/hero/build-journey.png";
 }
 
-function categoryProducts(products: StoreProduct[], categoryName: string) {
-  return products.filter((product) => product.categories.includes(categoryName));
+function categoryProducts(products: StoreProduct[], categoryNames: string[]) {
+  return products.filter((product) => categoryNames.some((name) => product.categories.includes(name)));
 }
 
 export default async function Categories({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const [{ q = "" }, catalog] = await Promise.all([searchParams, getCatalogSnapshot()]);
   const needle = q.trim().toLowerCase();
   const roots = rootNodes(catalog.categories);
+  const descendantNames = (rootId: string) => {
+    const names: string[] = [];
+    const collect = (id: string) => {
+      const node = catalog.categories.find((item) => item.id === id);
+      if (!node) return;
+      names.push(node.name);
+      childrenOf(catalog.categories, id).forEach((child) => collect(child.id));
+    };
+    collect(rootId);
+    return names;
+  };
   const matchedProducts = needle ? catalog.products.filter((product) => `${product.name} ${product.brand} ${product.category} ${product.description} ${product.specs.join(" ")}`.toLowerCase().includes(needle)) : [];
   const filtered = roots.filter((category) => {
     const children = childrenOf(catalog.categories, category.id);
-    const products = categoryProducts(catalog.products, category.name);
+    const products = categoryProducts(catalog.products, descendantNames(category.id));
     return !needle || `${category.name} ${children.map((item) => item.name).join(" ")} ${products.map((product) => `${product.name} ${product.brand}`).join(" ")}`.toLowerCase().includes(needle);
   });
   const liveHeroImages = catalog.products.filter((product) => product.image).slice(0, 3);
@@ -50,7 +61,7 @@ export default async function Categories({ searchParams }: { searchParams: Promi
     <section className="category-directory"><div className="section-heading-row"><div><p>Browse the catalogue</p><h2>{needle ? "Matching categories" : "Construction material categories"}</h2><span>Open any category to see its live products, prices and quotation options.</span></div><a className="view-all" href="/bulk-quotes">Request a bulk quote <span>→</span></a></div>
       {filtered.length ? <div className="taxonomy-grid">{filtered.map((category) => {
         const children = childrenOf(catalog.categories, category.id);
-        const products = categoryProducts(catalog.products, category.name);
+        const products = categoryProducts(catalog.products, descendantNames(category.id));
         const livePreview = products.find((product) => product.image);
         const previewImage = category.imageUrl ?? livePreview?.image ?? fallbackImage(category.name);
         const brands = [...new Set(products.map((product) => product.brand))].slice(0, 3);

@@ -14,8 +14,8 @@ export const createProductInput = z.object({
   categoryIds: z.array(z.string().trim().min(1)).optional(),
   stageIds: z.array(z.string().trim().min(1)).optional(),
   roomIds: z.array(z.string().trim().min(1)).optional(),
-  sku: z.string().trim().optional(),
   price: z.number().nonnegative().optional(),
+  status: z.enum(['DRAFT', 'PUBLISHED']).default('PUBLISHED'),
   createDefaultVariant: z.boolean().optional(),
   defaultVariant: z
     .object({
@@ -45,8 +45,30 @@ export const updateProductInput = z.object({
   stageIds: z.array(z.string().trim().min(1)).optional(),
   roomIds: z.array(z.string().trim().min(1)).optional(),
   price: z.number().nonnegative().optional(),
+  status: z.enum(['DRAFT', 'PUBLISHED', 'HIDDEN', 'ARCHIVED']).optional(),
   accessToken: z.string().trim().min(1),
 });
+
+export const updateProductImagesInput = z.object({
+  productId: z.string().trim().min(1),
+  images: z.array(z.object({
+    src: z.string().trim().url(),
+    alt: z.string().trim().min(1).max(300),
+    sortOrder: z.number().int().min(0).max(1000),
+    primary: z.boolean(),
+    variantId: z.string().trim().min(1).nullable().optional(),
+  })).min(1).max(20),
+  accessToken: z.string().trim().min(1),
+});
+
+export const updateProductImagesResponseSchema = z.array(z.object({
+  id: z.string(),
+  src: z.string(),
+  alt: z.string(),
+  sortOrder: z.number(),
+  primary: z.boolean(),
+  variantId: z.string().nullable(),
+}).passthrough());
 
 export const updateProductResponseSchema = z.object({
   id: z.string(),

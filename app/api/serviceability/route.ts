@@ -1,4 +1,8 @@
-const inventoryApiUrl = (process.env.INVENTORY_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5173").replace(/\/$/, "")
+const defaultInventoryApiUrl = process.env.NODE_ENV === "development"
+  ? "http://localhost:5173"
+  : "https://buildanta-api.vercel.app"
+
+const inventoryApiUrl = (process.env.INVENTORY_API_URL || process.env.NEXT_PUBLIC_API_URL || defaultInventoryApiUrl).replace(/\/$/, "")
 
 export async function GET(request: Request) {
   const url = new URL(request.url)

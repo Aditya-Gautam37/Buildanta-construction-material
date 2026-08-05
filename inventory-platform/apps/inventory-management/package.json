@@ -12,6 +12,7 @@
     "test": "tsx --test \"lib/**/*.test.ts\"",
     "test:unit": "vitest run",
     "seed:real-catalogue": "tsx --env-file=.env.local scripts/seed-real-catalogue.ts",
+    "seed:serviceability": "tsx --env-file=.env.local scripts/seed-serviceability.ts",
     "verify:catalogue": "tsx --env-file=.env.local scripts/verify-catalogue.ts",
     "cleanup:demo": "tsx --env-file=.env.local scripts/clear-demo-data.ts"
   },

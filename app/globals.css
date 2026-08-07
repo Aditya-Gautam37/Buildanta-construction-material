@@ -637,3 +637,6 @@ img { max-width: 100%; display: block; }
   .brand-track { animation: none; }
   .hero-slide, .hero-dots button, .product-card, .category-tile, .category-showcase-card, .category-showcase-visual > img, .room-card img { transition: none; }
 }
+
+.taxonomy-page > section[aria-labelledby="guided-finder-category"] { margin-top: 52px; margin-bottom: 45px; }
+@media(max-width:720px){.taxonomy-page > section[aria-labelledby="guided-finder-category"]{margin-top:32px;margin-bottom:34px}}

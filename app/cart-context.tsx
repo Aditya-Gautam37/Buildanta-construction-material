@@ -2,6 +2,15 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
+export type CartAdjustmentReason = "MINIMUM_ORDER_QUANTITY" | "QUANTITY_INCREMENT" | "MAXIMUM_DIRECT_QUANTITY";
+
+export type CartAdjustment = {
+  requestedQuantity: number;
+  adjustedQuantity: number;
+  reasons: CartAdjustmentReason[];
+  message: string;
+};
+
 export type CartLine = {
   itemId: string;
   variantId: string;
@@ -18,7 +27,7 @@ export type CartLine = {
   availability: "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK" | "ENQUIRY";
   eligible: boolean;
   requiresQuote: boolean;
-  quantityAdjusted: boolean;
+  adjustment: CartAdjustment | null;
   issues: string[];
 };
 
@@ -39,6 +48,9 @@ type CartContextValue = {
   summary: CartSummary;
   loading: boolean;
   error: string | null;
+  /** Server-reported message for the most recent quantity adjustment. */
+  notice: string | null;
+  dismissNotice: () => void;
   refresh: () => Promise<void>;
   addItem: (variantId: string, quantity: number) => Promise<boolean>;
   updateItem: (itemId: string, quantity: number) => Promise<boolean>;
@@ -48,19 +60,27 @@ type CartContextValue = {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-async function parseSummary(response: Response): Promise<{ summary?: CartSummary; error?: string }> {
-  const data = await response.json().catch(() => ({})) as { error?: string; message?: string | string[] } & Partial<CartSummary>;
+async function parseSummary(
+  response: Response,
+): Promise<{ summary?: CartSummary; adjustment?: CartAdjustment | null; error?: string }> {
+  const data = await response.json().catch(() => ({})) as {
+    error?: string;
+    message?: string | string[];
+    adjustment?: CartAdjustment | null;
+  } & Partial<CartSummary>;
   if (!response.ok) {
     const message = Array.isArray(data.message) ? data.message.join(" ") : data.message;
     return { error: data.error || message || "The cart service is temporarily unavailable." };
   }
-  return { summary: data as CartSummary };
+  return { summary: data as CartSummary, adjustment: data.adjustment ?? null };
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [summary, setSummary] = useState<CartSummary>(EMPTY_SUMMARY);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const dismissNotice = useCallback(() => setNotice(null), []);
 
   const refresh = useCallback(async () => {
     try {
@@ -81,10 +101,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback(async (variantId: string, quantity: number) => {
     setError(null);
+    setNotice(null);
     try {
       const response = await fetch("/api/cart/items", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ variantId, quantity }) });
       const result = await parseSummary(response);
-      if (result.summary) { setSummary(result.summary); return true; }
+      if (result.summary) { setSummary(result.summary); setNotice(result.adjustment?.message ?? null); return true; }
       setError(result.error ?? "Unable to add this product to your cart.");
       return false;
     } catch {
@@ -95,10 +116,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateItem = useCallback(async (itemId: string, quantity: number) => {
     setError(null);
+    setNotice(null);
     try {
       const response = await fetch(`/api/cart/items/${encodeURIComponent(itemId)}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ quantity }) });
       const result = await parseSummary(response);
-      if (result.summary) { setSummary(result.summary); return true; }
+      if (result.summary) { setSummary(result.summary); setNotice(result.adjustment?.message ?? null); return true; }
       setError(result.error ?? "Unable to update this item.");
       return false;
     } catch {
@@ -133,8 +155,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ summary, loading, error, refresh, addItem, updateItem, removeItem, clear }),
-    [summary, loading, error, refresh, addItem, updateItem, removeItem, clear],
+    () => ({ summary, loading, error, notice, dismissNotice, refresh, addItem, updateItem, removeItem, clear }),
+    [summary, loading, error, notice, dismissNotice, refresh, addItem, updateItem, removeItem, clear],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

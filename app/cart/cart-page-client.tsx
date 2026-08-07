@@ -28,7 +28,7 @@ function LineRow({ line, busy, onUpdate, onRemove }: { line: CartLine; busy: boo
 }
 
 function CartPageInner() {
-  const { summary, loading, error, updateItem, removeItem, clear } = useCart();
+  const { summary, loading, error, notice, dismissNotice, updateItem, removeItem, clear } = useCart();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [converting, setConverting] = useState(false);
 
@@ -63,6 +63,12 @@ function CartPageInner() {
   return <div className={styles.layout}>
     <div className={styles.lines}>
       {error && <p className={styles.formError} role="alert">{error}</p>}
+      {notice && (
+        <p className={styles.notice} role="status">
+          {notice}
+          <button type="button" onClick={dismissNotice} aria-label="Dismiss message">×</button>
+        </p>
+      )}
       {summary.lines.map((line) => (
         <LineRow
           key={line.itemId}

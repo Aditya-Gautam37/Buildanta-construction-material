@@ -203,6 +203,89 @@ describe('CartService', () => {
     expect(summary.itemCount).toBe(6);
   });
 
+  it('returns the minimum-order-quantity adjustment from addItem', async () => {
+    const { service, variants } = setup();
+    variants.set('variant-1', makeVariant({ minimumOrderQuantity: 5 }));
+
+    const summary = await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 2 });
+
+    expect(summary.itemCount).toBe(5);
+    expect(summary.adjustment).toMatchObject({
+      requestedQuantity: 2,
+      adjustedQuantity: 5,
+      reasons: ['MINIMUM_ORDER_QUANTITY'],
+      message: 'Quantity adjusted from 2 to 5 because the minimum order quantity is 5.',
+    });
+  });
+
+  it('returns the quantity-increment adjustment from updateItem', async () => {
+    const { service, variants } = setup();
+    variants.set('variant-1', makeVariant({ quantityIncrement: 5, minimumOrderQuantity: 5 }));
+    const added = await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 5 });
+
+    const updated = await service.updateItem({ guestToken: 'guest-1' }, added.lines[0]!.itemId, 7);
+
+    expect(updated.itemCount).toBe(10);
+    expect(updated.adjustment).toMatchObject({
+      requestedQuantity: 7,
+      adjustedQuantity: 10,
+      reasons: ['QUANTITY_INCREMENT'],
+      message: 'Quantity adjusted from 7 to 10 because this product is sold in increments of 5.',
+    });
+  });
+
+  it('returns the maximum-direct-quantity adjustment from updateItem', async () => {
+    const { service, variants } = setup();
+    variants.set('variant-1', makeVariant({ maxDirectQuantity: 50 }));
+    const added = await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 1 });
+
+    const updated = await service.updateItem({ guestToken: 'guest-1' }, added.lines[0]!.itemId, 100);
+
+    expect(updated.itemCount).toBe(50);
+    expect(updated.adjustment).toMatchObject({
+      requestedQuantity: 100,
+      adjustedQuantity: 50,
+      reasons: ['MAXIMUM_DIRECT_QUANTITY'],
+      message: 'Quantity adjusted from 100 to 50 because the maximum direct-order quantity is 50.',
+    });
+  });
+
+  it('reports no adjustment when the requested quantity is already valid', async () => {
+    const { service, variants } = setup();
+    variants.set('variant-1', makeVariant());
+
+    const summary = await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 3 });
+
+    expect(summary.adjustment).toBeNull();
+  });
+
+  it('does not replay a past adjustment on a later read of the cart', async () => {
+    const { service, variants } = setup();
+    variants.set('variant-1', makeVariant({ minimumOrderQuantity: 5 }));
+    const added = await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 2 });
+    expect(added.adjustment).not.toBeNull();
+
+    const reread = await service.getSummary({ guestToken: 'guest-1' });
+
+    expect(reread.lines[0]!.adjustment).toBeNull();
+    expect(reread.lines[0]!.issues).toEqual([]);
+  });
+
+  it('surfaces a line adjustment when the rules changed after the item was added', async () => {
+    const { service, variants } = setup();
+    variants.set('variant-1', makeVariant({ minimumOrderQuantity: 1 }));
+    await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 2 });
+
+    // Staff later raises the minimum order quantity above the stored quantity.
+    variants.set('variant-1', makeVariant({ minimumOrderQuantity: 10 }));
+    const reread = await service.getSummary({ guestToken: 'guest-1' });
+
+    expect(reread.lines[0]!.quantity).toBe(10);
+    expect(reread.lines[0]!.adjustment?.message).toBe(
+      'Quantity adjusted from 2 to 10 because the minimum order quantity is 10.',
+    );
+  });
+
   it('enforces cart ownership when updating or removing a line item', async () => {
     const { service, variants } = setup();
     variants.set('variant-1', makeVariant());

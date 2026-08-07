@@ -37,6 +37,8 @@
 .clearButton{width:100%;margin-top:.6rem;border:1px solid #d5e0e7;border-radius:.85rem;background:#fff;padding:.7rem;color:#48606f;font-size:.78rem;font-weight:800;cursor:pointer}
 
 .formError{margin:.9rem 0 0;border-radius:.65rem;background:#fff0ee;padding:.65rem .75rem;color:#b42318;font-size:.74rem;font-weight:750}
+.notice{display:flex;justify-content:space-between;gap:.75rem;align-items:flex-start;margin:0;border-left:3px solid #e8944a;border-radius:.6rem;background:#fff7ec;padding:.7rem .8rem;color:#8a5320;font-size:.76rem;font-weight:700;line-height:1.45}
+.notice button{flex:none;border:0;background:transparent;color:#8a5320;font-size:1rem;line-height:1;cursor:pointer}
 .success{border:1px solid #cdeee0;border-radius:1rem;background:#f2fbf6;padding:1.5rem;text-align:center;color:#0b2b3f}
 .success h2{margin:.4rem 0}
 

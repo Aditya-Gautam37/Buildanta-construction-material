@@ -1,6 +1,10 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CartStatus, Prisma, ProductStatus, PurchaseMode, VariantStatus } from '@workspace/db';
-import { decideCartLineQuantity, type CartVariantPurchaseRules } from '../common/cart-eligibility';
+import {
+  decideCartLineQuantity,
+  type CartQuantityAdjustment,
+  type CartVariantPurchaseRules,
+} from '../common/cart-eligibility';
 import { publicAvailabilityForStock, type PublicAvailability } from '../common/public-catalogue';
 import { withSerializableRetry } from '../common/serializable-transaction';
 import { PrismaService } from '../database/prisma.service';
@@ -36,7 +40,9 @@ export type CartLineSummary = {
   availability: PublicAvailability;
   eligible: boolean;
   requiresQuote: boolean;
-  quantityAdjusted: boolean;
+  // Set when the stored quantity no longer satisfies the variant's current rules,
+  // e.g. staff raised the minimum order quantity after this line was added.
+  adjustment: CartQuantityAdjustment | null;
   issues: string[];
 };
 
@@ -50,6 +56,10 @@ export type CartSummary = {
   requiresQuoteCount: number;
   hasBlockingIssues: boolean;
 };
+
+// The adjustment caused by *this* request. It is an event, not stored state, so it
+// is returned from mutations only and never replayed on a later GET /cart.
+export type CartMutationResult = CartSummary & { adjustment: CartQuantityAdjustment | null };
 
 const CART_INCLUDE = {
   items: { include: { variant: { include: { product: true } } } },
@@ -68,6 +78,10 @@ const EMPTY_SUMMARY: CartSummary = {
   requiresQuoteCount: 0,
   hasBlockingIssues: false,
 };
+
+function withAdjustment(summary: CartSummary, adjustment: CartQuantityAdjustment | null): CartMutationResult {
+  return { ...summary, adjustment };
+}
 
 function toRules(variant: {
   purchaseMode: PurchaseMode;
@@ -143,6 +157,7 @@ export class CartService {
       const active = variant.status === VariantStatus.ACTIVE && product.status === ProductStatus.PUBLISHED;
       const eligible = decision.eligible && active;
       const issues = [...decision.issues];
+      if (decision.eligible && decision.adjustment) issues.push(decision.adjustment.message);
       if (!active) issues.push('This product is no longer available for direct purchase.');
       if (!eligible) hasBlockingIssues = true;
       const requiresQuote = decision.eligible && decision.requiresQuote;
@@ -167,7 +182,7 @@ export class CartService {
         availability,
         eligible,
         requiresQuote,
-        quantityAdjusted: decision.eligible ? decision.quantityAdjusted : false,
+        adjustment: decision.eligible ? decision.adjustment : null,
         issues,
       };
     });
@@ -189,7 +204,7 @@ export class CartService {
     return this.buildSummary(cart);
   }
 
-  async addItem(identity: CartIdentity, input: { variantId: string; quantity: number }): Promise<CartSummary> {
+  async addItem(identity: CartIdentity, input: { variantId: string; quantity: number }): Promise<CartMutationResult> {
     const cart = await this.getOrCreateCart(identity);
     const variant = await this.prisma.client.productVariant.findUnique({
       where: { id: input.variantId },
@@ -210,10 +225,10 @@ export class CartService {
       update: { quantity: decision.quantity, unitPriceSnapshot },
     });
     await this.prisma.client.cart.update({ where: { id: cart.id }, data: { lastActivityAt: new Date() } });
-    return this.getSummary(identity);
+    return withAdjustment(await this.getSummary(identity), decision.adjustment);
   }
 
-  async updateItem(identity: CartIdentity, itemId: string, quantity: number): Promise<CartSummary> {
+  async updateItem(identity: CartIdentity, itemId: string, quantity: number): Promise<CartMutationResult> {
     const cart = await this.findCart(identity, { activeOnly: false });
     this.assertActive(cart);
     const item = cart.items.find((candidate: CartItemWithVariant) => candidate.id === itemId);
@@ -224,7 +239,7 @@ export class CartService {
     }
     await this.prisma.client.cartItem.update({ where: { id: itemId }, data: { quantity: decision.quantity } });
     await this.prisma.client.cart.update({ where: { id: cart.id }, data: { lastActivityAt: new Date() } });
-    return this.getSummary(identity);
+    return withAdjustment(await this.getSummary(identity), decision.adjustment);
   }
 
   async removeItem(identity: CartIdentity, itemId: string): Promise<CartSummary> {

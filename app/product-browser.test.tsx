@@ -100,6 +100,15 @@ describe("ProductBrowser", () => {
     expect(screen.getByText("Find the right product in under a minute.")).toBeInTheDocument();
   });
 
+  it("replaces an unavailable catalogue image with a relevant local fallback", () => {
+    const paint = makeProduct({ id: "paint-image", name: "Interior Paint", categories: ["Paints"], category: "Paints", image: "https://example.invalid/paint.jpg", imageAlt: "Interior paint bucket" });
+    render(<ProductBrowser mode="category" products={[paint]} options={["Paints"]} initial="Paints" />);
+
+    const cardImage = screen.getAllByAltText("Interior paint bucket").at(-1) as HTMLImageElement;
+    fireEvent.error(cardImage);
+    expect(cardImage.src).toContain("/demo/products/real/paint.jpg");
+  });
+
   it("shows the empty state when the search term matches nothing", () => {
     render(<ProductBrowser mode="category" products={products} options={["Cement & Structure"]} initial="Cement & Structure" />);
 

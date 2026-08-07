@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { type SyntheticEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { availabilityLabel, availabilityStatusLabel, type PublicAvailability, type StoreProduct } from "./live-catalog";
 import { StageQuestionnaire } from "./by-stage/stage-questionnaire";
 import { GuidedProductFinder } from "./guided-product-finder";
@@ -12,6 +12,26 @@ function matches(product: StoreProduct, mode: Mode, option: string, categoryGrou
   if (mode === "room") return product.rooms.includes(option);
   const acceptedCategories = categoryGroups?.[option] ?? [option];
   return acceptedCategories.some((category) => product.categories.includes(category));
+}
+
+function productImageFallback(product: Pick<StoreProduct, "name" | "category">) {
+  const label = `${product.name} ${product.category}`.toLowerCase();
+  if (/(paint|putty|finish)/.test(label)) return "/demo/products/real/paint.jpg";
+  if (/(tile|floor)/.test(label)) return "/demo/products/real/tiles.jpg";
+  if (/(bath|sanitary|plumb|faucet)/.test(label)) return "/demo/products/real/bath.jpg";
+  if (/(electric|wire|switch|light)/.test(label)) return "/demo/products/real/electrical.jpg";
+  if (/(steel|tmt|rebar|binding)/.test(label)) return "/demo/products/real/steel.jpg";
+  if (/(waterproof|chemical)/.test(label)) return "/demo/products/real/waterproofing.jpg";
+  if (/(door|window|glass|opening)/.test(label)) return "/demo/products/real/openings.jpg";
+  if (/(ceiling|gypsum|drywall)/.test(label)) return "/demo/products/real/ceiling.jpg";
+  return "/demo/products/real/cement.jpg";
+}
+
+function recoverProductImage(event: SyntheticEvent<HTMLImageElement>, fallback: string) {
+  const image = event.currentTarget;
+  if (image.dataset.fallbackApplied) return;
+  image.dataset.fallbackApplied = "true";
+  image.src = fallback;
 }
 
 export function ProductBrowser({ mode, products, options, initial = "", query = "", categoryGroups }: { mode: Mode; products: StoreProduct[]; options: string[]; initial?: string; query?: string; categoryGroups?: Record<string, string[]> }) {
@@ -70,7 +90,7 @@ export function ProductBrowser({ mode, products, options, initial = "", query = 
     <section className="results-panel">
       <section className="commerce-hero">
         <div className="commerce-hero-copy"><p>BUILDANTA MATERIAL STORE · {String(selectionIndex + 1).padStart(2, "0")}</p><h1>{selection || "Construction materials"}</h1><span>{description}</span><div className="commerce-hero-actions"><button onClick={() => document.getElementById("product-results")?.scrollIntoView({ behavior: "smooth" })}>Shop {scopedProducts.length} products <b>→</b></button><button className="secondary" onClick={() => setFinderOpen(true)}>Help me choose</button></div><dl><div><dt>Products</dt><dd>{scopedProducts.length}</dd></div><div><dt>Starting at</dt><dd>{startingPrice ? `₹${startingPrice.toLocaleString("en-IN")}` : "Get quote"}</dd></div><div><dt>Delivery</dt><dd>{locationState === "serviceable" ? `To ${pincode}` : "Check PIN"}</dd></div></dl></div>
-        <div className="commerce-hero-visual">{heroProduct?.image ? <img src={heroProduct.image} alt={heroProduct.imageAlt || `${selection} construction material`} decoding="async" fetchPriority="high" /> : <img src="/images/buildanta-v2/foundation-planning-v2.webp" alt={`${selection} construction materials`} decoding="async" fetchPriority="high" />}<span>Live catalogue</span><small>{heroProduct?.brand || "Buildanta verified materials"}</small></div>
+        <div className="commerce-hero-visual">{heroProduct?.image ? <img src={heroProduct.image} alt={heroProduct.imageAlt || `${selection} construction material`} decoding="async" fetchPriority="high" onError={(event) => recoverProductImage(event, productImageFallback(heroProduct))} /> : <img src="/images/buildanta-v2/foundation-planning-v2.webp" alt={`${selection} construction materials`} decoding="async" fetchPriority="high" />}<span>Live catalogue</span><small>{heroProduct?.brand || "Buildanta verified materials"}</small></div>
       </section>
 
       <div className="commerce-assurance commerce-browser-assurance"><span><i>✓</i><strong>Verified catalogue</strong><small>Products managed in Inventory</small></span><span><i>₹</i><strong>Transparent pricing</strong><small>Indicative rates shown upfront</small></span><span><i>◎</i><strong>Location checked</strong><small>Availability for your PIN code</small></span><span><i>↗</i><strong>Bulk quotations</strong><small>Project pricing when you need it</small></span></div>
@@ -90,5 +110,5 @@ export function ProductBrowser({ mode, products, options, initial = "", query = 
 }
 
 export function ProductCard({ product,location }: { product: StoreProduct;location?:{availabilityStatus:PublicAvailability;leadTimeLabel:string;fulfilmentMode:string} }) {
-  return <article className="product-card"><a className={`product-visual ${product.image ? "has-image" : ""}`} href={`/products/${product.slug}`}><span className="product-brand">{product.brand}</span>{product.image ? <img src={product.image} alt={product.imageAlt} loading="lazy" decoding="async" /> : <b>{product.category.split(" ")[0]}</b>}<i>{location?availabilityStatusLabel(location.availabilityStatus):availabilityLabel(product)}</i></a><div className="product-body"><p>{product.brand} / {product.unit}</p><a href={`/products/${product.slug}`}><h2>{product.name}</h2></a><p className="product-description">{product.description}</p>{location&&<small className="location-product-note">{location.fulfilmentMode==="PARTNER_STOCK"?"Available from partner":location.fulfilmentMode==="ON_REQUEST"?"Available on request":"Buildanta stock"}. {location.leadTimeLabel}.</small>}<div><span>{product.price > 0 ? <>Indicative <strong>{"\u20B9"}{product.price.toLocaleString("en-IN")}</strong></> : <strong>Request latest price</strong>}</span><a className="small-quote" href={`/bulk-quotes?product=${encodeURIComponent(product.name)}`}>Get quote</a></div></div></article>;
+  return <article className="product-card"><a className={`product-visual ${product.image ? "has-image" : ""}`} href={`/products/${product.slug}`}><span className="product-brand">{product.brand}</span>{product.image ? <img src={product.image} alt={product.imageAlt} loading="lazy" decoding="async" onError={(event) => recoverProductImage(event, productImageFallback(product))} /> : <b>{product.category.split(" ")[0]}</b>}<i>{location?availabilityStatusLabel(location.availabilityStatus):availabilityLabel(product)}</i></a><div className="product-body"><p>{product.brand} / {product.unit}</p><a href={`/products/${product.slug}`}><h2>{product.name}</h2></a><p className="product-description">{product.description}</p>{location&&<small className="location-product-note">{location.fulfilmentMode==="PARTNER_STOCK"?"Available from partner":location.fulfilmentMode==="ON_REQUEST"?"Available on request":"Buildanta stock"}. {location.leadTimeLabel}.</small>}<div><span>{product.price > 0 ? <>Indicative <strong>{"\u20B9"}{product.price.toLocaleString("en-IN")}</strong></> : <strong>Request latest price</strong>}</span><a className="small-quote" href={`/bulk-quotes?product=${encodeURIComponent(product.name)}`}>Get quote</a></div></div></article>;
 }

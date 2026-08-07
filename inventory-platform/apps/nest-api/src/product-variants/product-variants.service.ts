@@ -70,6 +70,38 @@ export class ProductVariantsService {
 		};
 	}
 
+	// Purchase rules are enforced server-side at cart time; rejecting incoherent
+	// combinations here stops staff from saving a variant that can never be bought.
+	private assertCoherentPurchaseRules(rules: {
+		purchaseMode: PurchaseMode;
+		minimumOrderQuantity: number;
+		quantityIncrement: number;
+		maxDirectQuantity: number | null;
+		bulkQuoteThreshold: number | null;
+	}) {
+		if (rules.purchaseMode === PurchaseMode.QUOTE_ONLY) return;
+
+		if (rules.maxDirectQuantity != null && rules.maxDirectQuantity < rules.minimumOrderQuantity) {
+			throw new BadRequestException(
+				'Maximum direct quantity cannot be lower than the minimum order quantity.',
+			);
+		}
+		if (rules.bulkQuoteThreshold != null && rules.purchaseMode === PurchaseMode.DIRECT_ONLY) {
+			throw new BadRequestException(
+				'A bulk quote threshold has no effect on a direct-only variant. Use DIRECT_AND_QUOTE instead.',
+			);
+		}
+		if (
+			rules.bulkQuoteThreshold != null &&
+			rules.maxDirectQuantity != null &&
+			rules.bulkQuoteThreshold > rules.maxDirectQuantity
+		) {
+			throw new BadRequestException(
+				'The bulk quote threshold must be reachable: it cannot exceed the maximum direct quantity.',
+			);
+		}
+	}
+
 	private async assertProductAndSupplier(productId: string, supplierId: string) {
 		const [product, supplier] = await Promise.all([
 			this.prisma.client.product.findUnique({ where: { id: productId } }),
@@ -94,6 +126,13 @@ export class ProductVariantsService {
 		if ((input.reservedQuantity ?? 0) > (input.stockQuantity ?? 0)) {
 			throw new BadRequestException('Reserved stock cannot exceed available stock.');
 		}
+		this.assertCoherentPurchaseRules({
+			purchaseMode: input.purchaseMode ?? PurchaseMode.QUOTE_ONLY,
+			minimumOrderQuantity: input.minimumOrderQuantity ?? product.minimumOrderQuantity,
+			quantityIncrement: input.quantityIncrement ?? 1,
+			maxDirectQuantity: input.maxDirectQuantity ?? null,
+			bulkQuoteThreshold: input.bulkQuoteThreshold ?? null,
+		});
 
 		return await this.prisma.client.$transaction(async (tx) => {
 			const created = await tx.productVariant.create({
@@ -110,6 +149,12 @@ export class ProductVariantsService {
 					lowStockThreshold: input.lowStockThreshold ?? 5,
 					stockTracked: input.stockQuantity !== undefined || input.reservedQuantity !== undefined,
 					status: input.status ?? VariantStatus.ACTIVE,
+					purchaseMode: input.purchaseMode ?? PurchaseMode.QUOTE_ONLY,
+					maxDirectQuantity: input.maxDirectQuantity ?? null,
+					bulkQuoteThreshold: input.bulkQuoteThreshold ?? null,
+					quantityIncrement: input.quantityIncrement ?? 1,
+					directCheckoutEnabled: input.directCheckoutEnabled ?? false,
+					manualDeliveryPricingEnabled: input.manualDeliveryPricingEnabled ?? false,
 				},
 			});
 
@@ -226,6 +271,13 @@ export class ProductVariantsService {
 		if (nextReserved > nextStock) {
 			throw new BadRequestException('Reserved stock cannot exceed available stock.');
 		}
+		this.assertCoherentPurchaseRules({
+			purchaseMode: input.purchaseMode ?? existing.purchaseMode,
+			minimumOrderQuantity: input.minimumOrderQuantity ?? existing.minimumOrderQuantity,
+			quantityIncrement: input.quantityIncrement ?? existing.quantityIncrement,
+			maxDirectQuantity: input.maxDirectQuantity === undefined ? existing.maxDirectQuantity : input.maxDirectQuantity,
+			bulkQuoteThreshold: input.bulkQuoteThreshold === undefined ? existing.bulkQuoteThreshold : input.bulkQuoteThreshold,
+		});
 
 		return await this.prisma.client.$transaction(async (tx) => {
 			const updated = await tx.productVariant.update({
@@ -246,6 +298,12 @@ export class ProductVariantsService {
 							? true
 							: undefined,
 					status: input.status,
+					purchaseMode: input.purchaseMode,
+					maxDirectQuantity: input.maxDirectQuantity,
+					bulkQuoteThreshold: input.bulkQuoteThreshold,
+					quantityIncrement: input.quantityIncrement,
+					directCheckoutEnabled: input.directCheckoutEnabled,
+					manualDeliveryPricingEnabled: input.manualDeliveryPricingEnabled,
 				},
 			});
 

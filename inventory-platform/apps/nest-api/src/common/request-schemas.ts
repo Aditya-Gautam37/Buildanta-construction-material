@@ -3,6 +3,7 @@ import {
   FulfilmentMode,
   InventoryLedgerType,
   ProductStatus,
+  PurchaseMode,
   QuotationApprovalStatus,
   QuotationStatus,
   StockCountStatus,
@@ -71,6 +72,12 @@ const variantFields = {
   reservedQuantity: z.number().int().nonnegative().optional(),
   lowStockThreshold: z.number().int().nonnegative().optional(),
   status: z.nativeEnum(VariantStatus).optional(),
+  purchaseMode: z.nativeEnum(PurchaseMode).optional(),
+  maxDirectQuantity: z.number().int().min(1).nullable().optional(),
+  bulkQuoteThreshold: z.number().int().min(1).nullable().optional(),
+  quantityIncrement: z.number().int().min(1).optional(),
+  directCheckoutEnabled: z.boolean().optional(),
+  manualDeliveryPricingEnabled: z.boolean().optional(),
 };
 export const variantCreateSchema = z.object(variantFields).strict();
 export const variantUpdateSchema = z.object(variantFields).partial().strict();

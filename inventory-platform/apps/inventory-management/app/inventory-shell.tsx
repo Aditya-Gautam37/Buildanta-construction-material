@@ -16,6 +16,7 @@ import {
   MapPinned,
   Menu,
   PackageCheck,
+  ShoppingCart,
   Truck,
   UserRound,
   X,
@@ -29,6 +30,7 @@ const navigationGroups: Array<{ label: string; items: NavigationItem[] }> = [
     label: "Catalogue",
     items: [
       { label: "Products", href: "/catalog-control", icon: PackageCheck },
+      { label: "Direct purchase", href: "/commerce", icon: ShoppingCart },
       { label: "Product Categories", href: "/category-management", icon: FolderTree },
       { label: "Homepage", href: "/homepage-content", icon: GalleryHorizontalEnd },
       { label: "Professionals", href: "/professionals", icon: BriefcaseBusiness },
@@ -49,6 +51,7 @@ const navigationGroups: Array<{ label: string; items: NavigationItem[] }> = [
 const pageTitles: Record<string, string> = {
   "/dashboard": "Operations overview",
   "/catalog-control": "Product catalogue",
+  "/commerce": "Direct purchase settings",
   "/category-management": "Product categories",
   "/homepage-content": "Storefront homepage",
   "/professionals": "Professional directory",

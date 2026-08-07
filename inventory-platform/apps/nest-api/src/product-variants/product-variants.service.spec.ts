@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from "@nestjs/common";
 import type { PrismaService } from "../database/prisma.service";
 import { ProductVariantsService } from "./product-variants.service";
-import { ProductStatus, UserRole, VariantStatus } from "@workspace/db";
+import { ProductStatus, PurchaseMode, UserRole, VariantStatus } from "@workspace/db";
 
 describe("ProductVariantsService CRUD", () => {
   it("rejects invalid product and supplier relationships", async () => {
@@ -132,5 +132,71 @@ describe("ProductVariantsService CRUD", () => {
     const internalResult = await service.findAllInventory();
     expect(JSON.stringify(internalResult)).toContain("Private Supplier");
     expect(JSON.stringify(internalResult)).toContain("stockQuantity");
+  });
+});
+
+describe("ProductVariantsService purchase rules", () => {
+  const existing = {
+    id: "variant-1",
+    productId: "product-1",
+    supplierId: "supplier-1",
+    minimumOrderQuantity: 10,
+    quantityIncrement: 1,
+    maxDirectQuantity: null,
+    bulkQuoteThreshold: null,
+    purchaseMode: PurchaseMode.QUOTE_ONLY,
+    stockQuantity: 100,
+    reservedQuantity: 0,
+    product: { name: "TMT Steel", categories: [] },
+  };
+
+  function serviceFor(record: Record<string, unknown> = {}) {
+    return new ProductVariantsService({
+      client: {
+        productVariant: { findUnique: jest.fn().mockResolvedValue({ ...existing, ...record }) },
+        product: { findUnique: jest.fn().mockResolvedValue({ id: "product-1", minimumOrderQuantity: 10 }) },
+        supplier: { findUnique: jest.fn().mockResolvedValue({ id: "supplier-1" }) },
+      },
+    } as unknown as PrismaService);
+  }
+
+  it("rejects a maximum direct quantity below the minimum order quantity", async () => {
+    await expect(
+      serviceFor().update(
+        "variant-1",
+        { purchaseMode: PurchaseMode.DIRECT_ONLY, maxDirectQuantity: 5 },
+        UserRole.ADMIN,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("rejects a bulk quote threshold on a direct-only variant", async () => {
+    await expect(
+      serviceFor().update(
+        "variant-1",
+        { purchaseMode: PurchaseMode.DIRECT_ONLY, bulkQuoteThreshold: 50 },
+        UserRole.ADMIN,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("rejects an unreachable bulk quote threshold above the maximum direct quantity", async () => {
+    await expect(
+      serviceFor().update(
+        "variant-1",
+        { purchaseMode: PurchaseMode.DIRECT_AND_QUOTE, maxDirectQuantity: 40, bulkQuoteThreshold: 90 },
+        UserRole.ADMIN,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("leaves quote-only variants unconstrained by direct-purchase rules", async () => {
+    await expect(
+      serviceFor().update(
+        "variant-1",
+        { purchaseMode: PurchaseMode.QUOTE_ONLY, maxDirectQuantity: 1 },
+        UserRole.ADMIN,
+      ),
+    ).rejects.not.toBeInstanceOf(BadRequestException);
   });
 });

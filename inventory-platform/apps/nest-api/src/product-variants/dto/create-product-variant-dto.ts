@@ -1,4 +1,4 @@
-import type { VariantStatus } from '@workspace/db';
+import type { PurchaseMode, VariantStatus } from '@workspace/db';
 
 export class CreateProductVariantDTO {
   productId!: string;
@@ -13,4 +13,10 @@ export class CreateProductVariantDTO {
   reservedQuantity?: number;
   lowStockThreshold?: number;
   status?: VariantStatus;
+  purchaseMode?: PurchaseMode;
+  maxDirectQuantity?: number | null;
+  bulkQuoteThreshold?: number | null;
+  quantityIncrement?: number;
+  directCheckoutEnabled?: boolean;
+  manualDeliveryPricingEnabled?: boolean;
 }

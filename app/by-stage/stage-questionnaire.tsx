@@ -71,13 +71,13 @@ const ROOM_OPTIONS: Array<{ key: RoomKey; label: string; image: string; roomType
   { key: "kitchens", label: "Kitchen", image: "/kitchen.jpg", roomType: "KITCHEN" },
   { key: "bedrooms", label: "Bedroom", image: "/bedroom.jpg", roomType: "BEDROOM" },
   { key: "bathrooms", label: "Bathroom", image: "/bathroom.jpg", roomType: "BATHROOM" },
-  { key: "diningRooms", label: "Dining area", image: "/livingroom.jpg", roomType: "DINING_ROOM" },
-  { key: "balconies", label: "Balcony", image: "/homepage_img.png", roomType: "BALCONY" },
-  { key: "utilityRooms", label: "Utility", image: "/kitchen.jpg", roomType: "UTILITY" },
-  { key: "studies", label: "Study", image: "/bedroom.jpg", roomType: "STUDY" },
-  { key: "pujaRooms", label: "Puja room", image: "/homepage_img.png", roomType: "OTHER" },
-  { key: "storageRooms", label: "Storage", image: "/homepage_img.png", roomType: "OTHER" },
-  { key: "garages", label: "Garage", image: "/homepage_img.png", roomType: "GARAGE" },
+  { key: "diningRooms", label: "Dining area", image: "/images/buildanta-v2/room-dining-v2.webp", roomType: "DINING_ROOM" },
+  { key: "balconies", label: "Balcony", image: "/images/buildanta-v2/room-balcony-v2.webp", roomType: "BALCONY" },
+  { key: "utilityRooms", label: "Utility", image: "/images/buildanta-v2/room-utility-v2.webp", roomType: "UTILITY" },
+  { key: "studies", label: "Study", image: "/images/buildanta-v2/room-study-v2.webp", roomType: "STUDY" },
+  { key: "pujaRooms", label: "Puja room", image: "/images/buildanta-v2/room-puja-v2.webp", roomType: "OTHER" },
+  { key: "storageRooms", label: "Storage", image: "/images/buildanta-v2/room-garage-storage-v2.webp", roomType: "OTHER" },
+  { key: "garages", label: "Garage", image: "/images/buildanta-v2/room-garage-storage-v2.webp", roomType: "GARAGE" },
   { key: "servantRooms", label: "Servant room", image: "/bedroom.jpg", roomType: "BEDROOM" },
   { key: "halls", label: "Hall", image: "/livingroom.jpg", roomType: "LIVING_ROOM" },
 ];
@@ -213,7 +213,9 @@ export function StageQuestionnaire({ stage, products, deliveryPincode }: { stage
   const sessionReference = useRef(makeSessionReference(stage));
 
   const plan = useMemo(() => (submitted && !calculatorConfig ? buildStagePlan(stage, submitted, products) : null), [products, stage, submitted, calculatorConfig]);
-  const stageImage = products.find((product) => product.image)?.image || "/homepage_img.png";
+  const stageImage = stage.toLowerCase().includes("foundation")
+    ? "/images/buildanta-v2/foundation-planning-v2.webp"
+    : products.find((product) => product.image)?.image || "/images/buildanta-v2/homepage-construction-team-v2.webp";
 
   useEffect(() => {
     try {
@@ -349,7 +351,7 @@ export function StageQuestionnaire({ stage, products, deliveryPincode }: { stage
 
       <div className={`${styles.wizardBody} ${step === 2 || step === 3 || step === 4 ? styles.wideStep : ""}`}>
         {step < 2 && <aside className={styles.visualPanel}>
-          <img src={stageImage} alt="" />
+          <img src={stageImage} alt={`${stage} construction planning in progress`} loading="lazy" decoding="async" />
           <div><span>{stage}</span><strong>{step === 0 ? "Start with what you already know." : `${wizard.builtUpAreaSqFt.toLocaleString("en-IN")} sq ft per floor`}</strong><small>Your answers are saved in this browser session.</small></div>
         </aside>}
 
@@ -384,7 +386,7 @@ export function StageQuestionnaire({ stage, products, deliveryPincode }: { stage
             <p>Room quantities create the concept electrical point and plumbing fixture schedules. Adjust every space that applies.</p>
             <div className={styles.roomGrid}>
               {ROOM_OPTIONS.map((room) => <article key={room.key}>
-                <img src={room.image} alt="" loading="lazy" />
+                <img src={room.image} alt={`${room.label} material planning`} loading="lazy" decoding="async" />
                 <strong>{room.label}</strong>
                 <div className={styles.stepper}><button type="button" aria-label={`Decrease ${room.label}`} onClick={() => updateField(room.key, Math.max(0, wizard[room.key] - 1))}>−</button><span>{wizard[room.key]}</span><button type="button" aria-label={`Increase ${room.label}`} onClick={() => updateField(room.key, Math.min(200, wizard[room.key] + 1))}>+</button></div>
               </article>)}

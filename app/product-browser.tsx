@@ -4,6 +4,7 @@ import { type SyntheticEvent, useCallback, useEffect, useMemo, useState } from "
 import { availabilityLabel, availabilityStatusLabel, type PublicAvailability, type StoreProduct } from "./live-catalog";
 import { StageQuestionnaire } from "./by-stage/stage-questionnaire";
 import { GuidedProductFinder } from "./guided-product-finder";
+import { DELIVERY_PIN_CLEARED_EVENT, DELIVERY_PIN_STORAGE_KEY, saveDeliveryPincode } from "./delivery-location";
 
 type Mode = "stage" | "room" | "category";
 
@@ -34,6 +35,35 @@ function recoverProductImage(event: SyntheticEvent<HTMLImageElement>, fallback: 
   image.src = fallback;
 }
 
+function browserHeroImage(mode: Mode, selection: string, product?: StoreProduct) {
+  const label = selection.toLowerCase();
+  if (mode === "room") {
+    if (label.includes("bedroom")) return "/bedroom.jpg";
+    if (label.includes("kitchen")) return "/kitchen.jpg";
+    if (label.includes("bathroom")) return "/bathroom.jpg";
+    if (label.includes("living")) return "/livingroom.jpg";
+    if (label.includes("study")) return "/images/buildanta-v2/room-study-v2.webp";
+    if (label.includes("balcony")) return "/images/buildanta-v2/room-balcony-v2.webp";
+    if (label.includes("dining")) return "/images/buildanta-v2/room-dining-v2.webp";
+    if (label.includes("puja")) return "/images/buildanta-v2/room-puja-v2.webp";
+    if (label.includes("garage") || label.includes("storage")) return "/images/buildanta-v2/room-garage-storage-v2.webp";
+    if (label.includes("utility")) return "/images/buildanta-v2/room-utility-v2.webp";
+  }
+  if (mode === "stage") {
+    if (/(bath|plumb)/.test(label)) return "/demo/products/real/bath.jpg";
+    if (/(electric|wiring)/.test(label)) return "/demo/products/real/electrical.jpg";
+    if (/(waterproof)/.test(label)) return "/demo/products/real/waterproofing.jpg";
+    if (/(floor|tiling)/.test(label)) return "/demo/products/real/tiles.jpg";
+    if (/(ceiling)/.test(label)) return "/demo/products/real/ceiling.jpg";
+    if (/(paint|finish)/.test(label)) return "/demo/products/real/paint.jpg";
+    if (/(door|window|glass)/.test(label)) return "/demo/products/real/openings.jpg";
+    if (/(steel|tmt)/.test(label)) return "/demo/products/real/steel.jpg";
+    if (/(kitchen|wardrobe)/.test(label)) return "/kitchen.jpg";
+    return "/demo/products/real/cement.jpg";
+  }
+  return product?.image || "/images/buildanta-v2/foundation-planning-v2.webp";
+}
+
 export function ProductBrowser({ mode, products, options, initial = "", query = "", categoryGroups }: { mode: Mode; products: StoreProduct[]; options: string[]; initial?: string; query?: string; categoryGroups?: Record<string, string[]> }) {
   const validInitial = options.includes(initial) ? initial : options[0] || "";
   const [selection, setSelection] = useState(validInitial);
@@ -49,8 +79,8 @@ export function ProductBrowser({ mode, products, options, initial = "", query = 
   const [locationState,setLocationState]=useState<"idle"|"loading"|"serviceable"|"unsupported"|"error">("idle");
   const [locationProducts,setLocationProducts]=useState(new Map<string,{availabilityStatus:PublicAvailability;leadTimeLabel:string;fulfilmentMode:string}>());
   const brands=useMemo(()=>[...new Set(products.map(product=>product.brand))].sort(),[products]);
-  const checkLocation=useCallback(async(value:string)=>{if(!/^\d{6}$/.test(value)){setLocationState("error");return}setLocationState("loading");try{const response=await fetch(`/api/serviceability?pincode=${encodeURIComponent(value)}`,{cache:"no-store"});const result=await response.json() as {serviceable?:boolean;products?:{productId:string;availabilityStatus:PublicAvailability;leadTimeLabel:string;fulfilmentMode:string}[]};if(!response.ok)throw new Error();window.localStorage.setItem("buildanta-delivery-pincode",value);if(!result.serviceable){setLocationProducts(new Map());setLocationState("unsupported");return}setLocationProducts(new Map((result.products||[]).map(product=>[product.productId,product])));setLocationState("serviceable")}catch{setLocationState("error")}},[])
-  useEffect(()=>{const saved=window.localStorage.getItem("buildanta-delivery-pincode")||"";if(!/^\d{6}$/.test(saved))return;const timer=window.setTimeout(()=>{setPincode(saved);void checkLocation(saved)},0);return()=>window.clearTimeout(timer)},[checkLocation])
+  const checkLocation=useCallback(async(value:string)=>{if(!/^\d{6}$/.test(value)){setLocationState("error");return}setLocationState("loading");try{const response=await fetch(`/api/serviceability?pincode=${encodeURIComponent(value)}`,{cache:"no-store"});const result=await response.json() as {serviceable?:boolean;products?:{productId:string;availabilityStatus:PublicAvailability;leadTimeLabel:string;fulfilmentMode:string}[]};if(!response.ok)throw new Error();saveDeliveryPincode(value);if(!result.serviceable){setLocationProducts(new Map());setLocationState("unsupported");return}setLocationProducts(new Map((result.products||[]).map(product=>[product.productId,product])));setLocationState("serviceable")}catch{setLocationState("error")}},[])
+  useEffect(()=>{const saved=window.localStorage.getItem(DELIVERY_PIN_STORAGE_KEY)||"";const clear=()=>{setPincode("");setLocationProducts(new Map());setLocationState("idle")};window.addEventListener(DELIVERY_PIN_CLEARED_EVENT,clear);if(!/^\d{6}$/.test(saved))return()=>window.removeEventListener(DELIVERY_PIN_CLEARED_EVENT,clear);const timer=window.setTimeout(()=>{setPincode(saved);void checkLocation(saved)},0);return()=>{window.clearTimeout(timer);window.removeEventListener(DELIVERY_PIN_CLEARED_EVENT,clear)}},[checkLocation])
   const counts = useMemo(() => new Map(options.map((option) => [option, products.filter((product) => matches(product, mode, option, categoryGroups)).length])), [categoryGroups, mode, options, products]);
   const visible = useMemo(() => {
     const needle = term.trim().toLowerCase();
@@ -70,6 +100,7 @@ export function ProductBrowser({ mode, products, options, initial = "", query = 
   const selectionIndex = Math.max(0, options.indexOf(selection));
   const description = mode === "stage" ? `Shop verified materials for ${selection}. Compare live products now or use the buying assistant for a tailored list.` : mode === "room" ? `Shop products selected for ${selection}. Compare prices, brands and availability in one place.` : "Compare live products, prices and brands from the Buildanta catalogue.";
   const heroProduct = scopedProducts.find((product) => product.image);
+  const heroImage = browserHeroImage(mode, selection, heroProduct);
   const pricedProducts = scopedProducts.filter((product) => product.price > 0);
   const startingPrice = pricedProducts.length ? Math.min(...pricedProducts.map((product) => product.price)) : 0;
   const browseLabel = mode === "stage" ? "construction stage" : mode === "room" ? "room" : "category";
@@ -90,14 +121,14 @@ export function ProductBrowser({ mode, products, options, initial = "", query = 
     <section className="results-panel">
       <section className="commerce-hero">
         <div className="commerce-hero-copy"><p>BUILDANTA MATERIAL STORE · {String(selectionIndex + 1).padStart(2, "0")}</p><h1>{selection || "Construction materials"}</h1><span>{description}</span><div className="commerce-hero-actions"><button onClick={() => document.getElementById("product-results")?.scrollIntoView({ behavior: "smooth" })}>Shop {scopedProducts.length} products <b>→</b></button><button className="secondary" onClick={() => setFinderOpen(true)}>Help me choose</button></div><dl><div><dt>Products</dt><dd>{scopedProducts.length}</dd></div><div><dt>Starting at</dt><dd>{startingPrice ? `₹${startingPrice.toLocaleString("en-IN")}` : "Get quote"}</dd></div><div><dt>Delivery</dt><dd>{locationState === "serviceable" ? `To ${pincode}` : "Check PIN"}</dd></div></dl></div>
-        <div className="commerce-hero-visual">{heroProduct?.image ? <img src={heroProduct.image} alt={heroProduct.imageAlt || `${selection} construction material`} decoding="async" fetchPriority="high" onError={(event) => recoverProductImage(event, productImageFallback(heroProduct))} /> : <img src="/images/buildanta-v2/foundation-planning-v2.webp" alt={`${selection} construction materials`} decoding="async" fetchPriority="high" />}<span>Live catalogue</span><small>{heroProduct?.brand || "Buildanta verified materials"}</small></div>
+        <div className="commerce-hero-visual"><img src={heroImage} alt={`${selection} shopping collection`} decoding="async" fetchPriority="high" onError={(event) => recoverProductImage(event, heroProduct ? productImageFallback(heroProduct) : "/images/buildanta-v2/foundation-planning-v2.webp")} /><span>Curated collection</span><small>Selected for {selection}</small></div>
       </section>
 
-      <div className="commerce-assurance commerce-browser-assurance"><span><i>✓</i><strong>Verified catalogue</strong><small>Products managed in Inventory</small></span><span><i>₹</i><strong>Transparent pricing</strong><small>Indicative rates shown upfront</small></span><span><i>◎</i><strong>Location checked</strong><small>Availability for your PIN code</small></span><span><i>↗</i><strong>Bulk quotations</strong><small>Project pricing when you need it</small></span></div>
+      <div className="commerce-proofline" aria-label="Buildanta shopping benefits"><span>✓ Verified catalogue</span><span>₹ Transparent prices</span><span>◎ PIN-code availability</span><a href="/bulk-quotes">Project quotation →</a></div>
 
-      <form className={`location-filter-bar commerce-location ${locationState}`} onSubmit={event=>{event.preventDefault();void checkLocation(pincode)}}><div><strong>Delivering to</strong><span>{locationState==="serviceable"?`${pincode} · Products available in your area`:locationState==="unsupported"?"Area not yet serviceable · Manual quotation available":locationState==="error"?"Enter a valid 6-digit PIN code":"Check product availability and delivery"}</span></div><label><span className="sr-only">Delivery PIN code</span><input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={pincode} onChange={event=>setPincode(event.target.value.replace(/\D/g,""))} placeholder="Enter PIN code"/></label><button disabled={locationState==="loading"}>{locationState==="loading"?"Checking...":"Check"}</button></form>
+      {locationState !== "serviceable" && <form className={`location-filter-bar commerce-location ${locationState}`} onSubmit={event=>{event.preventDefault();void checkLocation(pincode)}}><div><strong>Where should we deliver?</strong><span>{locationState==="unsupported"?"Area not yet serviceable · Manual quotation available":locationState==="error"?"Enter a valid 6-digit PIN code":"Enter PIN once—we'll remember it across the store."}</span></div><label><span className="sr-only">Delivery PIN code</span><input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={pincode} onChange={event=>setPincode(event.target.value.replace(/\D/g,""))} placeholder="Enter PIN code"/></label><button disabled={locationState==="loading"}>{locationState==="loading"?"Checking...":"Set location"}</button></form>}
 
-      {finderOpen && <section className="commerce-finder-shell"><div className="commerce-finder-title"><div><span>PERSONAL SHOPPING ASSISTANT</span><strong>{mode === "stage" ? `Build my ${selection} material list` : `Find the right products for ${selection}`}</strong></div><button onClick={() => setFinderOpen(false)} aria-label="Close product finder">Close ×</button></div>{mode === "stage" ? <StageQuestionnaire key={selection} stage={selection} products={scopedProducts} deliveryPincode={pincode} /> : <GuidedProductFinder key={`${mode}-${selection}`} mode={mode} selection={selection} products={scopedProducts} />}</section>}
+      {finderOpen && <section className="commerce-finder-shell"><button className="commerce-finder-close" onClick={() => setFinderOpen(false)} aria-label="Close product finder">Close ×</button>{mode === "stage" ? <StageQuestionnaire key={selection} stage={selection} products={scopedProducts} deliveryPincode={pincode} /> : <GuidedProductFinder key={`${mode}-${selection}`} mode={mode} selection={selection} products={scopedProducts} />}</section>}
 
       <section className="commerce-products" id="product-results">
         <div className="commerce-products-heading"><div><span>SHOP LIVE PRODUCTS</span><h2>{selection}</h2><p>{visible.length} products ready to compare</p></div><button className="commerce-filter-button" onClick={() => setFiltersOpen((open) => !open)} aria-expanded={filtersOpen}>Filters {filtersOpen ? "×" : "+"}</button></div>

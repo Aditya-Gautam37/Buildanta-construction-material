@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { DELIVERY_PIN_CLEARED_EVENT, DELIVERY_PIN_STORAGE_KEY, saveDeliveryPincode } from "./delivery-location";
 
 type Result = {
   pincode: string;
@@ -24,7 +25,7 @@ export function ServiceabilityChecker({ productId }: { productId?: string }) {
       const response = await fetch(`/api/serviceability?${params}`, { cache: "no-store" });
       const result = await response.json() as Result & { error?: string };
       if (!response.ok) throw new Error(result.error || "Unable to check serviceability.");
-      window.localStorage.setItem("buildanta-delivery-pincode", value);
+      saveDeliveryPincode(value);
       if (!result.serviceable) { setState("error"); setMessage("Not serviceable at this PIN code yet. You can still request a quotation for manual confirmation."); return; }
       const product = productId ? result.products.find((item) => item.productId === productId) : undefined;
       setState("success");
@@ -34,8 +35,17 @@ export function ServiceabilityChecker({ productId }: { productId?: string }) {
     }
   },[productId])
 
-  useEffect(()=>{const saved=window.localStorage.getItem("buildanta-delivery-pincode")||"";if(!/^\d{6}$/.test(saved))return;const timer=window.setTimeout(()=>{setPincode(saved);void runCheck(saved)},0);return()=>window.clearTimeout(timer)},[runCheck])
+  useEffect(()=>{const saved=window.localStorage.getItem(DELIVERY_PIN_STORAGE_KEY)||"";const clear=()=>{setPincode("");setState("idle");setMessage("Enter your delivery PIN code for location-specific availability.")};window.addEventListener(DELIVERY_PIN_CLEARED_EVENT,clear);if(!/^\d{6}$/.test(saved))return()=>window.removeEventListener(DELIVERY_PIN_CLEARED_EVENT,clear);const timer=window.setTimeout(()=>{setPincode(saved);void runCheck(saved)},0);return()=>{window.clearTimeout(timer);window.removeEventListener(DELIVERY_PIN_CLEARED_EVENT,clear)}},[runCheck])
   function check(event: React.FormEvent){event.preventDefault();void runCheck(pincode)}
+
+  if (state === "success") return <section className="serviceability-summary" aria-live="polite"><span><i /> Delivering to <strong>{pincode}</strong></span><button type="button" onClick={resetLocation}>Change</button></section>;
+
+  function resetLocation() {
+    clearDeliveryPincode();
+    setPincode("");
+    setState("idle");
+    setMessage("Enter your delivery PIN code for location-specific availability.");
+  }
 
   return <section className={`serviceability-checker ${state}`} aria-live="polite"><div><b>Check delivery availability</b><p>{message}</p></div><form onSubmit={check}><label className="sr-only" htmlFor={`pincode-${productId || "catalogue"}`}>Delivery PIN code</label><input id={`pincode-${productId || "catalogue"}`} inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={pincode} onChange={(event) => setPincode(event.target.value.replace(/\D/g, ""))} placeholder="6-digit PIN code"/><button disabled={state === "loading"}>{state === "loading" ? "Checking..." : "Check"}</button></form></section>;
 }

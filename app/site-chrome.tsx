@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { UiIcon } from "./ui-icon";
+import { clearDeliveryPincode, DELIVERY_PIN_STORAGE_KEY, DELIVERY_PIN_UPDATED_EVENT } from "./delivery-location";
 
 type ChromeProps = {
   categories: { name: string; slug: string }[];
@@ -15,8 +16,28 @@ type ChromeProps = {
 export function Header({ categories, rooms, stages, customerName }: ChromeProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [deliveryPincode, setDeliveryPincode] = useState("");
   const router = useRouter();
   const pathname = usePathname();
+
+  useEffect(() => {
+    const syncStoredPincode = () => {
+      const saved = window.localStorage.getItem(DELIVERY_PIN_STORAGE_KEY) || "";
+      setDeliveryPincode(/^\d{6}$/.test(saved) ? saved : "");
+    };
+    const handleUpdatedPincode = (event: Event) => setDeliveryPincode((event as CustomEvent<string>).detail || "");
+    const timer = window.setTimeout(syncStoredPincode, 0);
+    window.addEventListener(DELIVERY_PIN_UPDATED_EVENT, handleUpdatedPincode);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener(DELIVERY_PIN_UPDATED_EVENT, handleUpdatedPincode);
+    };
+  }, []);
+
+  function resetDeliveryPincode() {
+    clearDeliveryPincode();
+    setDeliveryPincode("");
+  }
 
   function submitSearch(event: FormEvent) {
     event.preventDefault();
@@ -30,7 +51,7 @@ export function Header({ categories, rooms, stages, customerName }: ChromeProps)
 
   return (
     <header className="site-header">
-      <div className="header-utility"><div><p><span /> Construction materials for every stage of your build</p><nav aria-label="Quick links"><a href="/bulk-quotes">Project quotations</a><a href="/professionals">Find professionals</a></nav></div></div>
+      <div className="header-utility"><div><p><span /> Construction materials for every stage of your build</p><nav aria-label="Quick links">{deliveryPincode && <button className="header-location" onClick={resetDeliveryPincode} title="Change delivery PIN code"><b>Deliver to</b> {deliveryPincode}</button>}<a href="/bulk-quotes">Project quotations</a><a href="/professionals">Find professionals</a></nav></div></div>
       <div className="header-main">
         <a className="wordmark" href="/" aria-label="Buildanta home"><img src="/logo.png" alt="" /><span><strong>Buildanta</strong><small>Build better. Buy smarter.</small></span></a>
         <form className="header-search" onSubmit={submitSearch}>
@@ -38,6 +59,7 @@ export function Header({ categories, rooms, stages, customerName }: ChromeProps)
           <input id="global-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search products, brands, categories..." />
           <button aria-label="Search" type="submit"><UiIcon name="search" size={17} /><span className="sr-only">Search</span></button>
         </form>
+        {deliveryPincode && <button className="header-location-mobile" onClick={resetDeliveryPincode} aria-label={`Change delivery PIN code ${deliveryPincode}`}><span>PIN</span>{deliveryPincode}</button>}
         <div className="account-links">{customerName ? <a className="signup-button" href="/account">My Account</a> : <><a href="/login">Customer Login</a><a className="signup-button" href="/signup">Sign Up</a></>}</div>
         <button className="menu-button" aria-label="Open menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}><i /><i /><i /></button>
       </div>

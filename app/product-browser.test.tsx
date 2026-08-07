@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ProductBrowser } from "./product-browser";
 import type { StoreProduct } from "./live-catalog";
@@ -107,6 +107,20 @@ describe("ProductBrowser", () => {
     const cardImage = screen.getAllByAltText("Interior paint bucket").at(-1) as HTMLImageElement;
     fireEvent.error(cardImage);
     expect(cardImage.src).toContain("/demo/products/real/paint.jpg");
+  });
+
+  it("hides the delivery form after a successful PIN check", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ serviceable: true, products: [] }),
+    }));
+    render(<ProductBrowser mode="category" products={products} options={["Cement & Structure"]} initial="Cement & Structure" />);
+
+    fireEvent.change(screen.getByLabelText("Delivery PIN code"), { target: { value: "208001" } });
+    fireEvent.click(screen.getByRole("button", { name: "Set location" }));
+
+    await waitFor(() => expect(screen.queryByLabelText("Delivery PIN code")).not.toBeInTheDocument());
+    expect(localStorage.setItem).toHaveBeenCalledWith("buildanta-delivery-pincode", "208001");
   });
 
   it("shows the empty state when the search term matches nothing", () => {

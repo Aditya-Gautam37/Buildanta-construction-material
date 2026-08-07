@@ -257,6 +257,20 @@ export function StageQuestionnaire({ stage, products, deliveryPincode }: { stage
     setStep((current) => Math.min(STEP_TITLES.length - 1, current + 1));
   }
 
+  function choosePlanStatus(value: PlanStatus) {
+    updateField("planStatus", value);
+    if (!/^\d{6}$/.test(wizard.deliveryPincode)) {
+      setStepError("Enter a valid 6-digit delivery PIN code first.");
+      return;
+    }
+    setStep(1);
+  }
+
+  function chooseQuality(value: StageAnswers["qualityTier"]) {
+    updateField("qualityTier", value);
+    setStep(4);
+  }
+
   function previousStep() {
     setStepError("");
     setStep((current) => Math.max(0, current - 1));
@@ -328,15 +342,11 @@ export function StageQuestionnaire({ stage, products, deliveryPincode }: { stage
   return <section className={styles.planner} aria-labelledby="stage-questionnaire-title">
     <div className={styles.heading}>
       <div>
-        <span>{calculatorConfig ? "GUIDED STAGE ESTIMATOR" : "PRELIMINARY STAGE PLANNER"}</span>
-        <h2 id="stage-questionnaire-title">Plan {stage}, one simple step at a time</h2>
-        <p>{calculatorConfig
-          ? <>Your answers are calculated by Buildanta&apos;s versioned material engine. Products and prices are matched only after quantities are prepared.</>
-          : <>This stage still uses a clearly labelled local planning allowance while its versioned formula is being completed.</>}
-        </p>
+        <span>60-SECOND MATERIAL FINDER</span>
+        <h2 id="stage-questionnaire-title">What do you need for {stage}?</h2>
       </div>
       <div className={styles.headingActions}>
-        <b>{products.length} live stage products</b>
+        <b>{products.length} products available</b>
         <a className={styles.skipLink} href="#product-results">Exit to products ↓</a>
       </div>
     </div>
@@ -352,26 +362,23 @@ export function StageQuestionnaire({ stage, products, deliveryPincode }: { stage
       <div className={`${styles.wizardBody} ${step === 2 || step === 3 || step === 4 ? styles.wideStep : ""}`}>
         {step < 2 && <aside className={styles.visualPanel}>
           <img src={stageImage} alt={`${stage} construction planning in progress`} loading="lazy" decoding="async" />
-          <div><span>{stage}</span><strong>{step === 0 ? "Start with what you already know." : `${wizard.builtUpAreaSqFt.toLocaleString("en-IN")} sq ft per floor`}</strong><small>Your answers are saved in this browser session.</small></div>
+          <div><span>{stage}</span><strong>{step === 0 ? "Choose what matches your project." : `${wizard.builtUpAreaSqFt.toLocaleString("en-IN")} sq ft per floor`}</strong></div>
         </aside>}
 
         <div className={styles.questionPanel}>
           {step === 0 && <fieldset>
-            <legend>Tell us how far your project has progressed</legend>
-            <p>This helps us label the estimate correctly and identify where professional verification is required.</p>
-            <label className={styles.pinField}><span>Delivery PIN code</span><input aria-label="Delivery PIN code" inputMode="numeric" maxLength={6} value={wizard.deliveryPincode} onChange={(event) => updateField("deliveryPincode", event.target.value.replace(/\D/g, ""))} /><small>Used only for product availability and delivery context.</small></label>
+            <legend>Where is your project now?</legend>
+            <label className={styles.pinField}><span>Delivery PIN code</span><input aria-label="Delivery PIN code" inputMode="numeric" maxLength={6} value={wizard.deliveryPincode} onChange={(event) => updateField("deliveryPincode", event.target.value.replace(/\D/g, ""))} placeholder="6-digit PIN" /></label>
             <div className={styles.modeRow} aria-label="Planning mode">
               {(["CONCEPT", "DETAILED", "DRAWING_BASED"] as PlanningMode[]).map((mode) => <button type="button" className={wizard.planningMode === mode ? styles.selected : ""} onClick={() => updateField("planningMode", mode)} key={mode}>{mode === "CONCEPT" ? "Concept estimate" : mode === "DETAILED" ? "Detailed estimate" : "Drawing based"}</button>)}
             </div>
             <div className={styles.planOptions}>
-              {PLAN_OPTIONS.map((option) => <button type="button" className={wizard.planStatus === option.value ? styles.selected : ""} onClick={() => updateField("planStatus", option.value)} key={option.value}><span>{wizard.planStatus === option.value ? "✓" : ""}</span><strong>{option.title}</strong><small>{option.detail}</small></button>)}
+              {PLAN_OPTIONS.map((option) => <button type="button" className={wizard.planStatus === option.value ? styles.selected : ""} onClick={() => choosePlanStatus(option.value)} key={option.value}><span>{wizard.planStatus === option.value ? "✓" : ""}</span><strong>{option.title}</strong><small>{option.detail}</small><b aria-hidden="true">→</b></button>)}
             </div>
-            {wizard.planningMode !== "CONCEPT" && <div className={styles.infoNote}>This stage wizard currently produces a preliminary concept quantity schedule. Your detailed drawings can be checked during quotation verification.</div>}
           </fieldset>}
 
           {step === 1 && <fieldset>
-            <legend>What is the size of your project?</legend>
-            <p>Enter built-up area for one floor. The total project basis is calculated using the number of floors.</p>
+            <legend>How large is your project?</legend>
             <label className={styles.rangeField}><span>Built-up area per floor</span><input aria-label="Built-up area slider" type="range" min="100" max="10000" step="50" value={Math.min(10000, wizard.builtUpAreaSqFt)} onChange={(event) => updateField("builtUpAreaSqFt", Number(event.target.value))} /><div><input aria-label="Built-up area per floor" type="number" min="100" max="1000000" value={wizard.builtUpAreaSqFt} onChange={(event) => updateField("builtUpAreaSqFt", Number(event.target.value))} /><b>sq ft</b></div></label>
             <div className={styles.areaGrid}>
               <label><span>Plot area</span><div><input aria-label="Plot area" type="number" min="100" max="1000000" value={wizard.plotAreaSqFt} onChange={(event) => updateField("plotAreaSqFt", Number(event.target.value))} /><small>sq ft</small></div></label>
@@ -382,8 +389,7 @@ export function StageQuestionnaire({ stage, products, deliveryPincode }: { stage
           </fieldset>}
 
           {step === 2 && <fieldset>
-            <legend>Select your space requirements</legend>
-            <p>Room quantities create the concept electrical point and plumbing fixture schedules. Adjust every space that applies.</p>
+            <legend>Which spaces are you building?</legend>
             <div className={styles.roomGrid}>
               {ROOM_OPTIONS.map((room) => <article key={room.key}>
                 <img src={room.image} alt={`${room.label} material planning`} loading="lazy" decoding="async" />
@@ -394,20 +400,18 @@ export function StageQuestionnaire({ stage, products, deliveryPincode }: { stage
           </fieldset>}
 
           {step === 3 && <fieldset>
-            <legend>Choose the project and material preference</legend>
-            <p>Quality changes compatible catalogue recommendations and indicative price—not the underlying engineering quantity.</p>
+            <legend>Choose your material quality</legend>
             <div className={styles.choiceRow}>
               <label><span>Project type</span><select value={wizard.projectType} onChange={(event) => updateField("projectType", event.target.value as WizardState["projectType"])}><option value="RESIDENTIAL">Residential</option><option value="COMMERCIAL">Commercial</option></select></label>
               <label><span>Structural system</span><select value={wizard.structureSystem} onChange={(event) => updateField("structureSystem", event.target.value as WizardState["structureSystem"])}><option value="RCC_FRAME">RCC frame</option><option value="LOAD_BEARING">Load bearing</option></select></label>
             </div>
             <div className={styles.qualityGrid}>
-              {QUALITY_OPTIONS.map((option) => <button type="button" className={wizard.qualityTier === option.value ? styles.selected : ""} onClick={() => updateField("qualityTier", option.value)} key={option.value}><i>{option.title.slice(0, 1)}</i><span>{wizard.qualityTier === option.value ? "Selected" : option.kicker}</span><strong>{option.title}</strong>{option.details.map((detail) => <small key={detail}>✓ {detail}</small>)}</button>)}
+              {QUALITY_OPTIONS.map((option) => <button type="button" className={wizard.qualityTier === option.value ? styles.selected : ""} onClick={() => chooseQuality(option.value)} key={option.value}><i>{option.title.slice(0, 1)}</i><span>{option.kicker}</span><strong>{option.title}</strong><small>{option.details[0]}</small><b aria-hidden="true">Choose →</b></button>)}
             </div>
           </fieldset>}
 
           {step === 4 && <fieldset>
-            <legend>Review your {stage} estimate</legend>
-            <p>Check the project basis before Buildanta prepares the material schedule.</p>
+            <legend>Ready to see your materials?</legend>
             <div className={styles.reviewGrid}>
               <button type="button" onClick={() => setStep(0)}><span>Location and plan</span><strong>{wizard.deliveryPincode} · {wizard.planStatus.replaceAll("_", " ").toLowerCase()}</strong><small>Edit</small></button>
               <button type="button" onClick={() => setStep(1)}><span>Project size</span><strong>{wizard.builtUpAreaSqFt.toLocaleString("en-IN")} sq ft × {wizard.floors} floor(s)</strong><small>Edit</small></button>
@@ -418,7 +422,7 @@ export function StageQuestionnaire({ stage, products, deliveryPincode }: { stage
               <label><span>{profile.coverageLabel}</span><div><input aria-label={profile.coverageLabel} type="number" min="1" max="100" value={wizard.coveragePercent} onChange={(event) => updateField("coveragePercent", Number(event.target.value))} /><small>%</small></div><em>{profile.coverageHelp}</em></label>
               <label><span>Wastage allowance</span><div><input aria-label="Wastage allowance" type="number" min="0" max="20" step="0.5" value={wizard.wastagePercent} onChange={(event) => updateField("wastagePercent", Number(event.target.value))} /><small>%</small></div><em>Applied separately and shown in the result.</em></label>
             </div>
-            <div className={styles.infoNote}>{calculatorConfig ? "This is a preliminary concept estimate using a published calculator version. Final quantities require approved drawings and site measurements." : "This stage is still a local preliminary allowance and is not yet backed by a published calculator version."}</div>
+            <div className={styles.infoNote}>Final quantities are confirmed from approved drawings and site measurements.</div>
           </fieldset>}
 
           {stepError && <p className={styles.formError} role="alert">{stepError}</p>}
@@ -427,7 +431,9 @@ export function StageQuestionnaire({ stage, products, deliveryPincode }: { stage
           <div className={styles.wizardActions}>
             <button type="button" className={styles.backButton} onClick={previousStep} disabled={step === 0}>← Back</button>
             {step < STEP_TITLES.length - 1
-              ? <button type="button" className={styles.nextButton} onClick={nextStep}>Next <span>→</span></button>
+              ? step === 0 || step === 3
+                ? <small className={styles.autoAdvance}>Choose an option to continue</small>
+                : <button type="button" className={styles.nextButton} onClick={nextStep}>Continue <span>→</span></button>
               : <button type="submit" className={styles.nextButton} disabled={calculating}>{calculating ? "Preparing estimate…" : `Calculate ${stage}`} <span>→</span></button>}
           </div>
         </div>

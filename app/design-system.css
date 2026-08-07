@@ -66,6 +66,7 @@ input:hover,select:hover,textarea:hover{border-color:#9db0b8}input:focus,select:
 
 .listing-page,.taxonomy-page,.calculators-page,.more-page,.professionals-page,.product-page,.workflow-page,.account-dashboard{background:var(--b-canvas)}
 .page-intro,.category-hero,.professional-type-hero,.calculatorHero{border-bottom:1px solid var(--b-slate-200)}
+.discovery-intro{display:flex;align-items:center;justify-content:space-between;gap:2rem;padding-top:3.5rem;padding-bottom:3.5rem;background:radial-gradient(circle at 85% 20%,rgba(10,139,112,.12),transparent 28%),linear-gradient(135deg,#eef6f2,#fff)!important}.discovery-intro>div{max-width:780px}.discovery-intro h1{max-width:760px;font-size:clamp(2.35rem,4.5vw,4.8rem);line-height:1.02;text-wrap:balance}.discovery-intro>ol{display:flex;flex:none;gap:.65rem;margin:0;padding:0;list-style:none}.discovery-intro li{display:grid;width:8rem;min-height:7rem;place-items:center;align-content:center;gap:.5rem;border:1px solid var(--b-slate-200);border-radius:var(--b-radius-lg);background:rgba(255,255,255,.82);color:var(--b-slate-700);font-size:.7rem;font-weight:750;text-align:center;box-shadow:var(--b-shadow-sm)}.discovery-intro li b{display:grid;width:2rem;height:2rem;place-items:center;border-radius:.65rem;background:var(--b-navy-900);color:#fff}
 .browser-layout{gap:1.2rem}
 .browser-sidebar,.results-panel,.guided-finder,.stage-context,.location-filter-bar,.advanced-filters,.results-toolbar,.form-card,.product-detail,.spec-section{border-color:var(--b-slate-200)!important;border-radius:var(--b-radius-lg)!important;box-shadow:var(--b-shadow-sm)}
 .browser-sidebar>button{border-radius:var(--b-radius-md)}.browser-sidebar>button:hover{background:#f2f7f5}.browser-sidebar>button.selected{background:var(--b-navy-900);box-shadow:var(--b-shadow-sm)}
@@ -98,4 +99,5 @@ input:hover,select:hover,textarea:hover{border-color:#9db0b8}input:focus,select:
   .stage-panel{grid-template-columns:repeat(2,minmax(0,1fr))}.professional-hero{min-height:520px;padding:4rem 1.25rem}.professional-hero>img{object-position:62% center}
   .professional-hero:after{background:linear-gradient(90deg,rgba(5,27,42,.94),rgba(5,27,42,.62)),linear-gradient(0deg,rgba(5,27,42,.5),transparent)}.professional-hero h1{font-size:clamp(2.35rem,11vw,3.2rem)}
   .button{min-height:50px}input:not([type=checkbox]):not([type=radio]):not([type=range]),select{min-height:50px;font-size:16px}
+  .discovery-intro{align-items:flex-start;flex-direction:column;padding-top:2.5rem;padding-bottom:2.5rem}.discovery-intro>ol{width:100%;overflow-x:auto}.discovery-intro li{min-width:7rem;min-height:6.2rem}
 }

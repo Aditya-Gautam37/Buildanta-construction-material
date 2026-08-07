@@ -55,7 +55,7 @@ export default async function Categories({ searchParams }: { searchParams: Promi
 
   return <main className="taxonomy-page"><div className="taxonomy-serviceability"><ServiceabilityChecker /></div>
     <section className="category-hero">
-      <div className="category-hero-copy"><p>EXPLORE THE LIVE CATALOGUE</p><h1>Everything your project needs, organized clearly.</h1><span>Browse materials by category, compare current products and send one clear quotation request. Product names, images and availability are read directly from Buildanta Inventory.</span><div><b>{roots.length}</b><small>material categories</small><b>{catalog.products.length}</b><small>published products</small></div></div>
+      <div className="category-hero-copy"><p>SHOP BY MATERIAL</p><h1>Choose a material. Get the right product.</h1><span>Use the quick finder or browse the live catalogue.</span><div><b>{roots.length}</b><small>material categories</small><b>{catalog.products.length}</b><small>published products</small></div></div>
       <div className="category-hero-gallery" aria-label="Construction material catalogue preview">{heroImages.map((src, index) => <figure key={`${src}-${index}`}><img src={src} alt={index === 0 ? "Structural construction material" : index === 1 ? "Finishing material" : "Fixture and fitting"} /></figure>)}</div>
     </section>
     <GuidedProductFinder mode="category" selection={roots[0]?.name || ""} products={catalog.products} options={roots.map((category) => category.name)} categoryGroups={categoryGroups} />

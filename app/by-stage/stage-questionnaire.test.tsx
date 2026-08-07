@@ -27,8 +27,8 @@ const estimateResponse = {
   ],
 };
 
-function next() {
-  fireEvent.click(screen.getByRole("button", { name: /^Next/ }));
+function continueWizard() {
+  fireEvent.click(screen.getByRole("button", { name: /^Continue/ }));
 }
 
 describe("StageQuestionnaire", () => {
@@ -44,21 +44,20 @@ describe("StageQuestionnaire", () => {
     render(<StageQuestionnaire stage="Foundation & Structure" products={[]} deliveryPincode="208001" />);
 
     expect(screen.getByText("Step 1 of 5")).toBeInTheDocument();
-    expect(screen.getByText("Tell us how far your project has progressed")).toBeInTheDocument();
+    expect(screen.getByText("Where is your project now?")).toBeInTheDocument();
 
-    next();
-    expect(screen.getByText("What is the size of your project?")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /My plan is in progress/ }));
+    expect(screen.getByText("How large is your project?")).toBeInTheDocument();
 
-    next();
-    expect(screen.getByText("Select your space requirements")).toBeInTheDocument();
+    continueWizard();
+    expect(screen.getByText("Which spaces are you building?")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Increase Bedroom" }));
 
-    next();
-    expect(screen.getByText("Choose the project and material preference")).toBeInTheDocument();
+    continueWizard();
+    expect(screen.getByText("Choose your material quality")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Economy/ }));
 
-    next();
-    expect(screen.getByText("Review your Foundation & Structure estimate")).toBeInTheDocument();
+    expect(screen.getByText("Ready to see your materials?")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Calculate Foundation & Structure/ }));
 
     expect(await screen.findByText("Your Foundation & Structure material schedule")).toBeInTheDocument();
@@ -78,10 +77,10 @@ describe("StageQuestionnaire", () => {
     render(<StageQuestionnaire stage="Foundation & Structure" products={[]} deliveryPincode="208001" />);
 
     fireEvent.change(screen.getByLabelText("Delivery PIN code"), { target: { value: "2080" } });
-    next();
+    fireEvent.click(screen.getByRole("button", { name: /My plan is in progress/ }));
 
-    expect(screen.getByRole("alert")).toHaveTextContent("Enter a valid 6-digit delivery PIN code.");
-    expect(screen.getByText("Tell us how far your project has progressed")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Enter a valid 6-digit delivery PIN code first.");
+    expect(screen.getByText("Where is your project now?")).toBeInTheDocument();
     await waitFor(() => expect(fetch).not.toHaveBeenCalled());
   });
 });

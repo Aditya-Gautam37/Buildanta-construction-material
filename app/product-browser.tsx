@@ -7,20 +7,6 @@ import { GuidedProductFinder } from "./guided-product-finder";
 
 type Mode = "stage" | "room" | "category";
 
-const stageDescriptions: Record<string, string> = {
-  "Foundation & Structure": "Cement, reinforcement steel and structural materials for the load-bearing core of the project.",
-  "Walls & Masonry": "Blocks, bricks, mortar and related materials for internal and external wall construction.",
-  "Bathroom & Plumbing": "Sanitaryware, faucets and wet-area products selected for bathroom installation.",
-  "Electrical & Wiring": "Wires, switches and lighting products for concealed services and final electrical fit-out.",
-  "Plastering & Waterproofing": "Protection systems and finishing materials for terraces, bathrooms and exposed walls.",
-  "Flooring & Tiling": "Floor and wall finishes for living spaces, kitchens, bathrooms and outdoor areas.",
-  "False Ceiling": "Boards, channels and finishing materials for suspended ceilings and lightweight partitions.",
-  "Paint & Finishing": "Primers, interior coatings and exterior finishes for final surface preparation.",
-  "Doors, Windows, Railings & Glass": "Door, window and hardware systems for secure, weather-ready openings.",
-  "Kitchen & Wardrobes": "Cabinetry, countertops, wardrobe systems and hardware for fitted residential interiors.",
-  Finishing: "Final accessories, sealants, touch-up work and snagging materials required before handover.",
-};
-
 function matches(product: StoreProduct, mode: Mode, option: string, categoryGroups?: Record<string, string[]>) {
   if (mode === "stage") return product.stages.includes(option);
   if (mode === "room") return product.rooms.includes(option);
@@ -61,7 +47,7 @@ export function ProductBrowser({ mode, products, options, initial = "", query = 
   }, [mode, products, selection, term, sort,locationProducts,locationState,availability,fulfilmentMode,brand,maxPrice,categoryGroups]);
   const scopedProducts = useMemo(() => products.filter((product) => matches(product, mode, selection, categoryGroups)), [categoryGroups, mode, products, selection]);
   const selectionIndex = Math.max(0, options.indexOf(selection));
-  const description = mode === "stage" ? stageDescriptions[selection] : mode === "room" ? `Materials currently mapped to ${selection} from the live Inventory catalogue.` : `Published products filed under ${selection}.`;
+  const description = mode === "stage" ? `Answer a few quick questions to get your ${selection} material list.` : mode === "room" ? "Answer three quick questions to see the best product matches." : "Choose what matters and see the closest product matches.";
 
   return <div className="browser-layout">
     <button className="filter-trigger" onClick={() => setFiltersOpen(!filtersOpen)} aria-expanded={filtersOpen}>Browse {mode === "stage" ? "construction stages" : mode === "room" ? "rooms" : "categories"}</button>

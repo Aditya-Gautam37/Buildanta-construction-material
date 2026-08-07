@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 type ChromeProps = {
   categories: { name: string; slug: string }[];
@@ -15,21 +15,27 @@ export function Header({ categories, rooms, stages, inventoryHref, customerName 
   const [menuOpen, setMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const router = useRouter();
+  const pathname = usePathname();
 
   function submitSearch(event: FormEvent) {
     event.preventDefault();
     if (search.trim()) router.push(`/categories?q=${encodeURIComponent(search.trim())}`);
   }
 
+  function navGroupClass(href: string) {
+    const active = pathname === href || pathname.startsWith(`${href}/`);
+    return active ? "nav-group nav-highlight" : "nav-group";
+  }
+
   return (
     <header className="site-header">
       <a className="wordmark" href="/" aria-label="Buildanta home"><img src="/logo.png" alt="" /><strong>Buildanta</strong></a>
       <nav className="desktop-nav" aria-label="Primary">
-        <div className="nav-group"><a href="/by-stage">By Stage <span>v</span></a><div className="nav-dropdown">{stages.slice(0, 8).map((name) => <a href={`/by-stage?stage=${encodeURIComponent(name)}`} key={name}>{name}</a>)}</div></div>
-        <div className="nav-group"><a href="/by-room">By Room <span>v</span></a><div className="nav-dropdown">{rooms.map((name) => <a href={`/by-room?room=${encodeURIComponent(name)}`} key={name}>{name}</a>)}</div></div>
-        <div className="nav-group"><a href="/categories">Categories <span>v</span></a><div className="nav-dropdown">{categories.slice(0, 8).map((category) => <a href={`/categories/${category.slug}`} key={category.slug}>{category.name}</a>)}</div></div>
-        <div className="nav-group nav-highlight"><a href="/calculators">Calculators</a></div>
-        <div className="nav-group"><a href="/more">More <span>v</span></a><div className="nav-dropdown compact"><a href="/professionals">Find Professionals</a><a href="/bulk-quotes">Get Bulk Quotes</a><a href="/list-product">List your Products</a><a href={inventoryHref}>Inventory Management [new]</a></div></div>
+        <div className={navGroupClass("/by-stage")}><a href="/by-stage">By Stage <span>v</span></a><div className="nav-dropdown">{stages.slice(0, 8).map((name) => <a href={`/by-stage?stage=${encodeURIComponent(name)}`} key={name}>{name}</a>)}</div></div>
+        <div className={navGroupClass("/by-room")}><a href="/by-room">By Room <span>v</span></a><div className="nav-dropdown">{rooms.map((name) => <a href={`/by-room?room=${encodeURIComponent(name)}`} key={name}>{name}</a>)}</div></div>
+        <div className={navGroupClass("/categories")}><a href="/categories">Categories <span>v</span></a><div className="nav-dropdown">{categories.slice(0, 8).map((category) => <a href={`/categories/${category.slug}`} key={category.slug}>{category.name}</a>)}</div></div>
+        <div className={navGroupClass("/calculators")}><a href="/calculators">Calculators</a></div>
+        <div className={navGroupClass("/more")}><a href="/more">More <span>v</span></a><div className="nav-dropdown compact"><a href="/professionals">Find Professionals</a><a href="/bulk-quotes">Get Bulk Quotes</a><a href="/list-product">List your Products</a><a href={inventoryHref}>Inventory Management [new]</a></div></div>
       </nav>
       <form className="header-search" onSubmit={submitSearch}>
         <label className="sr-only" htmlFor="global-search">Search products</label>

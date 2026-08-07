@@ -55,8 +55,11 @@ export function GuidedProductFinder({ mode, selection, products, options = [sele
 
   return <section className={styles.finder} aria-labelledby={`guided-finder-${mode}`}>
     <div className={styles.hero}>
-      <div><span>GUIDED PRODUCT FINDER</span><h3 id={`guided-finder-${mode}`}>Not sure which product to choose?</h3><p>Answer these simple questions first. Buildanta will compare the products available for {scope || `this ${scopeLabel}`} and show the closest choices.</p></div>
-      <div className={styles.steps} aria-label="Three-step product finder"><span><b>1</b> Your need</span><span><b>2</b> Preferences</span><span><b>3</b> Best matches</span></div>
+      <div><span>PRODUCT MATCHER (OPTIONAL)</span><h3 id={`guided-finder-${mode}`}>Not sure which product to choose?</h3><p>Answer these simple questions first. Buildanta will compare the products available for {scope || `this ${scopeLabel}`} and show the closest choices. This matches products to your preferences — it does not calculate material quantities. Need quantities instead? Use <a href="/calculators">Material Calculators</a>.</p></div>
+      <div className={styles.heroActions}>
+        <div className={styles.steps} aria-label="Three-step product finder"><span><b>1</b> Your need</span><span><b>2</b> Preferences</span><span><b>3</b> Best matches</span></div>
+        <a className={styles.skipLink} href="#product-results">Skip to products ↓</a>
+      </div>
     </div>
 
     <form className={styles.form} onSubmit={findProducts}>

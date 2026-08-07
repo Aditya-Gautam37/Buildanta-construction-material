@@ -38,8 +38,11 @@ export function StageQuestionnaire({ stage, products }: { stage: string; product
 
   return <section className={styles.planner} aria-labelledby="stage-questionnaire-title">
     <div className={styles.heading}>
-      <div><span>GUIDED STAGE PLANNER</span><h2 id="stage-questionnaire-title">Answer a few questions for {stage}</h2><p>Get a preliminary material schedule with live catalogue products, purchase quantities and indicative Kanpur pricing.</p></div>
-      <b>{products.length} mapped products</b>
+      <div><span>QUICK STAGE ESTIMATE (OPTIONAL)</span><h2 id="stage-questionnaire-title">Answer a few questions for {stage}</h2><p>Get a preliminary material schedule with live catalogue products, purchase quantities and indicative Kanpur pricing. This is a short, stage-only estimate — for a full house-wide plan across every stage, use <a href="/calculators">Material Calculators</a>.</p></div>
+      <div className={styles.headingActions}>
+        <b>{products.length} mapped products</b>
+        <a className={styles.skipLink} href="#product-results">Skip to products ↓</a>
+      </div>
     </div>
 
     <form className={styles.form} onSubmit={preparePlan}>

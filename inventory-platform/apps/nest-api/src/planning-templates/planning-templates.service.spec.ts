@@ -25,15 +25,28 @@ describe('PlanningTemplatesService.resolveConceptModeSchedule', () => {
     expect(result).toEqual({ electricalPoints: [], plumbingFixtures: [], unresolvedRoomTypes: [] });
   });
 
-  it('only queries published national-default templates when no region is given', async () => {
+  it('queries all published templates for the room type when no region is given, not just national-default ones', async () => {
     const findMany = jest.fn().mockResolvedValue([]);
     const service = new PlanningTemplatesService({ client: { roomTemplate: { findMany } } } as never);
 
     await service.resolveConceptModeSchedule([{ roomType: 'KITCHEN' as never, quantity: 1 }]);
 
-    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: expect.objectContaining({ status: 'PUBLISHED', regionalProfileId: null }),
-    }));
+    const [call] = findMany.mock.calls;
+    expect(call[0].where).toEqual({ status: 'PUBLISHED', roomType: { in: ['KITCHEN'] } });
+  });
+
+  it('resolves a region-scoped template even when the caller specifies no region at all', async () => {
+    // Regression test: every seeded template today is region-scoped (Kanpur), and the storefront
+    // never passes a regionalProfileId — this must not silently resolve to nothing.
+    const findMany = jest.fn().mockResolvedValue([
+      { id: 'kanpur-template', roomType: 'BEDROOM', regionalProfileId: 'kanpur-region-id', electricalPoints: [electricalPointRow()], plumbingFixtures: [] },
+    ]);
+    const service = new PlanningTemplatesService({ client: { roomTemplate: { findMany } } } as never);
+
+    const result = await service.resolveConceptModeSchedule([{ roomType: 'BEDROOM' as never, quantity: 1 }]);
+
+    expect(result.unresolvedRoomTypes).toEqual([]);
+    expect(result.electricalPoints).toHaveLength(1);
   });
 
   it('multiplies template point quantities by the requested room instance count', async () => {

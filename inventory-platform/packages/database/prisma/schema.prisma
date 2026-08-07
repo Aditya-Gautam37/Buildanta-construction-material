@@ -298,6 +298,83 @@ enum MaterialEstimateStatus {
   CANCELLED
 }
 
+enum RoomType {
+  BEDROOM
+  LIVING_ROOM
+  KITCHEN
+  BATHROOM
+  TOILET
+  DINING_ROOM
+  STUDY
+  UTILITY
+  BALCONY
+  STAIRCASE
+  CORRIDOR
+  GARAGE
+  OTHER
+}
+
+enum ElectricalPointType {
+  LIGHT_POINT
+  FAN_POINT
+  SOCKET_5A
+  SOCKET_15A
+  SOCKET_20A_AC
+  SOCKET_20A_GEYSER
+  TV_POINT
+  DATA_POINT
+  DOORBELL
+  EXHAUST_FAN_POINT
+  DB_FEEDER
+  OTHER
+}
+
+enum ElectricalCircuitPurpose {
+  LIGHTING
+  POWER_SOCKET
+  AC
+  GEYSER
+  KITCHEN_APPLIANCE
+  PUMP_MOTOR
+  DB_FEEDER
+  OTHER
+}
+
+enum PlumbingSystemType {
+  COLD_WATER
+  HOT_WATER
+  SOIL
+  WASTE
+  VENT
+  RAINWATER
+}
+
+enum PlumbingFixtureType {
+  WASH_BASIN
+  WC
+  SHOWER
+  BATHTUB
+  KITCHEN_SINK
+  UTILITY_SINK
+  FLOOR_DRAIN
+  HOSE_BIB
+  RAINWATER_OUTLET
+  OTHER
+}
+
+enum TemplateStatus {
+  DRAFT
+  PUBLISHED
+  RETIRED
+}
+
+enum PlanningCoefficientStatus {
+  DRAFT
+  APPROVED
+  PUBLISHED
+  RETIRED
+}
+
 model User {
   id                String   @id // Supabase Auth UUID
   email             String   @unique
@@ -319,6 +396,11 @@ model User {
   calculatorVersionsCreated   CalculatorVersion[]      @relation("CalculatorVersionCreatedBy")
   calculatorVersionsPublished CalculatorVersion[]      @relation("CalculatorVersionPublishedBy")
   calculatorAuditEvents       CalculatorAuditEvent[]
+  roomTemplatesCreated        RoomTemplate[]           @relation("RoomTemplateCreatedBy")
+  roomTemplatesPublished      RoomTemplate[]           @relation("RoomTemplatePublishedBy")
+  planningCoefficientsCreated  PlanningCoefficient[]    @relation("PlanningCoefficientCreatedBy")
+  planningCoefficientsApproved PlanningCoefficient[]    @relation("PlanningCoefficientApprovedBy")
+  planningCoefficientsPublished PlanningCoefficient[]   @relation("PlanningCoefficientPublishedBy")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -379,6 +461,7 @@ model Stage {
   parent   Stage?    @relation("StageHierarchy", fields: [parentId], references: [id])
   children Stage[]   @relation("StageHierarchy")
   products Product[] @relation("ProductToStage")
+  planningCoefficients PlanningCoefficient[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1208,6 +1291,135 @@ model CalculatorAuditEvent {
   @@index([definitionId, createdAt])
   @@index([versionId, createdAt])
   @@index([actorId, createdAt])
+}
+
+// ==========================================
+// 7A. PLANNING TEMPLATES & COEFFICIENTS
+// ==========================================
+
+model RegionalProfile {
+  id                      String    @id @default(cuid())
+  code                    String    @unique
+  name                    String
+  country                 String    @default("IN")
+  state                   String
+  city                    String?
+  district                String?
+  seismicZone             String?
+  windZoneMPerS           Decimal?  @db.Decimal(10, 2)
+  soilBearingCapacityKNM2 Decimal?  @db.Decimal(10, 2)
+  notes                   String?   @db.Text
+  active                  Boolean   @default(true)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  roomTemplates        RoomTemplate[]
+  planningCoefficients PlanningCoefficient[]
+
+  @@index([active, state, city])
+}
+
+model RoomTemplate {
+  id                 String           @id @default(cuid())
+  regionalProfileId  String?
+  regionalProfile    RegionalProfile? @relation(fields: [regionalProfileId], references: [id], onDelete: SetNull)
+  roomType           RoomType
+  code               String           @unique
+  name               String
+  description        String?          @db.Text
+  typicalAreaSqFtMin Decimal?         @db.Decimal(10, 2)
+  typicalAreaSqFtMax Decimal?         @db.Decimal(10, 2)
+  status             TemplateStatus   @default(DRAFT)
+  version            Int              @default(1)
+  effectiveFrom      DateTime?
+  publishedAt        DateTime?
+  createdById        String?
+  createdBy          User?            @relation("RoomTemplateCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  publishedById      String?
+  publishedBy        User?            @relation("RoomTemplatePublishedBy", fields: [publishedById], references: [id], onDelete: SetNull)
+  electricalPoints   ElectricalPointTemplate[]
+  plumbingFixtures   PlumbingFixtureTemplate[]
+  createdAt          DateTime         @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@index([roomType, status])
+  @@index([regionalProfileId, roomType, status])
+}
+
+model ElectricalPointTemplate {
+  id                     String                   @id @default(cuid())
+  roomTemplateId         String
+  roomTemplate           RoomTemplate             @relation(fields: [roomTemplateId], references: [id], onDelete: Cascade)
+  pointType              ElectricalPointType
+  purpose                ElectricalCircuitPurpose @default(OTHER)
+  quantity               Int                      @default(1)
+  oneWayRouteM           Decimal                  @db.Decimal(10, 2)
+  numberOfConductors     Int                      @default(2)
+  earthConductorCount    Int                      @default(1)
+  conductorSizeSqmm      Decimal                  @db.Decimal(6, 2)
+  earthConductorSizeSqmm Decimal?                 @db.Decimal(6, 2)
+  notes                  String?                  @db.Text
+  sortOrder              Int                      @default(0)
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+
+  @@index([roomTemplateId, pointType])
+}
+
+model PlumbingFixtureTemplate {
+  id             String              @id @default(cuid())
+  roomTemplateId String
+  roomTemplate   RoomTemplate        @relation(fields: [roomTemplateId], references: [id], onDelete: Cascade)
+  fixtureType    PlumbingFixtureType
+  system         PlumbingSystemType
+  quantity       Int                 @default(1)
+  diameterMm     Decimal             @db.Decimal(6, 2)
+  oneWayRouteM   Decimal             @db.Decimal(10, 2)
+  notes          String?             @db.Text
+  sortOrder      Int                 @default(0)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([roomTemplateId, fixtureType, system])
+}
+
+model PlanningCoefficient {
+  id                         String                     @id @default(cuid())
+  code                       String
+  name                       String
+  materialKey                String
+  stageId                    String?
+  stage                      Stage?                     @relation(fields: [stageId], references: [id], onDelete: SetNull)
+  applicableBuildingUse      String?
+  applicableStructureSystem  String?
+  regionalProfileId          String?
+  regionalProfile            RegionalProfile?           @relation(fields: [regionalProfileId], references: [id], onDelete: SetNull)
+  unit                       String
+  minValue                   Decimal                    @db.Decimal(18, 6)
+  maxValue                   Decimal                    @db.Decimal(18, 6)
+  value                      Decimal                    @db.Decimal(18, 6)
+  sensitivityLow             Decimal?                   @db.Decimal(18, 6)
+  sensitivityHigh            Decimal?                   @db.Decimal(18, 6)
+  rationale                  String                     @db.Text
+  sourceReference            String?                    @db.Text
+  version                    Int                        @default(1)
+  effectiveDate               DateTime?
+  reviewDate                  DateTime?
+  expiryDate                  DateTime?
+  status                      PlanningCoefficientStatus  @default(DRAFT)
+  createdById                  String?
+  createdBy                    User?  @relation("PlanningCoefficientCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  approvedById                  String?
+  approvedBy                    User?  @relation("PlanningCoefficientApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  publishedById                  String?
+  publishedBy                    User?  @relation("PlanningCoefficientPublishedBy", fields: [publishedById], references: [id], onDelete: SetNull)
+  createdAt                       DateTime  @default(now())
+  updatedAt                       DateTime  @updatedAt
+
+  @@unique([code, version])
+  @@index([materialKey, status])
+  @@index([regionalProfileId, status])
+  @@index([stageId, status])
 }
 
 // ==========================================

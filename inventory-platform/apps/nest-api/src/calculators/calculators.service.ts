@@ -12,12 +12,14 @@ import {
   MaterialEstimateStatus,
   Prisma,
   ProductStatus,
+  RoomType,
   UserRole,
   VariantStatus,
 } from '@workspace/db';
 import { InventoryLocationsService } from '../inventory-locations/inventory-locations.service';
 import { QuoteRequestsService } from '../quote-requests/quote-requests.service';
 import { PrismaService } from '../database/prisma.service';
+import { PlanningTemplatesService, type ConceptRoomBreakdownEntry } from '../planning-templates/planning-templates.service';
 import {
   type CalculatorDefinitionCreateInput,
   type CalculatorDefinitionUpdateInput,
@@ -42,6 +44,12 @@ type AvailabilityResponse = {
     leadTimeLabel?: string;
   }>;
 };
+
+const unavailableInventoryContext = (pincode: string): AvailabilityResponse => ({
+  pincode,
+  serviceable: false,
+  products: [],
+});
 
 type ResolvedProduct = {
   product: {
@@ -91,6 +99,7 @@ export class CalculatorsService {
     private readonly prisma: PrismaService,
     private readonly inventoryLocations: InventoryLocationsService,
     private readonly quoteRequests: QuoteRequestsService,
+    private readonly planningTemplates: PlanningTemplatesService,
   ) {}
 
   private requireEditor(role: UserRole) {
@@ -281,6 +290,35 @@ export class CalculatorsService {
     };
   }
 
+  // Concept-mode input augmentation: if the caller supplied a `roomBreakdown` and did not already
+  // supply explicit `electricalPoints`/`plumbingFixtures`, resolve those arrays from managed
+  // RoomTemplates before the pure formula runs. Runs strictly before `runFormula` — symmetric to
+  // `buildEstimateItem()`'s DB-dependent product-mapping resolution, which runs strictly after it.
+  private async augmentConceptModeInputs(rawInputs: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const roomBreakdown = rawInputs.roomBreakdown;
+    if (!Array.isArray(roomBreakdown) || roomBreakdown.length === 0) return rawInputs;
+
+    const hasExplicitElectrical = Array.isArray(rawInputs.electricalPoints) && rawInputs.electricalPoints.length > 0;
+    const hasExplicitPlumbing = Array.isArray(rawInputs.plumbingFixtures) && rawInputs.plumbingFixtures.length > 0;
+    if (hasExplicitElectrical && hasExplicitPlumbing) return rawInputs;
+
+    const knownRoomTypes = new Set<string>(Object.values(RoomType));
+    const validRoomBreakdown = (roomBreakdown as Array<{ roomType?: unknown; quantity?: unknown }>).filter(
+      (room): room is ConceptRoomBreakdownEntry =>
+        typeof room?.roomType === 'string' && knownRoomTypes.has(room.roomType) && typeof room.quantity === 'number' && room.quantity > 0,
+    );
+    if (validRoomBreakdown.length === 0) return rawInputs;
+
+    const regionalProfileId = typeof rawInputs.regionalProfileId === 'string' ? rawInputs.regionalProfileId : undefined;
+    const schedule = await this.planningTemplates.resolveConceptModeSchedule(validRoomBreakdown, regionalProfileId);
+
+    return {
+      ...rawInputs,
+      electricalPoints: hasExplicitElectrical ? rawInputs.electricalPoints : schedule.electricalPoints,
+      plumbingFixtures: hasExplicitPlumbing ? rawInputs.plumbingFixtures : schedule.plumbingFixtures,
+    };
+  }
+
   async calculate(slug: string, input: CalculatorRunInput): Promise<unknown> {
     const { definition, version } = await this.currentVersion(slug);
     if (input.sessionReference) {
@@ -290,8 +328,17 @@ export class CalculatorsService {
       });
       if (existing) return this.toPublicEstimate(existing);
     }
-    const result = runFormula(version.formulaKey, input.inputs, version.configuration);
-    const availability = await this.inventoryLocations.publicAvailability(input.deliveryPincode) as AvailabilityResponse;
+    const formulaInputs = await this.augmentConceptModeInputs(input.inputs);
+    const result = runFormula(version.formulaKey, formulaInputs, version.configuration);
+    // Quantity calculation must not depend on catalogue, pricing, serviceability, or
+    // fulfilment data. Inventory enrichment is optional and can be configured later.
+    let availability = unavailableInventoryContext(input.deliveryPincode);
+    try {
+      availability = await this.inventoryLocations.publicAvailability(input.deliveryPincode) as AvailabilityResponse;
+    } catch {
+      // Keep the versioned material calculation available when inventory context is
+      // temporarily unavailable. No availability promise is made in this state.
+    }
     const items = await Promise.all(result.lines.map((formulaLine, index) => this.buildEstimateItem(formulaLine, version.id, input.qualityTier, availability, index)));
     const pricedItems = items.filter((item) => item.lineTotal != null);
     const subtotal = pricedItems.length === items.length ? money(items.reduce((sum, item) => sum + (item.lineSubtotal ?? 0), 0)) : null;
@@ -456,14 +503,13 @@ export class CalculatorsService {
     if (!estimate) throw new NotFoundException('Estimate not found.');
     if (estimate.quotation) return { reference: estimate.quotation.reference, itemCount: estimate.items.length, existing: true };
     if (estimate.expiresAt.getTime() <= Date.now()) throw new ConflictException('This estimate has expired. Run the calculator again for current products and prices.');
-    if (estimate.items.some((item) => !item.productId || !item.variantId)) throw new BadRequestException('Every material line needs an approved product before requesting a quotation.');
     return this.quoteRequests.create({
       ...input,
       deliveryPincode: estimate.deliveryPincode,
       sourceEstimateReference: estimate.reference,
       items: estimate.items.map((item) => ({
-        productId: item.productId!,
-        variantId: item.variantId!,
+        productId: item.productId ?? undefined,
+        variantId: item.variantId ?? undefined,
         description: item.description,
         quantity: Number(item.purchaseQuantity),
         unitCode: item.unitCode,
@@ -572,7 +618,6 @@ export class CalculatorsService {
     if (!version) throw new NotFoundException('Calculator version not found.');
     if (version.status !== CalculatorVersionStatus.DRAFT) throw new ConflictException('Only a draft version can be published.');
     validateFormulaConfiguration(version.formulaKey, version.configuration);
-    if (!version.mappings.some((mapping) => mapping.active)) throw new BadRequestException('Add at least one active product mapping before publication.');
     const now = new Date();
     return this.prisma.client.$transaction(async (tx) => {
       await tx.calculatorVersion.updateMany({ where: { definitionId: version.definitionId, status: CalculatorVersionStatus.PUBLISHED }, data: { status: CalculatorVersionStatus.RETIRED } });

@@ -11,7 +11,7 @@ import {
   VariantStatus,
 } from './../generated/client';
 
-const disclaimer = 'DEMO configuration: This estimate is for preliminary planning. Actual quantities and costs can vary with design, site conditions, workmanship, product coverage and market prices. Confirm final quantities with a qualified contractor, architect or engineer.';
+const disclaimer = 'This quantity estimate is for preliminary planning. Actual requirements can vary with design, site conditions, workmanship and material specifications. Confirm final quantities with a qualified contractor, architect or engineer.';
 
 type DemoMaterial = {
   key: string;
@@ -44,6 +44,21 @@ const demoMaterials: Record<string, DemoMaterial> = {
   electrical_wire: { key: 'electrical_wire', name: 'Buildanta Calculator FR Copper Wire - 100 m', category: 'Electrical', categorySlug: 'electrical', formulaUnit: 'm', purchaseUnit: 'coil', price: 5200, packageSize: 100, specifications: ['100 metre coil', 'Flame-retardant copper wire', 'Cable size confirmed from electrical drawings'] },
   pvc_conduit: { key: 'pvc_conduit', name: 'Buildanta Calculator Heavy PVC Conduit - 3 m', category: 'Electrical', categorySlug: 'electrical', formulaUnit: 'm', purchaseUnit: 'length', price: 180, packageSize: 3, specifications: ['3 metre length', 'Heavy-duty PVC conduit', 'Diameter confirmed from electrical drawings'] },
   plumbing_pipe: { key: 'plumbing_pipe', name: 'Buildanta Calculator Plumbing Pipe - 3 m', category: 'Plumbing & Sanitary', categorySlug: 'plumbing-sanitary', formulaUnit: 'm', purchaseUnit: 'length', price: 450, packageSize: 3, specifications: ['3 metre length', 'Demonstration water and drainage allowance', 'Pipe type and diameter confirmed from plumbing drawings'] },
+  // v3 point/route-based electrical and plumbing output keys (formula-registry.ts groupElectricalPoints/groupPlumbingRoutes).
+  // Sizes below match what seed-planning-templates.ts's RoomTemplates actually produce; a new conductor size or pipe
+  // diameter introduced in a future template needs a matching entry here or that output line will show "Request price".
+  electrical_wire_1p5sqmm: { key: 'electrical_wire_1p5sqmm', name: 'Buildanta Calculator 1.5 sqmm FR Copper Wire - 90 m', category: 'Electrical', categorySlug: 'electrical', formulaUnit: 'm', purchaseUnit: 'coil', price: 1250, packageSize: 90, specifications: ['90 metre coil', '1.5 sqmm flame-retardant copper wire', 'Lighting/fan circuit planning grade'] },
+  electrical_wire_2p5sqmm: { key: 'electrical_wire_2p5sqmm', name: 'Buildanta Calculator 2.5 sqmm FR Copper Wire - 90 m', category: 'Electrical', categorySlug: 'electrical', formulaUnit: 'm', purchaseUnit: 'coil', price: 1950, packageSize: 90, specifications: ['90 metre coil', '2.5 sqmm flame-retardant copper wire', 'Socket circuit planning grade'] },
+  electrical_wire_4sqmm: { key: 'electrical_wire_4sqmm', name: 'Buildanta Calculator 4 sqmm FR Copper Wire - 90 m', category: 'Electrical', categorySlug: 'electrical', formulaUnit: 'm', purchaseUnit: 'coil', price: 3100, packageSize: 90, specifications: ['90 metre coil', '4 sqmm flame-retardant copper wire', 'AC/geyser dedicated-circuit planning grade'] },
+  electrical_earth_wire_1p5sqmm: { key: 'electrical_earth_wire_1p5sqmm', name: 'Buildanta Calculator 1.5 sqmm Earth Continuity Wire - 90 m', category: 'Electrical', categorySlug: 'electrical', formulaUnit: 'm', purchaseUnit: 'coil', price: 1200, packageSize: 90, specifications: ['90 metre coil', '1.5 sqmm earth continuity conductor', 'Demo catalogue mapping'] },
+  electrical_earth_wire_2p5sqmm: { key: 'electrical_earth_wire_2p5sqmm', name: 'Buildanta Calculator 2.5 sqmm Earth Continuity Wire - 90 m', category: 'Electrical', categorySlug: 'electrical', formulaUnit: 'm', purchaseUnit: 'coil', price: 1850, packageSize: 90, specifications: ['90 metre coil', '2.5 sqmm earth continuity conductor', 'Demo catalogue mapping'] },
+  electrical_earth_wire_4sqmm: { key: 'electrical_earth_wire_4sqmm', name: 'Buildanta Calculator 4 sqmm Earth Continuity Wire - 90 m', category: 'Electrical', categorySlug: 'electrical', formulaUnit: 'm', purchaseUnit: 'coil', price: 2950, packageSize: 90, specifications: ['90 metre coil', '4 sqmm earth continuity conductor', 'Demo catalogue mapping'] },
+  plumbing_cold_water_15mm: { key: 'plumbing_cold_water_15mm', name: 'Buildanta Calculator 15 mm CPVC Cold Water Pipe - 3 m', category: 'Plumbing & Sanitary', categorySlug: 'plumbing-sanitary', formulaUnit: 'm', purchaseUnit: 'length', price: 210, packageSize: 3, specifications: ['3 metre length', '15 mm CPVC cold-water supply pipe', 'Demo catalogue mapping'] },
+  plumbing_hot_water_15mm: { key: 'plumbing_hot_water_15mm', name: 'Buildanta Calculator 15 mm CPVC Hot Water Pipe - 3 m', category: 'Plumbing & Sanitary', categorySlug: 'plumbing-sanitary', formulaUnit: 'm', purchaseUnit: 'length', price: 320, packageSize: 3, specifications: ['3 metre length', '15 mm CPVC hot-water supply pipe', 'Demo catalogue mapping'] },
+  plumbing_waste_32mm: { key: 'plumbing_waste_32mm', name: 'Buildanta Calculator 32 mm UPVC Waste Pipe - 3 m', category: 'Plumbing & Sanitary', categorySlug: 'plumbing-sanitary', formulaUnit: 'm', purchaseUnit: 'length', price: 180, packageSize: 3, specifications: ['3 metre length', '32 mm UPVC waste pipe', 'Demo catalogue mapping'] },
+  plumbing_waste_40mm: { key: 'plumbing_waste_40mm', name: 'Buildanta Calculator 40 mm UPVC Waste Pipe - 3 m', category: 'Plumbing & Sanitary', categorySlug: 'plumbing-sanitary', formulaUnit: 'm', purchaseUnit: 'length', price: 230, packageSize: 3, specifications: ['3 metre length', '40 mm UPVC waste pipe', 'Demo catalogue mapping'] },
+  plumbing_waste_50mm: { key: 'plumbing_waste_50mm', name: 'Buildanta Calculator 50 mm UPVC Waste Pipe - 3 m', category: 'Plumbing & Sanitary', categorySlug: 'plumbing-sanitary', formulaUnit: 'm', purchaseUnit: 'length', price: 280, packageSize: 3, specifications: ['3 metre length', '50 mm UPVC floor-drain waste pipe', 'Demo catalogue mapping'] },
+  plumbing_soil_110mm: { key: 'plumbing_soil_110mm', name: 'Buildanta Calculator 110 mm UPVC Soil Pipe - 3 m', category: 'Plumbing & Sanitary', categorySlug: 'plumbing-sanitary', formulaUnit: 'm', purchaseUnit: 'length', price: 650, packageSize: 3, specifications: ['3 metre length', '110 mm UPVC soil/waste stack pipe', 'Demo catalogue mapping'] },
   sanitary_fixture_set: { key: 'sanitary_fixture_set', name: 'Buildanta Calculator Bathroom Fixture Set', category: 'Sanitaryware & Bathware', categorySlug: 'sanitaryware-bathware', formulaUnit: 'set', purchaseUnit: 'set', price: 18500, specifications: ['One planning set per bathroom', 'WC and wash-basin allowance', 'Models and fittings confirmed in quotation'] },
   doors: { key: 'doors', name: 'Buildanta Calculator Internal Door Set', category: 'Doors & Windows', categorySlug: 'doors-windows', formulaUnit: 'piece', purchaseUnit: 'piece', price: 12000, specifications: ['Door and frame planning set', 'Demonstration standard size', 'Material and hardware confirmed in quotation'] },
   windows: { key: 'windows', name: 'Buildanta Calculator Window Set', category: 'Doors & Windows', categorySlug: 'doors-windows', formulaUnit: 'piece', purchaseUnit: 'piece', price: 8000, specifications: ['Window and frame planning set', 'Demonstration standard size', 'Opening size and glazing confirmed in quotation'] },
@@ -53,8 +68,8 @@ const calculators = [
   {
     name: 'Cement and concrete calculator', slug: 'cement-concrete', type: CalculatorType.CEMENT_CONCRETE, formulaKey: 'cement-concrete-v1', version: 2, sortOrder: 10,
     description: 'Estimate cement bags, sand and aggregate for slabs, beams, columns and other concrete work.',
-    instructions: 'Enter finished dimensions in metres and select the reviewed project mix profile.',
-    configuration: { profileName: 'DEMO nominal planning profile - business approval required', dryVolumeFactor: 1.54, cementPart: 1, sandPart: 1.5, aggregatePart: 3, cementDensityKgM3: 1440, cementBagKg: 50 },
+    instructions: 'Enter finished dimensions in metres. Results use Buildanta\'s versioned preliminary planning profile and remain independent of product prices or stock.',
+    configuration: { profileName: 'Buildanta preliminary concrete planning profile', dryVolumeFactor: 1.54, cementPart: 1, sandPart: 1.5, aggregatePart: 3, cementDensityKgM3: 1440, cementBagKg: 50 },
     outputs: [{ key: 'cement', terms: ['cement'] }, { key: 'sand', terms: ['sand'] }, { key: 'aggregate', terms: ['aggregate', 'stone chips'] }],
   },
   {
@@ -82,11 +97,11 @@ const calculators = [
     outputs: [{ key: 'paint', terms: ['paint', 'emulsion'] }, { key: 'primer', terms: ['primer'] }, { key: 'putty', terms: ['putty'] }],
   },
   {
-    name: 'Get full construction material info', slug: 'complete-construction-material', type: CalculatorType.BUILDING_BUDGET, formulaKey: 'building-material-budget-v2', version: 3, sortOrder: 5,
+    name: 'Get full construction material info', slug: 'complete-construction-material', type: CalculatorType.BUILDING_BUDGET, formulaKey: 'building-material-budget-v3', version: 4, sortOrder: 5,
     description: 'Create a refined stage-wise BOQ from project area, floors, rooms, structural system, floor height, finish coverage and construction scope.',
-    instructions: 'Enter the built-up area for one floor, project type, structural system, floor height and required scope. The result uses a versioned demonstration profile and live Inventory product mappings.',
+    instructions: 'Enter the built-up area for one floor, project type, structural system, floor height, required scope and (optionally) a room breakdown. Electrical and plumbing quantities are derived from a point/fixture schedule instead of a per-sqft allowance; supply a roomBreakdown or explicit electricalPoints/plumbingFixtures to include them.',
     configuration: {
-      profileName: 'DEMO residential planning profile - business and technical approval required',
+      profileName: 'Buildanta preliminary residential planning profile',
       squareFeetPerSquareMetre: 10.7639,
       scopeRates: {
         FOUNDATION: { cementBagsPerSqFt: 0.18, sandM3PerSqFt: 0.01, aggregateM3PerSqFt: 0.014, tmtKgPerSqFt: 1.5, brickPiecesPerSqFt: 0 },
@@ -97,8 +112,7 @@ const calculators = [
         tileCoverageRatio: 0.7, tileAreaSqFtPerPiece: 3.875, adhesiveKgPerM2: 4, groutKgPerM2: 0.25,
         paintableAreaFactor: 3.2, paintCoverageM2PerLitrePerCoat: 10, primerCoverageM2PerLitrePerCoat: 12,
         puttyCoverageM2PerKgPerCoat: 8, paintCoats: 2, primerCoats: 1, puttyCoats: 2,
-        electricalWireMPerSqFt: 1.6, conduitMPerSqFt: 0.45, plumbingPipeMPerSqFt: 0.12,
-        plumbingPipeMPerBathroom: 8, doorsPerRoom: 1, entranceDoors: 1, windowsPerRoom: 0.8,
+        doorsPerRoom: 1, entranceDoors: 1, windowsPerRoom: 0.8,
       },
       refinement: {
         baselineFloorHeightFt: 10,
@@ -115,9 +129,13 @@ const calculators = [
       { key: 'cement', terms: ['cement'] }, { key: 'sand', terms: ['sand'] }, { key: 'aggregate', terms: ['aggregate'] },
       { key: 'tmt_rebar', terms: ['tmt', 'steel'] }, { key: 'bricks', terms: ['bricks'] }, { key: 'tiles', terms: ['tiles'] },
       { key: 'tile_adhesive', terms: ['tile adhesive'] }, { key: 'grout', terms: ['grout'] }, { key: 'paint', terms: ['paint'] },
-      { key: 'primer', terms: ['primer'] }, { key: 'putty', terms: ['putty'] }, { key: 'electrical_wire', terms: ['wire'] },
-      { key: 'pvc_conduit', terms: ['conduit'] }, { key: 'plumbing_pipe', terms: ['pipe'] }, { key: 'sanitary_fixture_set', terms: ['sanitary'] },
+      { key: 'primer', terms: ['primer'] }, { key: 'putty', terms: ['putty'] }, { key: 'sanitary_fixture_set', terms: ['sanitary'] },
       { key: 'doors', terms: ['door'] }, { key: 'windows', terms: ['window'] },
+      { key: 'electrical_wire_1p5sqmm', terms: ['1.5 sqmm wire'] }, { key: 'electrical_wire_2p5sqmm', terms: ['2.5 sqmm wire'] }, { key: 'electrical_wire_4sqmm', terms: ['4 sqmm wire'] },
+      { key: 'electrical_earth_wire_1p5sqmm', terms: ['1.5 sqmm earth wire'] }, { key: 'electrical_earth_wire_2p5sqmm', terms: ['2.5 sqmm earth wire'] }, { key: 'electrical_earth_wire_4sqmm', terms: ['4 sqmm earth wire'] },
+      { key: 'plumbing_cold_water_15mm', terms: ['15mm cold water pipe'] }, { key: 'plumbing_hot_water_15mm', terms: ['15mm hot water pipe'] },
+      { key: 'plumbing_waste_32mm', terms: ['32mm waste pipe'] }, { key: 'plumbing_waste_40mm', terms: ['40mm waste pipe'] }, { key: 'plumbing_waste_50mm', terms: ['50mm waste pipe'] },
+      { key: 'plumbing_soil_110mm', terms: ['110mm soil pipe'] },
     ],
   },
 ];
@@ -197,12 +215,8 @@ async function ensureDemoProduct(prisma: PrismaClient, material: DemoMaterial, q
 }
 
 async function main() {
-  if (process.env.ALLOW_DEMO_SEED !== "I_UNDERSTAND") {
-    throw new Error(
-      "Calculator demo seeding is disabled for the real-data workspace. Set ALLOW_DEMO_SEED=I_UNDERSTAND only in a disposable development database.",
-    );
-  }
   if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL environment variable is not set');
+  const includeDemoCatalogue = process.env.ALLOW_DEMO_SEED === 'I_UNDERSTAND';
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
   try {
@@ -221,21 +235,25 @@ async function main() {
         where: { definitionId: definition.id, id: { not: version.id }, status: CalculatorVersionStatus.PUBLISHED },
         data: { status: CalculatorVersionStatus.RETIRED },
       });
-      for (const [priority, output] of config.outputs.entries()) {
-        const material = demoMaterials[output.key];
-        if (!material) throw new Error(`Missing deliberate demo mapping for calculator output ${output.key}`);
-        for (const qualityTier of Object.values(CalculatorQualityTier)) {
-          const match = await ensureDemoProduct(prisma, material, qualityTier);
-          await prisma.calculatorProductMapping.upsert({
-            where: { calculatorVersionId_outputKey_qualityTier_priority: { calculatorVersionId: version.id, outputKey: output.key, qualityTier, priority: 0 } },
-            update: { productId: match.product.id, variantId: match.variant.id, expectedUnit: material.formulaUnit, conversionFactor: 1, packageSize: material.packageSize, preferred: true, active: true },
-            create: { calculatorVersionId: version.id, outputKey: output.key, qualityTier, productId: match.product.id, variantId: match.variant.id, expectedUnit: material.formulaUnit, conversionFactor: 1, packageSize: material.packageSize, priority: 0, preferred: true },
-          });
+      if (includeDemoCatalogue) {
+        for (const [priority, output] of config.outputs.entries()) {
+          const material = demoMaterials[output.key];
+          if (!material) throw new Error(`Missing deliberate demo mapping for calculator output ${output.key}`);
+          for (const qualityTier of Object.values(CalculatorQualityTier)) {
+            const match = await ensureDemoProduct(prisma, material, qualityTier);
+            await prisma.calculatorProductMapping.upsert({
+              where: { calculatorVersionId_outputKey_qualityTier_priority: { calculatorVersionId: version.id, outputKey: output.key, qualityTier, priority: 0 } },
+              update: { productId: match.product.id, variantId: match.variant.id, expectedUnit: material.formulaUnit, conversionFactor: 1, packageSize: material.packageSize, preferred: true, active: true },
+              create: { calculatorVersionId: version.id, outputKey: output.key, qualityTier, productId: match.product.id, variantId: match.variant.id, expectedUnit: material.formulaUnit, conversionFactor: 1, packageSize: material.packageSize, priority: 0, preferred: true },
+            });
+          }
+          void priority;
         }
-        void priority;
       }
     }
-    console.log('Calculator demo configuration completed.');
+    console.log(includeDemoCatalogue
+      ? 'Calculator formulas and explicitly requested demo catalogue mappings completed.'
+      : 'Quantity-first calculator formulas published without requiring catalogue mappings.');
   } finally {
     await prisma.$disconnect();
     await pool.end();

@@ -12,6 +12,9 @@ describe('calculator formula registry', () => {
       'paint-v1',
       'building-material-budget-v1',
       'building-material-budget-v2',
+      'electrical-wiring-v1',
+      'plumbing-routing-v1',
+      'building-material-budget-v3',
     ]));
   });
 
@@ -176,6 +179,101 @@ describe('calculator formula registry', () => {
       roomLengthM: 4, roomWidthM: 3, wallHeightM: 3, openingsAreaM2: 0, includeCeiling: false, paintCoats: 2, primerCoats: 1, puttyCoats: 2, quantity: 1, wastagePercent: 5,
     }, { paintCoverageM2PerLitrePerCoat: 0, primerCoverageM2PerLitrePerCoat: 12, puttyCoverageM2PerKgPerCoat: 8 })).toThrow(BadRequestException);
   });
+
+  it('groups electrical conductor and earth wire lengths by size instead of a per-sqft allowance', () => {
+    const result = runFormula('electrical-wiring-v1', {
+      points: [
+        { pointType: 'LIGHT_POINT', purpose: 'LIGHTING', quantity: 2, oneWayRouteM: 4, numberOfConductors: 2, earthConductorCount: 0, conductorSizeSqmm: 1.5 },
+        { pointType: 'FAN_POINT', purpose: 'LIGHTING', quantity: 1, oneWayRouteM: 5, numberOfConductors: 2, earthConductorCount: 0, conductorSizeSqmm: 1.5 },
+        { pointType: 'SOCKET_5A', purpose: 'POWER_SOCKET', quantity: 3, oneWayRouteM: 6, numberOfConductors: 2, earthConductorCount: 1, conductorSizeSqmm: 2.5 },
+      ],
+      wastagePercent: 5,
+    }, { profileName: 'Demo wiring profile' });
+    expect(result.lines.map((item) => item.outputKey)).toEqual(['electrical_wire_1p5sqmm', 'electrical_wire_2p5sqmm', 'electrical_earth_wire_2p5sqmm']);
+    expect(result.lines.find((item) => item.outputKey === 'electrical_wire_1p5sqmm')).toMatchObject({ rawQuantity: 26, unitCode: 'm' });
+    expect(result.lines.find((item) => item.outputKey === 'electrical_wire_2p5sqmm')).toMatchObject({ rawQuantity: 36, unitCode: 'm' });
+    expect(result.lines.find((item) => item.outputKey === 'electrical_earth_wire_2p5sqmm')).toMatchObject({ rawQuantity: 18, unitCode: 'm' });
+  });
+
+  it('rejects a hidden per-square-foot input on the electrical formula', () => {
+    expect(() => runFormula('electrical-wiring-v1', {
+      builtUpAreaSqFt: 1_000,
+      points: [{ pointType: 'LIGHT_POINT', purpose: 'LIGHTING', quantity: 1, oneWayRouteM: 4, numberOfConductors: 2, earthConductorCount: 0, conductorSizeSqmm: 1.5 }],
+      wastagePercent: 5,
+    }, { profileName: 'Demo wiring profile' })).toThrow(BadRequestException);
+  });
+
+  it('groups plumbing pipe lengths by system and diameter', () => {
+    const result = runFormula('plumbing-routing-v1', {
+      routes: [
+        { fixtureType: 'WASH_BASIN', system: 'COLD_WATER', diameterMm: 15, quantity: 1, routeM: 4 },
+        { fixtureType: 'WC', system: 'COLD_WATER', diameterMm: 15, quantity: 1, routeM: 3 },
+        { fixtureType: 'WC', system: 'SOIL', diameterMm: 110, quantity: 1, routeM: 3 },
+      ],
+      wastagePercent: 5,
+    }, { profileName: 'Demo plumbing profile' });
+    expect(result.lines.map((item) => item.outputKey)).toEqual(['plumbing_cold_water_15mm', 'plumbing_soil_110mm']);
+    expect(result.lines.find((item) => item.outputKey === 'plumbing_cold_water_15mm')).toMatchObject({ rawQuantity: 7, unitCode: 'm' });
+    expect(result.lines.find((item) => item.outputKey === 'plumbing_soil_110mm')).toMatchObject({ rawQuantity: 3, unitCode: 'm' });
+  });
+
+  it('uses a point/route schedule instead of a per-sqft allowance for v3 electrical and plumbing', () => {
+    const result = runFormula('building-material-budget-v3', {
+      projectName: 'Demo home v3', siteLocation: 'Kanpur', plotAreaSqFt: 1_500, builtUpAreaSqFt: 1_000,
+      floors: 1, rooms: 4, bathrooms: 2, kitchens: 1, constructionScope: 'FULL_FINISH', wastagePercent: 5,
+      electricalPoints: [
+        { pointType: 'LIGHT_POINT', purpose: 'LIGHTING', quantity: 2, oneWayRouteM: 4, numberOfConductors: 2, earthConductorCount: 0, conductorSizeSqmm: 1.5 },
+      ],
+      plumbingFixtures: [
+        { fixtureType: 'WC', system: 'SOIL', diameterMm: 110, quantity: 1, routeM: 3 },
+      ],
+    }, buildingBudgetV3Configuration());
+    const outputKeys = result.lines.map((item) => item.outputKey);
+    expect(outputKeys).toEqual(expect.arrayContaining(['electrical_wire_1p5sqmm', 'plumbing_soil_110mm']));
+    expect(outputKeys).not.toEqual(expect.arrayContaining(['electrical_wire', 'pvc_conduit', 'plumbing_pipe']));
+  });
+
+  it('omits electrical and plumbing lines gracefully when no schedule is supplied to v3', () => {
+    const result = runFormula('building-material-budget-v3', {
+      projectName: 'Demo home v3 no schedule', siteLocation: 'Kanpur', plotAreaSqFt: 1_500, builtUpAreaSqFt: 1_000,
+      floors: 1, rooms: 4, bathrooms: 2, kitchens: 1, constructionScope: 'FULL_FINISH', wastagePercent: 5,
+    }, buildingBudgetV3Configuration());
+    expect(result.lines.some((item) => item.outputKey.startsWith('electrical_') || item.outputKey.startsWith('plumbing_'))).toBe(false);
+    expect(result.assumptions.join(' ')).toContain('pending a room breakdown or an explicit point schedule');
+    expect(result.assumptions.join(' ')).toContain('pending a room breakdown or an explicit fixture schedule');
+  });
+
+  it('produces identical structural quantities between v2 and v3 for the same inputs', () => {
+    const common = {
+      projectName: 'v2 vs v3', siteLocation: 'Kanpur', plotAreaSqFt: 1_500, builtUpAreaSqFt: 1_000,
+      floors: 2, rooms: 6, bathrooms: 3, kitchens: 1, constructionScope: 'STRUCTURE', wastagePercent: 5,
+    };
+    const v2 = runFormula('building-material-budget-v2', common, buildingBudgetConfiguration());
+    const v3 = runFormula('building-material-budget-v3', common, buildingBudgetV3Configuration());
+    for (const key of ['cement', 'sand', 'aggregate', 'tmt_rebar', 'bricks']) {
+      expect(v3.lines.find((item) => item.outputKey === key)?.rawQuantity).toBe(v2.lines.find((item) => item.outputKey === key)?.rawQuantity);
+    }
+  });
+
+  it('keeps tiles, paint, doors and windows identical to v2 in full-finish scope', () => {
+    const common = {
+      projectName: 'v2 vs v3 full finish', siteLocation: 'Kanpur', plotAreaSqFt: 1_500, builtUpAreaSqFt: 1_000,
+      floors: 1, rooms: 4, bathrooms: 2, kitchens: 1, constructionScope: 'FULL_FINISH', wastagePercent: 5,
+    };
+    const v2 = runFormula('building-material-budget-v2', common, buildingBudgetConfiguration());
+    const v3 = runFormula('building-material-budget-v3', common, buildingBudgetV3Configuration());
+    for (const key of ['tiles', 'tile_adhesive', 'grout', 'paint', 'primer', 'putty', 'sanitary_fixture_set', 'doors', 'windows']) {
+      expect(v3.lines.find((item) => item.outputKey === key)?.rawQuantity).toBe(v2.lines.find((item) => item.outputKey === key)?.rawQuantity);
+    }
+  });
+
+  it('keeps the legacy per-sqft electrical, conduit and plumbing allowance on v1/v2', () => {
+    const result = runFormula('building-material-budget-v2', {
+      projectName: 'Legacy check', siteLocation: 'Kanpur', plotAreaSqFt: 1_500, builtUpAreaSqFt: 1_000,
+      floors: 1, rooms: 4, bathrooms: 2, kitchens: 1, constructionScope: 'FULL_FINISH', wastagePercent: 5,
+    }, buildingBudgetConfiguration());
+    expect(result.lines.map((item) => item.outputKey)).toEqual(expect.arrayContaining(['electrical_wire', 'pvc_conduit', 'plumbing_pipe']));
+  });
 });
 
 function buildingBudgetConfiguration() {
@@ -214,5 +312,35 @@ function masonryV2Configuration() {
       mortarDryVolumePerM3: 0.25, mortarCementPart: 1, mortarSandPart: 6, cementDensityKgM3: 1440, cementBagKg: 50,
     },
     AAC_BLOCK: { unitLengthM: 0.6, unitHeightM: 0.2, unitWidthM: 0.1, jointM: 0.003, adhesiveKgPerM2: 4 },
+  };
+}
+
+// Same shape as buildingBudgetConfiguration() minus the four per-sqft electrical/plumbing rates,
+// which v3's configSchema rejects entirely.
+function buildingBudgetV3Configuration() {
+  return {
+    profileName: 'DEMO residential planning profile - approval required',
+    squareFeetPerSquareMetre: 10.7639,
+    scopeRates: {
+      FOUNDATION: { cementBagsPerSqFt: 0.18, sandM3PerSqFt: 0.01, aggregateM3PerSqFt: 0.014, tmtKgPerSqFt: 1.5, brickPiecesPerSqFt: 0 },
+      STRUCTURE: { cementBagsPerSqFt: 0.4, sandM3PerSqFt: 0.021, aggregateM3PerSqFt: 0.018, tmtKgPerSqFt: 3.8, brickPiecesPerSqFt: 7.5 },
+      FULL_FINISH: { cementBagsPerSqFt: 0.44, sandM3PerSqFt: 0.023, aggregateM3PerSqFt: 0.019, tmtKgPerSqFt: 4, brickPiecesPerSqFt: 7.5 },
+    },
+    fullFinish: {
+      tileCoverageRatio: 0.7, tileAreaSqFtPerPiece: 3.875, adhesiveKgPerM2: 4, groutKgPerM2: 0.25,
+      paintableAreaFactor: 3.2, paintCoverageM2PerLitrePerCoat: 10, primerCoverageM2PerLitrePerCoat: 12,
+      puttyCoverageM2PerKgPerCoat: 8, paintCoats: 2, primerCoats: 1, puttyCoats: 2,
+      doorsPerRoom: 1, entranceDoors: 1, windowsPerRoom: 0.8,
+    },
+    refinement: {
+      baselineFloorHeightFt: 10,
+      foundationAdditionalFloorLoadFactor: 0.2,
+      ceilingPaintAreaFactor: 1,
+      projectTypeMultipliers: { RESIDENTIAL: 1, COMMERCIAL: 1.08 },
+      structureSystemMultipliers: {
+        RCC_FRAME: { cementBagsPerSqFt: 1, sandM3PerSqFt: 1, aggregateM3PerSqFt: 1, tmtKgPerSqFt: 1, brickPiecesPerSqFt: 1 },
+        LOAD_BEARING: { cementBagsPerSqFt: 0.92, sandM3PerSqFt: 1.08, aggregateM3PerSqFt: 0.78, tmtKgPerSqFt: 0.62, brickPiecesPerSqFt: 1.18 },
+      },
+    },
   };
 }

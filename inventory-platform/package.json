@@ -16,6 +16,7 @@
     "db:deploy": "pnpm --filter @workspace/db db:deploy",
     "db:seed": "pnpm --filter @workspace/db db:seed",
     "db:seed-calculators": "pnpm --filter @workspace/db db:seed-calculators",
+    "db:seed-planning-templates": "pnpm --filter @workspace/db db:seed-planning-templates",
     "db:verify-phase2": "pnpm --filter @workspace/db db:verify-phase2",
     "db:verify-phase3": "pnpm --filter @workspace/db db:verify-phase3",
     "db:migrate-old-catalog": "pnpm --filter @workspace/db db:migrate-old-catalog"

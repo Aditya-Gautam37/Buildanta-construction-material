@@ -16,6 +16,7 @@
         "db:deploy": "prisma migrate deploy",
         "db:seed": "tsx src/seed.ts",
         "db:seed-calculators": "tsx src/seed-calculators.ts",
+        "db:seed-planning-templates": "tsx src/seed-planning-templates.ts",
         "db:verify-phase2": "tsx src/verify-phase2.ts",
         "db:verify-phase3": "tsx src/verify-phase3.ts",
         "db:migrate-old-catalog": "tsx src/migrate-old-catalog.ts",

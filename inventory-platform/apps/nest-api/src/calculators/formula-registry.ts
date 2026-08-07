@@ -45,6 +45,85 @@ function line(outputKey: string, description: string, rawQuantity: number, wasta
   };
 }
 
+const electricalPointTypes = ['LIGHT_POINT', 'FAN_POINT', 'SOCKET_5A', 'SOCKET_15A', 'SOCKET_20A_AC', 'SOCKET_20A_GEYSER', 'TV_POINT', 'DATA_POINT', 'DOORBELL', 'EXHAUST_FAN_POINT', 'DB_FEEDER', 'OTHER'] as const;
+const electricalCircuitPurposes = ['LIGHTING', 'POWER_SOCKET', 'AC', 'GEYSER', 'KITCHEN_APPLIANCE', 'PUMP_MOTOR', 'DB_FEEDER', 'OTHER'] as const;
+const plumbingFixtureTypes = ['WASH_BASIN', 'WC', 'SHOWER', 'BATHTUB', 'KITCHEN_SINK', 'UTILITY_SINK', 'FLOOR_DRAIN', 'HOSE_BIB', 'RAINWATER_OUTLET', 'OTHER'] as const;
+const plumbingSystemTypes = ['COLD_WATER', 'HOT_WATER', 'SOIL', 'WASTE', 'VENT', 'RAINWATER'] as const;
+const roomTypes = ['BEDROOM', 'LIVING_ROOM', 'KITCHEN', 'BATHROOM', 'TOILET', 'DINING_ROOM', 'STUDY', 'UTILITY', 'BALCONY', 'STAIRCASE', 'CORRIDOR', 'GARAGE', 'OTHER'] as const;
+
+// Route/point-based electrical input. Conductor size and route length are always supplied by the
+// caller (from an approved design) or a managed RoomTemplate — never derived from quality tier or floor area.
+const electricalPointInputSchema = z.object({
+  roomLabel: z.string().trim().max(120).optional(),
+  pointType: z.enum(electricalPointTypes),
+  purpose: z.enum(electricalCircuitPurposes).default('OTHER'),
+  quantity: z.number().int().positive().max(1_000).default(1),
+  oneWayRouteM: positive.max(200),
+  numberOfConductors: z.number().int().min(1).max(6),
+  earthConductorCount: z.number().int().min(0).max(3).default(1),
+  conductorSizeSqmm: positive.max(400),
+  earthConductorSizeSqmm: positive.max(400).optional(),
+}).strict();
+
+// Route-based plumbing input, grouped per (system, diameter) — diameter is always supplied, never
+// derived from quality tier.
+const plumbingRouteInputSchema = z.object({
+  roomLabel: z.string().trim().max(120).optional(),
+  fixtureType: z.enum(plumbingFixtureTypes),
+  system: z.enum(plumbingSystemTypes),
+  diameterMm: positive.max(300),
+  quantity: z.number().int().positive().max(1_000).default(1),
+  routeM: positive.max(200),
+}).strict();
+
+type ElectricalPointInput = z.infer<typeof electricalPointInputSchema>;
+type PlumbingRouteInput = z.infer<typeof plumbingRouteInputSchema>;
+
+// outputKey must match /^[a-z0-9_]+$/ (CalculatorProductMapping.outputKey) — no literal dots.
+function sizeKey(value: number): string {
+  return round(value, 3).toString().replace('.', 'p');
+}
+
+function groupElectricalPoints(points: ElectricalPointInput[], wastagePercent: number): FormulaLine[] {
+  const conductorTotals = new Map<number, number>();
+  const earthTotals = new Map<number, number>();
+  for (const point of points) {
+    const runLength = point.oneWayRouteM * point.quantity;
+    conductorTotals.set(point.conductorSizeSqmm, (conductorTotals.get(point.conductorSizeSqmm) ?? 0) + runLength * point.numberOfConductors);
+    if (point.earthConductorCount > 0) {
+      const earthSize = point.earthConductorSizeSqmm ?? point.conductorSizeSqmm;
+      earthTotals.set(earthSize, (earthTotals.get(earthSize) ?? 0) + runLength * point.earthConductorCount);
+    }
+  }
+  const lines: FormulaLine[] = [];
+  for (const [size, metres] of Array.from(conductorTotals.entries()).sort((a, b) => a[0] - b[0])) {
+    lines.push(line(`electrical_wire_${sizeKey(size)}sqmm`, `${size} sqmm current-carrying conductor`, metres, wastagePercent, 'm', 'Electrical and plumbing'));
+  }
+  for (const [size, metres] of Array.from(earthTotals.entries()).sort((a, b) => a[0] - b[0])) {
+    lines.push(line(`electrical_earth_wire_${sizeKey(size)}sqmm`, `${size} sqmm earth continuity conductor`, metres, wastagePercent, 'm', 'Electrical and plumbing'));
+  }
+  return lines;
+}
+
+function groupPlumbingRoutes(routes: PlumbingRouteInput[], wastagePercent: number): FormulaLine[] {
+  const totals = new Map<string, { system: string; diameter: number; metres: number }>();
+  for (const route of routes) {
+    const key = `${route.system}:${route.diameterMm}`;
+    const metres = route.routeM * route.quantity;
+    const existing = totals.get(key);
+    if (existing) existing.metres += metres;
+    else totals.set(key, { system: route.system, diameter: route.diameterMm, metres });
+  }
+  const lines: FormulaLine[] = [];
+  const grouped = Array.from(totals.values()).sort((a, b) => a.system.localeCompare(b.system) || a.diameter - b.diameter);
+  for (const { system, diameter, metres } of grouped) {
+    const systemKey = system.toLowerCase();
+    const systemLabel = system.replaceAll('_', ' ').toLowerCase();
+    lines.push(line(`plumbing_${systemKey}_${sizeKey(diameter)}mm`, `${systemLabel} pipe, ${diameter} mm`, metres, wastagePercent, 'm', 'Electrical and plumbing'));
+  }
+  return lines;
+}
+
 const concreteInputs = z.object({
   componentType: z.enum(['SLAB', 'FOOTING', 'BEAM', 'COLUMN', 'OTHER']).default('SLAB'),
   lengthM: positive,
@@ -153,7 +232,7 @@ const paintConfig = z.object({
   puttyCoverageM2PerKgPerCoat: positive,
 }).strict();
 
-const buildingBudgetInputs = z.object({
+const buildingBudgetShape = z.object({
   projectName: z.string().trim().min(2).max(120),
   siteLocation: z.string().trim().min(2).max(160),
   plotAreaSqFt: z.number().finite().positive().max(1_000_000),
@@ -169,14 +248,30 @@ const buildingBudgetInputs = z.object({
   includeCeilingPaint: z.boolean().default(false),
   constructionScope: z.enum(['FOUNDATION', 'STRUCTURE', 'FULL_FINISH']),
   wastagePercent: wastage,
-}).strict().superRefine((input, context) => {
+});
+
+function buildingBudgetAreaRefine(input: z.infer<typeof buildingBudgetShape>, context: z.RefinementCtx) {
   if (input.builtUpAreaSqFt > input.plotAreaSqFt) {
     context.addIssue({ code: z.ZodIssueCode.custom, path: ['builtUpAreaSqFt'], message: 'Built-up area per floor cannot be larger than the plot area.' });
   }
   if (input.builtUpAreaSqFt * input.floors > 5_000_000) {
     context.addIssue({ code: z.ZodIssueCode.custom, path: ['floors'], message: 'Total built-up area is above the supported planning limit.' });
   }
-});
+}
+
+const buildingBudgetInputs = buildingBudgetShape.strict().superRefine(buildingBudgetAreaRefine);
+
+// v3 concept/detailed electrical & plumbing: `roomBreakdown` is resolved into `electricalPoints`/
+// `plumbingFixtures` by the service layer (via managed RoomTemplates) before the pure formula runs;
+// the formula itself never reads `roomBreakdown` directly, only the resolved arrays.
+const buildingBudgetInputsV3 = buildingBudgetShape.extend({
+  roomBreakdown: z.array(z.object({
+    roomType: z.enum(roomTypes),
+    quantity: z.number().int().positive().max(200),
+  }).strict()).max(200).optional(),
+  electricalPoints: z.array(electricalPointInputSchema).max(5_000).optional().default([]),
+  plumbingFixtures: z.array(plumbingRouteInputSchema).max(5_000).optional().default([]),
+}).strict().superRefine(buildingBudgetAreaRefine);
 
 const buildingScopeRates = z.object({
   cementBagsPerSqFt: z.number().finite().min(0).max(5),
@@ -246,7 +341,39 @@ const buildingBudgetConfig = z.object({
   }),
 }).strict();
 
-function runBuildingBudget(input: any, config: any, correctedScopeBasis: boolean): FormulaResult {
+// Same shape as `buildingBudgetConfig.fullFinish` minus the four per-sqft electrical/plumbing rates
+// that are the flaw being fixed — omitting them here means a future config edit can't silently
+// reintroduce a "wire per square foot" number for v3.
+const buildingBudgetFullFinishV3 = z.object({
+  tileCoverageRatio: z.number().finite().min(0).max(2),
+  tileAreaSqFtPerPiece: z.number().finite().positive().max(100),
+  adhesiveKgPerM2: z.number().finite().min(0).max(100),
+  groutKgPerM2: z.number().finite().min(0).max(20),
+  paintableAreaFactor: z.number().finite().min(0).max(10),
+  paintCoverageM2PerLitrePerCoat: positive,
+  primerCoverageM2PerLitrePerCoat: positive,
+  puttyCoverageM2PerKgPerCoat: positive,
+  paintCoats: z.number().int().min(1).max(5),
+  primerCoats: z.number().int().min(0).max(3),
+  puttyCoats: z.number().int().min(0).max(3),
+  doorsPerRoom: z.number().finite().min(0).max(5),
+  entranceDoors: z.number().int().min(0).max(20),
+  windowsPerRoom: z.number().finite().min(0).max(5),
+}).strict();
+
+const buildingBudgetConfigV3 = z.object({
+  profileName: z.string().trim().min(2).max(160),
+  squareFeetPerSquareMetre: z.number().finite().min(10).max(11),
+  scopeRates: z.object({
+    FOUNDATION: buildingScopeRates,
+    STRUCTURE: buildingScopeRates,
+    FULL_FINISH: buildingScopeRates,
+  }).strict(),
+  fullFinish: buildingBudgetFullFinishV3,
+  refinement: buildingBudgetConfig.shape.refinement,
+}).strict();
+
+function runBuildingBudget(input: any, config: any, correctedScopeBasis: boolean, includeAreaBasedUtilities = true): FormulaResult {
   const totalBuiltUpAreaSqFt = input.builtUpAreaSqFt * input.floors;
   const rates = correctedScopeBasis && input.constructionScope === 'FULL_FINISH'
     ? config.scopeRates.STRUCTURE
@@ -280,6 +407,15 @@ function runBuildingBudget(input: any, config: any, correctedScopeBasis: boolean
     const paintableAreaM2 = paintableAreaSqFt / config.squareFeetPerSquareMetre;
     const doorCount = input.rooms * finish.doorsPerRoom + input.bathrooms + input.kitchens + finish.entranceDoors;
     const windowCount = Math.max(1, input.rooms * finish.windowsPerRoom);
+    // v1/v2 keep the flat per-sqft electrical/plumbing/conduit allowance; v3 (includeAreaBasedUtilities:
+    // false) omits it here and the caller appends point/route-based lines instead — see runBuildingBudgetV3.
+    const areaBasedUtilityLines = includeAreaBasedUtilities
+      ? [
+          line('electrical_wire', 'Electrical copper wire allowance', totalBuiltUpAreaSqFt * finish.electricalWireMPerSqFt * projectMultiplier, input.wastagePercent, 'm', 'Electrical and plumbing'),
+          line('pvc_conduit', 'Electrical PVC conduit allowance', totalBuiltUpAreaSqFt * finish.conduitMPerSqFt * projectMultiplier, input.wastagePercent, 'm', 'Electrical and plumbing'),
+          line('plumbing_pipe', 'Water and drainage pipe allowance', (totalBuiltUpAreaSqFt * finish.plumbingPipeMPerSqFt + input.bathrooms * finish.plumbingPipeMPerBathroom) * projectMultiplier, input.wastagePercent, 'm', 'Electrical and plumbing'),
+        ]
+      : [];
 
     lines.push(
       line('tiles', 'Floor and wall tiles', tiledAreaSqFt / finish.tileAreaSqFtPerPiece, input.wastagePercent, 'piece', 'Flooring and finishes'),
@@ -288,9 +424,7 @@ function runBuildingBudget(input: any, config: any, correctedScopeBasis: boolean
       line('paint', 'Finish paint', paintableAreaM2 * finish.paintCoats / finish.paintCoverageM2PerLitrePerCoat, input.wastagePercent, 'litre', 'Painting system'),
       line('primer', 'Wall primer', paintableAreaM2 * finish.primerCoats / finish.primerCoverageM2PerLitrePerCoat, input.wastagePercent, 'litre', 'Painting system'),
       line('putty', 'Wall putty', paintableAreaM2 * finish.puttyCoats / finish.puttyCoverageM2PerKgPerCoat, input.wastagePercent, 'kg', 'Painting system'),
-      line('electrical_wire', 'Electrical copper wire allowance', totalBuiltUpAreaSqFt * finish.electricalWireMPerSqFt * projectMultiplier, input.wastagePercent, 'm', 'Electrical and plumbing'),
-      line('pvc_conduit', 'Electrical PVC conduit allowance', totalBuiltUpAreaSqFt * finish.conduitMPerSqFt * projectMultiplier, input.wastagePercent, 'm', 'Electrical and plumbing'),
-      line('plumbing_pipe', 'Water and drainage pipe allowance', (totalBuiltUpAreaSqFt * finish.plumbingPipeMPerSqFt + input.bathrooms * finish.plumbingPipeMPerBathroom) * projectMultiplier, input.wastagePercent, 'm', 'Electrical and plumbing'),
+      ...areaBasedUtilityLines,
       line('sanitary_fixture_set', 'Bathroom sanitary fixture set', input.bathrooms, 0, 'set', 'Electrical and plumbing'),
       line('doors', 'Entrance and internal door allowance', doorCount, 0, 'piece', 'Doors and windows'),
       line('windows', 'Window allowance', windowCount, 0, 'piece', 'Doors and windows'),
@@ -320,6 +454,37 @@ function runBuildingBudget(input: any, config: any, correctedScopeBasis: boolean
         : 'This scope excludes finishes, fixtures, electrical, plumbing, doors and windows.',
     ],
   };
+}
+
+// v3: same cement/sand/aggregate/TMT/bricks/tiles/paint/doors/windows logic as v2 (via
+// `includeAreaBasedUtilities: false`), but electrical and plumbing come from a point/route schedule
+// (`input.electricalPoints`/`input.plumbingFixtures`, resolved upstream by the service layer from
+// either caller-supplied detailed data or a managed RoomTemplate) instead of a per-sqft allowance.
+// Conduit has no route model defined yet and is intentionally omitted rather than kept on the old
+// flawed per-sqft number.
+function runBuildingBudgetV3(input: any, config: any): FormulaResult {
+  const base = runBuildingBudget(input, config, true, false);
+  const lines = base.lines.slice();
+  const assumptions = base.assumptions.slice();
+  const hasElectrical = input.electricalPoints.length > 0;
+  const hasPlumbing = input.plumbingFixtures.length > 0;
+
+  if (hasElectrical) lines.push(...groupElectricalPoints(input.electricalPoints, input.wastagePercent));
+  if (hasPlumbing) lines.push(...groupPlumbingRoutes(input.plumbingFixtures, input.wastagePercent));
+
+  if (input.constructionScope === 'FULL_FINISH') {
+    assumptions.push(
+      hasElectrical
+        ? `Electrical conductor lengths are grouped from ${input.electricalPoints.length} supplied or template point entries by design-selected conductor size, not a per-sqft allowance.`
+        : 'Electrical quantities are excluded from this estimate pending a room breakdown or an explicit point schedule.',
+      hasPlumbing
+        ? `Plumbing pipe lengths are grouped from ${input.plumbingFixtures.length} supplied or template fixture routes by system and diameter, not a per-sqft allowance.`
+        : 'Plumbing quantities are excluded from this estimate pending a room breakdown or an explicit fixture schedule.',
+      'Electrical conduit routing is not yet modelled in this formula version and is excluded from this estimate.',
+    );
+  }
+
+  return { normalizedInputs: base.normalizedInputs, lines, assumptions };
 }
 
 const registry: Record<string, FormulaDefinition> = {
@@ -506,6 +671,55 @@ const registry: Record<string, FormulaDefinition> = {
     configSchema: buildingBudgetConfig,
     run(input, config) {
       return runBuildingBudget(input, config, true);
+    },
+  },
+  'electrical-wiring-v1': {
+    inputSchema: z.object({
+      points: z.array(electricalPointInputSchema).min(1).max(2_000),
+      wastagePercent: wastage,
+    }).strict(),
+    configSchema: z.object({
+      profileName: z.string().trim().min(2).max(160),
+    }).strict(),
+    run(input, config) {
+      return {
+        normalizedInputs: input,
+        lines: groupElectricalPoints(input.points, input.wastagePercent),
+        assumptions: [
+          `${config.profileName} managed wiring profile`,
+          'Conductor cross-section and route length are supplied per point from an approved load/design, not derived from quality tier or floor area.',
+          `${input.points.length} point/circuit-run entries used as the basis for conductor length.`,
+          `Wastage included: ${input.wastagePercent}%`,
+        ],
+      };
+    },
+  },
+  'plumbing-routing-v1': {
+    inputSchema: z.object({
+      routes: z.array(plumbingRouteInputSchema).min(1).max(2_000),
+      wastagePercent: wastage,
+    }).strict(),
+    configSchema: z.object({
+      profileName: z.string().trim().min(2).max(160),
+    }).strict(),
+    run(input, config) {
+      return {
+        normalizedInputs: input,
+        lines: groupPlumbingRoutes(input.routes, input.wastagePercent),
+        assumptions: [
+          `${config.profileName} managed plumbing routing profile`,
+          'Pipe diameter and route length are supplied per fixture from an approved design, not derived from quality tier.',
+          `Grouped across ${new Set(input.routes.map((route: PlumbingRouteInput) => route.system)).size} plumbing system(s).`,
+          `Wastage included: ${input.wastagePercent}%`,
+        ],
+      };
+    },
+  },
+  'building-material-budget-v3': {
+    inputSchema: buildingBudgetInputsV3,
+    configSchema: buildingBudgetConfigV3,
+    run(input, config) {
+      return runBuildingBudgetV3(input, config);
     },
   },
 };

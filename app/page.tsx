@@ -5,24 +5,29 @@ import { defaultHomepageSlide, getHomepageContent } from "./homepage-content";
 import { HeroSlider } from "./hero-slider";
 import { HomepageProductCard } from "./homepage-product-card";
 import { BrandMark } from "./brand-mark";
+import { UiIcon } from "./ui-icon";
 
 const roomImages: Record<string, string> = {
   "Living Room": "/livingroom.jpg",
   Bedroom: "/bedroom.jpg",
   Kitchen: "/kitchen.jpg",
   Bathroom: "/bathroom.jpg",
-  "Study / Home Office": "/livingroom.jpg",
-  "Balcony & Terrace": "/livingroom.jpg",
+  "Study / Home Office": "/images/buildanta-v2/room-study-v2.webp",
+  "Balcony & Terrace": "/images/buildanta-v2/room-balcony-v2.webp",
+  "Dining Room": "/images/buildanta-v2/room-dining-v2.webp",
+  "Utility Room": "/images/buildanta-v2/room-utility-v2.webp",
+  "Puja Room": "/images/buildanta-v2/room-puja-v2.webp",
+  "Garage": "/images/buildanta-v2/room-garage-storage-v2.webp",
 };
 const materialIcons = ["▣", "▥", "⌁", "◉", "◒", "▦", "⌂", "✦", "▤", "▱"];
 
 const discoveryTiles = [
   { eyebrow: "MATERIALS", title: "Shop all products", detail: "Cement, steel, electrical, tiles and more", href: "/categories", image: "/demo/products/cement.png", tone: "light" },
-  { eyebrow: "PROJECT", title: "Plan by build stage", detail: "Get guided quantities before choosing products", href: "/by-stage", image: "/demo/hero/build-journey.png", tone: "image" },
+  { eyebrow: "PROJECT", title: "Plan by build stage", detail: "Get guided quantities before choosing products", href: "/by-stage", image: "/images/buildanta-v2/foundation-planning-v2.webp", tone: "image" },
   { eyebrow: "SPACES", title: "Find products by room", detail: "Kitchen, bathroom, bedroom and living spaces", href: "/by-room", image: "/livingroom.jpg", tone: "image" },
   { eyebrow: "CALCULATE", title: "Estimate your materials", detail: "Area-based construction planning tools", href: "/calculators", image: "/demo/hero/project-planning.png", tone: "dark" },
   { eyebrow: "PRICING", title: "Request a bulk quote", detail: "One enquiry for your complete material list", href: "/bulk-quotes", image: "/demo/products/tmt-steel.png", tone: "light" },
-  { eyebrow: "EXPERTS", title: "Find professionals", detail: "Connect with builders, architects and contractors", href: "/professionals", image: "/forprofessionalsbanner.png", tone: "image" },
+  { eyebrow: "EXPERTS", title: "Find professionals", detail: "Connect with builders, architects and contractors", href: "/professionals", image: "/images/buildanta-v2/professionals-network-v2.webp", tone: "image" },
 ] as const;
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -35,7 +40,11 @@ export default async function Home() {
   const rooms = rootNodes(catalog.rooms);
   const categories = rootNodes(catalog.categories);
   const repeatedBrands = [...catalog.brands, ...catalog.brands];
-  const slides = homepageContent.slides.length ? homepageContent.slides : [defaultHomepageSlide];
+  const slides = (homepageContent.slides.length ? homepageContent.slides : [defaultHomepageSlide]).map((slide) =>
+    ["/homepage_img.png", "/demo/hero/project-planning.png"].includes(slide.imageUrl)
+      ? { ...slide, imageUrl: defaultHomepageSlide.imageUrl, altText: defaultHomepageSlide.altText }
+      : slide,
+  );
   const productsById = new Map(catalog.products.map((product) => [product.id, product]));
   const selectedProducts = homepageContent.products.flatMap((placement) => {
     const product = productsById.get(placement.productId);
@@ -55,14 +64,15 @@ export default async function Home() {
       <HeroSlider slides={slides} />
 
       <section className="commerce-assurance" aria-label="Buildanta shopping benefits">
-        <span><i>01</i><strong>Verified catalogue</strong><small>Managed from Buildanta Inventory</small></span>
-        <span><i>02</i><strong>Project pricing</strong><small>Request quotes for any quantity</small></span>
-        <span><i>03</i><strong>Construction focused</strong><small>Browse by stage, room or category</small></span>
+        <span><i><UiIcon name="shield" /></i><strong>Verified catalogue</strong><small>Managed from Buildanta Inventory</small></span>
+        <span><i><UiIcon name="sparkles" /></i><strong>Quality-first sourcing</strong><small>Specifications and variants kept together</small></span>
+        <span><i><UiIcon name="truck" /></i><strong>PIN-aware fulfilment</strong><small>Availability checked for your location</small></span>
+        <span><i><UiIcon name="check" /></i><strong>GST-ready quotations</strong><small>Clear project pricing before purchase</small></span>
       </section>
 
       <section className="home-discovery" aria-labelledby="discovery-title">
         <div className="home-discovery-heading"><div><p>START YOUR BUILD JOURNEY</p><h2 id="discovery-title">What are you looking for?</h2></div><span>Choose the way you want to shop. Every path uses the same live Buildanta catalogue.</span></div>
-        <div className="discovery-grid">{discoveryTiles.map((tile) => <a className={`discovery-card ${tile.tone}`} href={tile.href} key={tile.title}><div><small>{tile.eyebrow}</small><h3>{tile.title}</h3><p>{tile.detail}</p><strong>Explore <span>→</span></strong></div><Image src={tile.image} alt="" width={560} height={320} sizes="(max-width: 760px) 40vw, (max-width: 1120px) 42vw, 220px" /></a>)}</div>
+        <div className="discovery-grid">{discoveryTiles.map((tile) => <a className={`discovery-card ${tile.tone}`} href={tile.href} key={tile.title}><div><small>{tile.eyebrow}</small><h3>{tile.title}</h3><p>{tile.detail}</p><strong>Explore <span>→</span></strong></div><Image src={tile.image} alt={`${tile.title} on Buildanta`} width={560} height={320} sizes="(max-width: 760px) 40vw, (max-width: 1120px) 42vw, 220px" /></a>)}</div>
       </section>
 
       <section className="home-section brands-section">
@@ -104,7 +114,7 @@ export default async function Home() {
       <section className="home-section">
         <SectionTitle>Shop by Room</SectionTitle>
         <div className="room-grid">
-          {rooms.map((room) => <a href={`/by-room?room=${encodeURIComponent(room.name)}`} className="room-card" key={room.id}><img src={roomImages[room.name] || "/livingroom.jpg"} alt={room.name} /><strong>{room.name}</strong></a>)}
+          {rooms.map((room) => <a href={`/by-room?room=${encodeURIComponent(room.name)}`} className="room-card" key={room.id}><img src={roomImages[room.name] || "/livingroom.jpg"} alt={`${room.name} interior and construction materials`} loading="lazy" decoding="async" /><strong>{room.name}</strong></a>)}
         </div>
       </section>
 
@@ -123,7 +133,7 @@ export default async function Home() {
 
       <section className="home-section professional-section">
         <SectionTitle>For Professionals</SectionTitle>
-        <div className="professional-banner"><img src="/forprofessionalsbanner.png" alt="Construction professionals collaborating on a project" /><div className="professional-banner-actions"><a className="button navy" href="/bulk-quotes">Get Bulk Quotes</a><a className="button orange" href="/list-product">List your Products</a></div><div className="professional-banner-types">{professionalCategories.map((category) => { const count = professionals.filter((item) => item.type === category.type).length; return <a href={`/professionals/${category.slug}`} key={category.type}><span>{category.short}</span><strong>{category.title}</strong><small>{count} profiles</small></a>; })}</div></div>
+        <div className="professional-banner"><img src="/images/buildanta-v2/professionals-network-v2.webp" alt="Indian construction professionals collaborating on a residential project" loading="lazy" decoding="async" /><div className="professional-banner-actions"><a className="button navy" href="/bulk-quotes">Get Bulk Quotes</a><a className="button orange" href="/list-product">List your Products</a></div><div className="professional-banner-types">{professionalCategories.map((category) => { const count = professionals.filter((item) => item.type === category.type).length; return <a href={`/professionals/${category.slug}`} key={category.type}><span>{category.short}</span><strong>{category.title}</strong><small>{count} profiles</small></a>; })}</div></div>
         <a className="view-all" href="/professionals">Explore all professionals <span>→</span></a>
       </section>
 

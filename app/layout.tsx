@@ -4,6 +4,7 @@ import { getCatalogSnapshot, rootNodes } from "./live-catalog";
 import { getCustomerUser } from "./customer-auth";
 import { Footer, Header } from "./site-chrome";
 import "./globals.css";
+import "./design-system.css";
 
 const sora = Sora({ variable: "--font-sora", subsets: ["latin"] });
 

@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { UiIcon } from "./ui-icon";
 
 type ChromeProps = {
   categories: { name: string; slug: string }[];
@@ -35,18 +36,18 @@ export function Header({ categories, rooms, stages, customerName }: ChromeProps)
         <form className="header-search" onSubmit={submitSearch}>
           <label className="sr-only" htmlFor="global-search">Search products</label>
           <input id="global-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search products, brands, categories..." />
-          <button aria-label="Search" type="submit">Search</button>
+          <button aria-label="Search" type="submit"><UiIcon name="search" size={17} /><span className="sr-only">Search</span></button>
         </form>
         <div className="account-links">{customerName ? <a className="signup-button" href="/account">My Account</a> : <><a href="/login">Customer Login</a><a className="signup-button" href="/signup">Sign Up</a></>}</div>
         <button className="menu-button" aria-label="Open menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}><i /><i /><i /></button>
       </div>
       <div className="header-navigation">
         <nav className="desktop-nav" aria-label="Primary">
-          <div className={navGroupClass("/by-stage")}><a href="/by-stage">Shop by Stage <span>⌄</span></a><div className="nav-dropdown">{stages.slice(0, 8).map((name) => <a href={`/by-stage?stage=${encodeURIComponent(name)}`} key={name}>{name}</a>)}</div></div>
-          <div className={navGroupClass("/by-room")}><a href="/by-room">Shop by Room <span>⌄</span></a><div className="nav-dropdown">{rooms.map((name) => <a href={`/by-room?room=${encodeURIComponent(name)}`} key={name}>{name}</a>)}</div></div>
-          <div className={navGroupClass("/categories")}><a href="/categories">All Categories <span>⌄</span></a><div className="nav-dropdown">{categories.slice(0, 8).map((category) => <a href={`/categories/${category.slug}`} key={category.slug}>{category.name}</a>)}</div></div>
+          <div className={navGroupClass("/by-stage")}><a href="/by-stage">Shop by Stage <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown">{stages.slice(0, 8).map((name) => <a href={`/by-stage?stage=${encodeURIComponent(name)}`} key={name}>{name}</a>)}</div></div>
+          <div className={navGroupClass("/by-room")}><a href="/by-room">Shop by Room <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown">{rooms.map((name) => <a href={`/by-room?room=${encodeURIComponent(name)}`} key={name}>{name}</a>)}</div></div>
+          <div className={navGroupClass("/categories")}><a href="/categories">All Categories <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown">{categories.slice(0, 8).map((category) => <a href={`/categories/${category.slug}`} key={category.slug}>{category.name}</a>)}</div></div>
           <div className={navGroupClass("/calculators")}><a href="/calculators">Design & Calculators</a></div>
-          <div className={navGroupClass("/more")}><a href="/more">More Services <span>⌄</span></a><div className="nav-dropdown compact"><a href="/professionals">Find Professionals</a><a href="/bulk-quotes">Get Bulk Quotes</a><a href="/list-product">List your Products</a></div></div>
+          <div className={navGroupClass("/more")}><a href="/more">More Services <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown compact"><a href="/professionals">Find Professionals</a><a href="/bulk-quotes">Get Bulk Quotes</a><a href="/list-product">List your Products</a></div></div>
         </nav>
         <a className="header-quote" href="/bulk-quotes"><span>Need project pricing?</span><strong>Request a quote →</strong></a>
       </div>

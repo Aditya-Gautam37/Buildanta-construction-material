@@ -19,7 +19,7 @@ export function HeroSlider({ slides }: { slides: HomepageSlide[] }) {
     <section className="home-hero home-hero-slider" aria-roledescription="carousel" aria-label="Buildanta highlights" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocusCapture={() => setPaused(true)} onBlurCapture={() => setPaused(false)}>
       {slides.map((slide, index) => (
         <article className={`hero-slide ${index === active ? "active" : ""}`} aria-hidden={index !== active} key={slide.id}>
-          <img src={slide.imageUrl} alt={index === active ? slide.altText : ""} />
+          <img src={slide.imageUrl} alt={index === active ? slide.altText : ""} loading={index === 0 ? "eager" : "lazy"} decoding="async" fetchPriority={index === 0 ? "high" : "auto"} />
           <div className="hero-shade" />
           <div className="home-hero-copy">
             <p className="live-catalog-pill"><span /> Live catalogue powered by Buildanta Inventory</p>

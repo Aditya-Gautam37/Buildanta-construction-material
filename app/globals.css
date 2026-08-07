@@ -176,10 +176,13 @@ img { max-width: 100%; display: block; }
 .professional-banner-types a:hover small { color: white; }
 
 .professionals-page { min-height: 700px; background: #fff; }
-.professional-hero { padding: 90px max(24px,calc((100vw - 1280px) / 2)); text-align: center; background: radial-gradient(circle at 18% 0%,rgba(255,140,26,.12),transparent 30%),linear-gradient(135deg,#f2f5f9,#fff); border-bottom: 1px solid var(--line); }
-.professional-hero > p,.professional-results-head > div > p,.profile-kicker { margin: 0; color: var(--orange); letter-spacing: .14em; font-size: 10px; font-weight: 750; }
-.professional-hero h1 { max-width: 850px; margin: 13px auto 18px; color: var(--navy); font-size: clamp(42px,5vw,67px); line-height: 1.08; letter-spacing: -.055em; }
-.professional-hero > span { display: block; max-width: 760px; margin: auto; color: var(--muted); font-size: 14px; line-height: 1.75; }
+.professional-hero { position: relative; min-height: 520px; display: grid; align-items: center; overflow: hidden; padding: 90px max(24px,calc((100vw - 1280px) / 2)); border-bottom: 1px solid var(--line); background: #0d2f4a; }
+.professional-hero > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; opacity: .72; }
+.professional-hero:after { position: absolute; inset: 0; content: ""; background: linear-gradient(90deg,rgba(5,27,42,.94) 0%,rgba(5,27,42,.72) 45%,rgba(5,27,42,.08) 80%); }
+.professional-hero > div { position: relative; z-index: 1; width: min(650px,100%); text-align: left; }
+.professional-hero > div > p,.professional-results-head > div > p,.profile-kicker { margin: 0; color: #ff9a4a; letter-spacing: .14em; font-size: 10px; font-weight: 750; }
+.professional-hero h1 { max-width: 650px; margin: 13px 0 18px; color: #fff; font-size: clamp(42px,5vw,67px); line-height: 1.08; letter-spacing: -.055em; }
+.professional-hero > div > span { display: block; max-width: 620px; color: #d8e5e9; font-size: 14px; line-height: 1.75; }
 .professional-category-section { width: min(1280px,calc(100% - 42px)); margin: -28px auto 0; position: relative; z-index: 2; }
 .professional-category-cards { display: grid; grid-template-columns: repeat(5,1fr); gap: 13px; }
 .professional-category-cards > a { min-width: 0; min-height: 220px; padding: 22px 19px; border: 1px solid var(--border); border-radius: 14px; background: white; box-shadow: 0 10px 28px rgba(31,58,95,.08); transition: .2s ease; }

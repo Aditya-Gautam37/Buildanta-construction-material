@@ -113,19 +113,12 @@ describe("mapProducts", () => {
 });
 
 describe("fallbackSnapshot", () => {
-  it("builds a complete, internally consistent snapshot from the static demo catalogue", () => {
+  it("keeps navigation available without reintroducing removed demo products", () => {
     const snapshot = fallbackSnapshot();
 
     expect(snapshot.source).toBe("fallback");
-    expect(snapshot.products.length).toBeGreaterThan(0);
+    expect(snapshot.products).toEqual([]);
     expect(snapshot.categories.length).toBeGreaterThan(0);
-
-    // every product's category must resolve to a real fallback category slug
-    const categorySlugs = new Set(snapshot.categories.map((category) => category.slug));
-    for (const product of snapshot.products) {
-      expect(categorySlugs.has(product.categorySlug)).toBe(true);
-      expect(product.availability).toBe("ENQUIRY");
-    }
   });
 });
 
@@ -143,7 +136,8 @@ describe("getCatalogSnapshot", () => {
     const snapshot = await getCatalogSnapshot();
 
     expect(snapshot.source).toBe("fallback");
-    expect(snapshot.products.length).toBeGreaterThan(0);
+    expect(snapshot.products).toEqual([]);
+    expect(snapshot.categories.length).toBeGreaterThan(0);
   });
 
   it("returns the fallback snapshot when the inventory API responds with a non-OK status", async () => {

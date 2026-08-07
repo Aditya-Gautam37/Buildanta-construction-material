@@ -11,7 +11,7 @@ async function bootstrap() {
     origin: origins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-buildanta-guest-cart'],
   });
   app.enableShutdownHooks();
   await app.listen(Number(process.env.PORT ?? 5173), '0.0.0.0');

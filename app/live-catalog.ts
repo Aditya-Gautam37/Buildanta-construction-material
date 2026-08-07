@@ -21,6 +21,7 @@ type ApiBrand = {
   website?: string | null;
 };
 export type PublicAvailability = "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK" | "ENQUIRY";
+export type PurchaseMode = "DIRECT_ONLY" | "QUOTE_ONLY" | "DIRECT_AND_QUOTE";
 type ApiProduct = {
   id: string;
   name: string;
@@ -52,6 +53,10 @@ type ApiVariant = {
   attributes?: unknown;
   product?: { id: string; name: string };
   images?: { id?: string; src: string; alt?: string; sortOrder?: number; primary?: boolean }[];
+  purchaseMode?: PurchaseMode;
+  maxDirectQuantity?: number | null;
+  bulkQuoteThreshold?: number | null;
+  quantityIncrement?: number;
 };
 
 export type CatalogNode = { id: string; name: string; slug: string; parentId: string | null; description: string | null; imageUrl: string | null; icon: string | null; sortOrder: number; featured: boolean; published: boolean; seoTitle: string | null; seoDescription: string | null; childCount: number; productCount: number };
@@ -81,7 +86,7 @@ export type StoreProduct = {
   image: string | null;
   imageAlt: string;
   images: { src: string; alt: string }[];
-  variants: { id: string; sku: string; label: string; price: number; unit: string; availability: PublicAvailability; attributes: Record<string, string> }[];
+  variants: { id: string; sku: string; label: string; price: number; unit: string; availability: PublicAvailability; attributes: Record<string, string>; purchaseMode: PurchaseMode; minimumOrderQuantity: number; maxDirectQuantity: number | null; bulkQuoteThreshold: number | null; quantityIncrement: number }[];
   sku: string;
   availability: PublicAvailability;
   minimumOrderQuantity: number;
@@ -201,7 +206,14 @@ export function mapProducts(products: ApiProduct[], variants: ApiVariant[], cate
       variants: detailedVariants.map((variant) => {
         const record = variant.attributes && typeof variant.attributes === "object" && !Array.isArray(variant.attributes) ? variant.attributes as Record<string, unknown> : {};
         const attributes = Object.fromEntries(Object.entries(record).flatMap(([key,value]) => typeof value === "string" || typeof value === "number" ? [[key,String(value)]] : []));
-        return { id:variant.id, sku:variant.sku, label:Object.values(attributes).join(" / ") || variant.sku, price:priceNumber(variant.price) || priceNumber(product.sellingPrice), unit:variant.unit || product.unit || "unit", availability:variant.availabilityStatus || "ENQUIRY", attributes };
+        return {
+          id:variant.id, sku:variant.sku, label:Object.values(attributes).join(" / ") || variant.sku, price:priceNumber(variant.price) || priceNumber(product.sellingPrice), unit:variant.unit || product.unit || "unit", availability:variant.availabilityStatus || "ENQUIRY", attributes,
+          purchaseMode: variant.purchaseMode || "QUOTE_ONLY",
+          minimumOrderQuantity: variant.minimumOrderQuantity ?? 1,
+          maxDirectQuantity: variant.maxDirectQuantity ?? null,
+          bulkQuoteThreshold: variant.bulkQuoteThreshold ?? null,
+          quantityIncrement: variant.quantityIncrement ?? 1,
+        };
       }),
       sku,
       availability,

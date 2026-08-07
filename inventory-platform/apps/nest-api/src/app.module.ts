@@ -21,9 +21,10 @@ import { QuotationsModule } from './quotations/quotations.module';
 import { FulfilmentOperationsModule } from './fulfilment-operations/fulfilment-operations.module';
 import { CustomerPortalModule } from './customer-portal/customer-portal.module';
 import { CalculatorsModule } from './calculators/calculators.module';
+import { CartModule } from './cart/cart.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule, AuthModule, ProductsModule, CategoriesModule, StagesModule, RoomsModule, SuppliersModule, BrandsModule, ProductVariantsModule, ProfessionalsModule, HomepageContentModule, QuoteRequestsModule, SupplierSubmissionsModule, StockModule, InventoryLocationsModule, QuotationsModule, FulfilmentOperationsModule, CustomerPortalModule, CalculatorsModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule, AuthModule, ProductsModule, CategoriesModule, StagesModule, RoomsModule, SuppliersModule, BrandsModule, ProductVariantsModule, ProfessionalsModule, HomepageContentModule, QuoteRequestsModule, SupplierSubmissionsModule, StockModule, InventoryLocationsModule, QuotationsModule, FulfilmentOperationsModule, CustomerPortalModule, CalculatorsModule, CartModule],
   controllers: [AppController],
   providers: [AppService],
 })

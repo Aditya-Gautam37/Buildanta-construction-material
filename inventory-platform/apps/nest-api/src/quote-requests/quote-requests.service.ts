@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { MaterialEstimateStatus, ProductStatus, QuotationStatus, VariantStatus } from '@workspace/db';
+import { MaterialEstimateStatus, Prisma, ProductStatus, QuotationStatus, VariantStatus } from '@workspace/db';
 import type { z } from 'zod';
 import type {
   legacyQuoteRequestCreateSchema,
@@ -43,9 +43,10 @@ function normalize(input: PublicQuotationInput): CanonicalQuotationInput {
 export class QuoteRequestsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(rawInput: PublicQuotationInput) {
+  async create(rawInput: PublicQuotationInput, tx?: Prisma.TransactionClient, extra?: { sourceCartId?: string }) {
+    const db = tx ?? this.prisma.client;
     const input = normalize(rawInput);
-    const existingEstimate = input.sourceEstimateReference ? await this.prisma.client.materialEstimate.findUnique({
+    const existingEstimate = input.sourceEstimateReference ? await db.materialEstimate.findUnique({
       where: { reference: input.sourceEstimateReference },
       include: { quotation: { select: { reference: true } }, items: { select: { id: true } } },
     }) : null;
@@ -56,11 +57,11 @@ export class QuoteRequestsService {
     }
     const variantIds = input.items.flatMap((item) => item.variantId ? [item.variantId] : []);
     const productIds = input.items.flatMap((item) => item.productId ? [item.productId] : []);
-    const variants = variantIds.length ? await this.prisma.client.productVariant.findMany({
+    const variants = variantIds.length ? await db.productVariant.findMany({
         where: { id: { in: variantIds } },
         include: { product: true },
       }) : [];
-    const products = productIds.length ? await this.prisma.client.product.findMany({
+    const products = productIds.length ? await db.product.findMany({
         where: { id: { in: productIds } },
       }) : [];
     const variantMap = new Map(variants.map((variant) => [variant.id, variant]));
@@ -89,8 +90,8 @@ export class QuoteRequestsService {
     });
     const reference = `BQ-${new Date().toISOString().slice(2, 10).replaceAll('-', '')}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
     const compatibilityRequirement = normalizedItems.map((item) => `${item.description} x ${item.quantity} ${item.unitCode}`).join('; ');
-    await this.prisma.client.$transaction(async (tx) => {
-      const source = await tx.quoteRequest.create({
+    const run = async (trx: Prisma.TransactionClient) => {
+      const source = await trx.quoteRequest.create({
         data: {
           reference,
           name: input.name,
@@ -105,10 +106,11 @@ export class QuoteRequestsService {
           notes: input.customerNotes,
         },
       });
-      const quotation = await tx.quotation.create({
+      const quotation = await trx.quotation.create({
         data: {
           reference,
           sourceQuoteRequestId: source.id,
+          sourceCartId: extra?.sourceCartId,
           customerName: input.name,
           customerEmail: input.email,
           customerPhone: input.phone,
@@ -128,13 +130,18 @@ export class QuoteRequestsService {
         },
       });
       if (existingEstimate) {
-        const linked = await tx.materialEstimate.updateMany({
+        const linked = await trx.materialEstimate.updateMany({
           where: { id: existingEstimate.id, quotationId: null, status: MaterialEstimateStatus.ACTIVE },
           data: { quotationId: quotation.id, status: MaterialEstimateStatus.CONVERTED },
         });
         if (linked.count !== 1) throw new BadRequestException('This estimate has already been converted to a quotation.');
       }
-    });
+    };
+    if (tx) {
+      await run(tx);
+    } else {
+      await this.prisma.client.$transaction(run);
+    }
     return { reference, itemCount: normalizedItems.length };
   }
 }

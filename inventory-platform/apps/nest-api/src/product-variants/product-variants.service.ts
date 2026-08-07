@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../database/prisma.service';
 import { CreateProductVariantDTO } from './dto/create-product-variant-dto';
 import { UpdateProductVariantDTO } from './dto/update-product-variant-dto';
-import { ProductStatus, UserRole, VariantStatus } from '@workspace/db';
+import { ProductStatus, PurchaseMode, UserRole, VariantStatus } from '@workspace/db';
 import { CATALOGUE_WRITE_ROLES, requireFinancialAccess, requireRole } from '../auth/roles';
 import { publicAvailabilityForBalances } from '../common/public-catalogue';
 
@@ -22,6 +22,10 @@ export class ProductVariantsService {
 		reservedQuantity: number;
 		lowStockThreshold: number;
 		stockTracked: boolean;
+		purchaseMode: PurchaseMode;
+		maxDirectQuantity: number | null;
+		bulkQuoteThreshold: number | null;
+		quantityIncrement: number;
 		inventoryBalances: Array<{
 			physicalQuantity: number;
 			reservedQuantity: number;
@@ -47,6 +51,10 @@ export class ProductVariantsService {
 			attributes: variant.attributes,
 			unit: variant.unit,
 			minimumOrderQuantity: variant.minimumOrderQuantity,
+			purchaseMode: variant.purchaseMode,
+			maxDirectQuantity: variant.maxDirectQuantity,
+			bulkQuoteThreshold: variant.bulkQuoteThreshold,
+			quantityIncrement: variant.quantityIncrement,
 			availabilityStatus: publicAvailabilityForBalances(variant.inventoryBalances),
 			images: variant.images.map((image) => ({
 				id: image.id,

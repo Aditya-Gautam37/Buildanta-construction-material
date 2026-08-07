@@ -1,0 +1,10 @@
+.wrap{display:flex;flex-wrap:wrap;align-items:center;gap:.7rem;margin-top:.9rem}
+.stepper{display:grid;grid-template-columns:2.2rem minmax(2.4rem,1fr) 2.2rem;align-items:center;border:1px solid #d5e0e7;border-radius:.75rem;background:#f8fafb;overflow:hidden}
+.stepper button{min-height:2.6rem;border:0;background:transparent;color:#183549;font-size:1.05rem;cursor:pointer}
+.stepper button:disabled{opacity:.4;cursor:not-allowed}
+.stepper span{text-align:center;color:#152f40;font-size:.9rem;font-weight:800}
+.addButton{border:0;border-radius:.8rem;background:#16805f;padding:.75rem 1.3rem;color:#fff;font-size:.82rem;font-weight:850;cursor:pointer}
+.addButton:disabled{opacity:.6;cursor:wait}
+.cartLink{color:#16805f;font-size:.78rem;font-weight:800;text-decoration:none}
+.cartLink:hover{text-decoration:underline}
+.error{width:100%;margin:0;border-radius:.6rem;background:#fff0ee;padding:.55rem .7rem;color:#b42318;font-size:.72rem;font-weight:750}

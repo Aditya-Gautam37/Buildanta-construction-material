@@ -55,10 +55,9 @@ export default async function Categories({ searchParams }: { searchParams: Promi
 
   return <main className="taxonomy-page"><div className="taxonomy-serviceability"><ServiceabilityChecker /></div>
     <section className="category-hero">
-      <div className="category-hero-copy"><p>SHOP BY MATERIAL</p><h1>Choose a material. Get the right product.</h1><span>Use the quick finder or browse the live catalogue.</span><div><b>{roots.length}</b><small>material categories</small><b>{catalog.products.length}</b><small>published products</small></div></div>
+      <div className="category-hero-copy"><p>SHOP BY MATERIAL</p><h1>Choose a material. Get the right product.</h1><span>Browse the live catalogue, compare products and request project pricing.</span><div><b>{roots.length}</b><small>material categories</small><b>{catalog.products.length}</b><small>published products</small></div></div>
       <div className="category-hero-gallery" aria-label="Construction material catalogue preview">{heroImages.map((src, index) => <figure key={`${src}-${index}`}><img src={src} alt={index === 0 ? "Structural construction material" : index === 1 ? "Finishing material" : "Fixture and fitting"} /></figure>)}</div>
     </section>
-    <GuidedProductFinder mode="category" selection={roots[0]?.name || ""} products={catalog.products} options={roots.map((category) => category.name)} categoryGroups={categoryGroups} />
     <form className="taxonomy-search"><span aria-hidden="true">⌕</span><label className="sr-only" htmlFor="category-search">Search categories or brands</label><input id="category-search" name="q" defaultValue={q} placeholder="Search products, categories or brands..." /><button>Search</button></form>
     {needle && <section className="search-product-results"><div className="section-heading-row"><div><p>Search results</p><h2>{matchedProducts.length ? `${matchedProducts.length} matching products` : "No matching products"}</h2><span>{matchedProducts.length ? "Live published products from Buildanta Inventory." : "Try a product, brand, category or specification."}</span></div></div>{matchedProducts.length > 0 && <div className="products-grid">{matchedProducts.map((product) => <ProductCard key={product.id} product={product} />)}</div>}</section>}
     <section className="category-directory"><div className="section-heading-row"><div><p>Browse the catalogue</p><h2>{needle ? "Matching categories" : "Construction material categories"}</h2><span>Open any category to see its live products, prices and quotation options.</span></div><a className="view-all" href="/bulk-quotes">Request a bulk quote <span>→</span></a></div>
@@ -77,5 +76,6 @@ export default async function Categories({ searchParams }: { searchParams: Promi
         </article>;
       })}</div> : <div className="category-empty"><h2>No matching categories</h2><p>Try another product, category or brand name.</p><a href="/categories">Clear search</a></div>}
     </section>
+    <GuidedProductFinder mode="category" selection={roots[0]?.name || ""} products={catalog.products} options={roots.map((category) => category.name)} categoryGroups={categoryGroups} />
   </main>;
 }

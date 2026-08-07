@@ -20,6 +20,7 @@ export function ProductBrowser({ mode, products, options, initial = "", query = 
   const [term, setTerm] = useState(query);
   const [sort, setSort] = useState("featured");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [finderOpen, setFinderOpen] = useState(false);
   const [brand,setBrand]=useState("all");
   const [availability,setAvailability]=useState("all");
   const [fulfilmentMode,setFulfilmentMode]=useState("all");
@@ -47,28 +48,43 @@ export function ProductBrowser({ mode, products, options, initial = "", query = 
   }, [mode, products, selection, term, sort,locationProducts,locationState,availability,fulfilmentMode,brand,maxPrice,categoryGroups]);
   const scopedProducts = useMemo(() => products.filter((product) => matches(product, mode, selection, categoryGroups)), [categoryGroups, mode, products, selection]);
   const selectionIndex = Math.max(0, options.indexOf(selection));
-  const description = mode === "stage" ? `Answer a few quick questions to get your ${selection} material list.` : mode === "room" ? "Answer three quick questions to see the best product matches." : "Choose what matters and see the closest product matches.";
+  const description = mode === "stage" ? `Shop verified materials for ${selection}. Compare live products now or use the buying assistant for a tailored list.` : mode === "room" ? `Shop products selected for ${selection}. Compare prices, brands and availability in one place.` : "Compare live products, prices and brands from the Buildanta catalogue.";
+  const heroProduct = scopedProducts.find((product) => product.image);
+  const pricedProducts = scopedProducts.filter((product) => product.price > 0);
+  const startingPrice = pricedProducts.length ? Math.min(...pricedProducts.map((product) => product.price)) : 0;
+  const browseLabel = mode === "stage" ? "construction stage" : mode === "room" ? "room" : "category";
 
-  return <div className="browser-layout">
-    <button className="filter-trigger" onClick={() => setFiltersOpen(!filtersOpen)} aria-expanded={filtersOpen}>Browse {mode === "stage" ? "construction stages" : mode === "room" ? "rooms" : "categories"}</button>
-    <aside className={`browser-sidebar ${filtersOpen ? "open" : ""}`}>
-      <div className="sidebar-title"><div><small>PROJECT NAVIGATOR</small><strong>{mode === "stage" ? "Construction stages" : mode === "room" ? "Rooms" : "Categories"}</strong></div><button onClick={() => setFiltersOpen(false)} aria-label="Close filters">Close</button></div>
-      {options.map((option, index) => <button className={selection === option ? "selected" : ""} onClick={() => { setSelection(option); setTerm(""); setFiltersOpen(false); }} key={option}>
-        <span className="option-number">{String(index + 1).padStart(2, "0")}</span><span className="option-copy"><strong>{option}</strong><small>{counts.get(option) || 0} published products</small></span><b aria-hidden="true">{">"}</b>
-      </button>)}
-    </aside>
+  function chooseSelection(option: string) {
+    setSelection(option);
+    setTerm("");
+    setFinderOpen(false);
+  }
+
+  return <div className="browser-layout commerce-browser">
+    <nav className="commerce-paths" aria-label={`Shop by ${browseLabel}`}>
+      <div><span>SHOP BY {browseLabel.toUpperCase()}</span><strong>Choose where you want to shop</strong></div>
+      <div className="commerce-path-scroll">{options.map((option, index) => <button className={selection === option ? "selected" : ""} onClick={() => chooseSelection(option)} aria-pressed={selection === option} key={option}>
+        <span>{String(index + 1).padStart(2, "0")}</span><strong>{option}</strong><small>{counts.get(option) || 0} products</small>
+      </button>)}</div>
+    </nav>
     <section className="results-panel">
-      <form className={`location-filter-bar ${locationState}`} onSubmit={event=>{event.preventDefault();void checkLocation(pincode)}}><div><strong>Delivery PIN code</strong><span>{locationState==="serviceable"?"Showing products serviceable in your area.":locationState==="unsupported"?"This area is not serviceable yet. Products remain available for manual enquiry.":locationState==="error"?"Availability could not be confirmed. You can still request a quotation.":"Set your PIN code for location-aware products and delivery estimates."}</span></div><label><span className="sr-only">Delivery PIN code</span><input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={pincode} onChange={event=>setPincode(event.target.value.replace(/\D/g,""))} placeholder="6-digit PIN"/></label><button disabled={locationState==="loading"}>{locationState==="loading"?"Checking...":"Apply"}</button></form>
-      <div className="stage-context">
-        <div className="stage-context-number"><small>{mode === "stage" ? "BUILD STAGE" : "CATALOGUE VIEW"}</small><strong>{String(selectionIndex + 1).padStart(2, "0")}</strong></div>
-        <div><p>{mode === "stage" ? "Materials for this phase" : mode === "room" ? "Products for this room" : "Product category"}</p><h1>{selection || "Construction materials"}</h1><span>{description}</span></div>
-        <ul><li>Inventory connected</li><li>Real product photography</li><li>Project quotes available</li></ul>
-      </div>
-      {mode === "stage" ? <StageQuestionnaire key={selection} stage={selection} products={scopedProducts} deliveryPincode={pincode} /> : <GuidedProductFinder key={`${mode}-${selection}`} mode={mode} selection={selection} products={scopedProducts} />}
-      <div className="results-toolbar" id="product-results"><label><span aria-hidden="true">Search</span><input value={term} onChange={(event) => setTerm(event.target.value)} placeholder="Search products and brands..." /></label><select value={sort} onChange={(event) => setSort(event.target.value)} aria-label="Sort products"><option value="featured">Recently updated</option><option value="low">Price: Low to High</option><option value="high">Price: High to Low</option></select></div>
-      <div className="advanced-filters"><label>Brand<select value={brand} onChange={event=>setBrand(event.target.value)}><option value="all">All brands</option>{brands.map(value=><option value={value} key={value}>{value}</option>)}</select></label><label>Availability<select value={availability} onChange={event=>setAvailability(event.target.value)}><option value="all">All availability</option><option value="IN_STOCK">Available</option><option value="LOW_STOCK">Limited</option><option value="ENQUIRY">On enquiry</option><option value="OUT_OF_STOCK">Request availability</option></select></label><label>Fulfilment<select value={fulfilmentMode} onChange={event=>setFulfilmentMode(event.target.value)}><option value="all">All fulfilment</option><option value="STOCKED">Buildanta stock</option><option value="PARTNER_STOCK">Partner stock</option><option value="ON_REQUEST">On request</option></select></label><label>Maximum indicative price<input type="number" min="0" value={maxPrice} onChange={event=>setMaxPrice(event.target.value)} placeholder="No limit"/></label></div>
-      <div className="results-summary"><strong>{visible.length} products</strong><span>Pricing is indicative. Final price, GST and transport are confirmed in your quotation.</span></div>
-      {visible.length ? <div className="products-grid">{visible.map((product) => <ProductCard key={product.id} product={product} location={locationProducts.get(product.id)} />)}</div> : <div className="empty-panel"><span aria-hidden="true">0</span><h2>No matching products</h2><p>{locationState==="serviceable"?"Try another category or request manual availability confirmation.":"Clear the filters or choose another catalogue section."}</p><button onClick={() => {setTerm("");setBrand("all");setAvailability("all");setFulfilmentMode("all");setMaxPrice("")}}>Clear filters</button></div>}
+      <section className="commerce-hero">
+        <div className="commerce-hero-copy"><p>BUILDANTA MATERIAL STORE · {String(selectionIndex + 1).padStart(2, "0")}</p><h1>{selection || "Construction materials"}</h1><span>{description}</span><div className="commerce-hero-actions"><button onClick={() => document.getElementById("product-results")?.scrollIntoView({ behavior: "smooth" })}>Shop {scopedProducts.length} products <b>→</b></button><button className="secondary" onClick={() => setFinderOpen(true)}>Help me choose</button></div><dl><div><dt>Products</dt><dd>{scopedProducts.length}</dd></div><div><dt>Starting at</dt><dd>{startingPrice ? `₹${startingPrice.toLocaleString("en-IN")}` : "Get quote"}</dd></div><div><dt>Delivery</dt><dd>{locationState === "serviceable" ? `To ${pincode}` : "Check PIN"}</dd></div></dl></div>
+        <div className="commerce-hero-visual">{heroProduct?.image ? <img src={heroProduct.image} alt={heroProduct.imageAlt || `${selection} construction material`} decoding="async" fetchPriority="high" /> : <img src="/images/buildanta-v2/foundation-planning-v2.webp" alt={`${selection} construction materials`} decoding="async" fetchPriority="high" />}<span>Live catalogue</span><small>{heroProduct?.brand || "Buildanta verified materials"}</small></div>
+      </section>
+
+      <div className="commerce-assurance commerce-browser-assurance"><span><i>✓</i><strong>Verified catalogue</strong><small>Products managed in Inventory</small></span><span><i>₹</i><strong>Transparent pricing</strong><small>Indicative rates shown upfront</small></span><span><i>◎</i><strong>Location checked</strong><small>Availability for your PIN code</small></span><span><i>↗</i><strong>Bulk quotations</strong><small>Project pricing when you need it</small></span></div>
+
+      <form className={`location-filter-bar commerce-location ${locationState}`} onSubmit={event=>{event.preventDefault();void checkLocation(pincode)}}><div><strong>Delivering to</strong><span>{locationState==="serviceable"?`${pincode} · Products available in your area`:locationState==="unsupported"?"Area not yet serviceable · Manual quotation available":locationState==="error"?"Enter a valid 6-digit PIN code":"Check product availability and delivery"}</span></div><label><span className="sr-only">Delivery PIN code</span><input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={pincode} onChange={event=>setPincode(event.target.value.replace(/\D/g,""))} placeholder="Enter PIN code"/></label><button disabled={locationState==="loading"}>{locationState==="loading"?"Checking...":"Check"}</button></form>
+
+      {finderOpen && <section className="commerce-finder-shell"><div className="commerce-finder-title"><div><span>PERSONAL SHOPPING ASSISTANT</span><strong>{mode === "stage" ? `Build my ${selection} material list` : `Find the right products for ${selection}`}</strong></div><button onClick={() => setFinderOpen(false)} aria-label="Close product finder">Close ×</button></div>{mode === "stage" ? <StageQuestionnaire key={selection} stage={selection} products={scopedProducts} deliveryPincode={pincode} /> : <GuidedProductFinder key={`${mode}-${selection}`} mode={mode} selection={selection} products={scopedProducts} />}</section>}
+
+      <section className="commerce-products" id="product-results">
+        <div className="commerce-products-heading"><div><span>SHOP LIVE PRODUCTS</span><h2>{selection}</h2><p>{visible.length} products ready to compare</p></div><button className="commerce-filter-button" onClick={() => setFiltersOpen((open) => !open)} aria-expanded={filtersOpen}>Filters {filtersOpen ? "×" : "+"}</button></div>
+        <div className="results-toolbar"><label><span aria-hidden="true">Search</span><input value={term} onChange={(event) => setTerm(event.target.value)} placeholder="Search products and brands..." /></label><select value={sort} onChange={(event) => setSort(event.target.value)} aria-label="Sort products"><option value="featured">Featured products</option><option value="low">Price: Low to High</option><option value="high">Price: High to Low</option></select></div>
+        {filtersOpen && <div className="advanced-filters"><label>Brand<select value={brand} onChange={event=>setBrand(event.target.value)}><option value="all">All brands</option>{brands.map(value=><option value={value} key={value}>{value}</option>)}</select></label><label>Availability<select value={availability} onChange={event=>setAvailability(event.target.value)}><option value="all">All availability</option><option value="IN_STOCK">Available</option><option value="LOW_STOCK">Limited</option><option value="ENQUIRY">On enquiry</option><option value="OUT_OF_STOCK">Request availability</option></select></label><label>Fulfilment<select value={fulfilmentMode} onChange={event=>setFulfilmentMode(event.target.value)}><option value="all">All fulfilment</option><option value="STOCKED">Buildanta stock</option><option value="PARTNER_STOCK">Partner stock</option><option value="ON_REQUEST">On request</option></select></label><label>Maximum indicative price<input type="number" min="0" value={maxPrice} onChange={event=>setMaxPrice(event.target.value)} placeholder="No limit"/></label></div>}
+        {visible.length ? <div className="products-grid">{visible.map((product) => <ProductCard key={product.id} product={product} location={locationProducts.get(product.id)} />)}</div> : <div className="empty-panel"><span aria-hidden="true">0</span><h2>No matching products</h2><p>{locationState==="serviceable"?"Try another category or request manual availability confirmation.":"Clear the filters or choose another catalogue section."}</p><button onClick={() => {setTerm("");setBrand("all");setAvailability("all");setFulfilmentMode("all");setMaxPrice("")}}>Clear filters</button></div>}
+      </section>
     </section>
   </div>;
 }

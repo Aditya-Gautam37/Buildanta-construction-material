@@ -84,12 +84,20 @@ describe("ProductBrowser", () => {
       makeProduct({ id: "b", slug: "b", name: "Beta", categories: ["Cement & Structure"], price: 100 }),
       makeProduct({ id: "c", slug: "c", name: "Gamma", categories: ["Cement & Structure"], price: 300 }),
     ];
-    render(<ProductBrowser mode="category" products={sameCategoryProducts} options={["Cement & Structure"]} initial="Cement & Structure" />);
+    const { container } = render(<ProductBrowser mode="category" products={sameCategoryProducts} options={["Cement & Structure"]} initial="Cement & Structure" />);
 
     fireEvent.change(screen.getByLabelText("Sort products"), { target: { value: "low" } });
 
-    const names = screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent);
+    const names = Array.from(container.querySelectorAll(".product-card h2")).map((heading) => heading.textContent);
     expect(names).toEqual(["Beta", "Gamma", "Alpha"]);
+  });
+
+  it("keeps the buying assistant optional until the customer asks for help", () => {
+    render(<ProductBrowser mode="category" products={products} options={options} initial="Cement & Structure" />);
+
+    expect(screen.queryByText("Find the right product in under a minute.")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Help me choose" }));
+    expect(screen.getByText("Find the right product in under a minute.")).toBeInTheDocument();
   });
 
   it("shows the empty state when the search term matches nothing", () => {

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { getCatalogSnapshot, rootNodes } from "./live-catalog";
 import { getProfessionals, professionalCategories } from "./professional-directory";
 import { defaultHomepageSlide, getHomepageContent } from "./homepage-content";
@@ -14,6 +15,15 @@ const roomImages: Record<string, string> = {
   "Balcony & Terrace": "/livingroom.jpg",
 };
 const materialIcons = ["▣", "▥", "⌁", "◉", "◒", "▦", "⌂", "✦", "▤", "▱"];
+
+const discoveryTiles = [
+  { eyebrow: "MATERIALS", title: "Shop all products", detail: "Cement, steel, electrical, tiles and more", href: "/categories", image: "/demo/products/cement.png", tone: "light" },
+  { eyebrow: "PROJECT", title: "Plan by build stage", detail: "Get guided quantities before choosing products", href: "/by-stage", image: "/demo/hero/build-journey.png", tone: "image" },
+  { eyebrow: "SPACES", title: "Find products by room", detail: "Kitchen, bathroom, bedroom and living spaces", href: "/by-room", image: "/livingroom.jpg", tone: "image" },
+  { eyebrow: "CALCULATE", title: "Estimate your materials", detail: "Area-based construction planning tools", href: "/calculators", image: "/demo/hero/project-planning.png", tone: "dark" },
+  { eyebrow: "PRICING", title: "Request a bulk quote", detail: "One enquiry for your complete material list", href: "/bulk-quotes", image: "/demo/products/tmt-steel.png", tone: "light" },
+  { eyebrow: "EXPERTS", title: "Find professionals", detail: "Connect with builders, architects and contractors", href: "/professionals", image: "/forprofessionalsbanner.png", tone: "image" },
+] as const;
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return <div className="section-title"><span /><h2>{children}</h2><span /></div>;
@@ -45,9 +55,14 @@ export default async function Home() {
       <HeroSlider slides={slides} />
 
       <section className="commerce-assurance" aria-label="Buildanta shopping benefits">
-        <span><strong>Verified catalogue</strong><small>Managed from Buildanta Inventory</small></span>
-        <span><strong>Project pricing</strong><small>Request quotes for any quantity</small></span>
-        <span><strong>Construction focused</strong><small>Browse by stage, room or category</small></span>
+        <span><i>01</i><strong>Verified catalogue</strong><small>Managed from Buildanta Inventory</small></span>
+        <span><i>02</i><strong>Project pricing</strong><small>Request quotes for any quantity</small></span>
+        <span><i>03</i><strong>Construction focused</strong><small>Browse by stage, room or category</small></span>
+      </section>
+
+      <section className="home-discovery" aria-labelledby="discovery-title">
+        <div className="home-discovery-heading"><div><p>START YOUR BUILD JOURNEY</p><h2 id="discovery-title">What are you looking for?</h2></div><span>Choose the way you want to shop. Every path uses the same live Buildanta catalogue.</span></div>
+        <div className="discovery-grid">{discoveryTiles.map((tile) => <a className={`discovery-card ${tile.tone}`} href={tile.href} key={tile.title}><div><small>{tile.eyebrow}</small><h3>{tile.title}</h3><p>{tile.detail}</p><strong>Explore <span>→</span></strong></div><Image src={tile.image} alt="" width={560} height={320} sizes="(max-width: 760px) 40vw, (max-width: 1120px) 42vw, 220px" /></a>)}</div>
       </section>
 
       <section className="home-section brands-section">

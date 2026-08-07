@@ -29,6 +29,7 @@ export function HeroSlider({ slides }: { slides: HomepageSlide[] }) {
               {slide.ctaLabel && slide.ctaHref && <a className="button orange" href={slide.ctaHref} tabIndex={index === active ? 0 : -1}>{slide.ctaLabel}</a>}
               <a className="button navy" href="/bulk-quotes" tabIndex={index === active ? 0 : -1}>Get project pricing</a>
             </div>
+            <ul className="hero-highlights" aria-label="Buildanta services"><li><strong>11</strong><span>build stages</span></li><li><strong>Live</strong><span>inventory products</span></li><li><strong>PIN</strong><span>delivery checks</span></li></ul>
           </div>
         </article>
       ))}

@@ -51,6 +51,28 @@ Every step is read from inventory. Nothing in the journey is hardcoded in the st
 | 23 | Launch gate? | Every category mapped to a live room or stage must reach at least one published product. Enforced by an audit script. |
 | 24 | Calculators? | Assumed out of scope. `CalculatorWizard` and its estimate flow are a different job and stay as they are. |
 
+## Decisions, set three — calculator convergence and recommendations
+
+Decision 24 previously put calculators out of scope. That is now reversed: the BOQ calculator and
+the product wizard converge on the same catalogue.
+
+| # | Question | Decision |
+|---|---|---|
+| 25 | What does the BOQ calculator output? | Quantities against material **categories**, never products and never prices. `CalculatorProductMapping.categoryId` already exists and is unused (0 of 174 mappings); the 174 variant-pointing mappings repoint to it. |
+| 26 | How does a BOQ line become a product? | The wizard resolves it: quality tier, then brand, then a real variant with a live inventory price. Each line arrives **pre-filled** with a recommended product so the customer can accept everything at once and change only what they care about. |
+| 27 | What drives the pre-fill? | Staff-curated **ranked list** per material per quality tier; the first available product wins, so a stockout does not empty the line. The admin shows margin, stock and brand-deal signals as **decision support** — it never auto-picks. |
+| 28 | Where do staff manage it? | A dedicated recommendations page: every calculator output key against its three tiers, the ranked products for each, with margin and stock inline. This is a merchandising decision and gets its own surface, not a corner of the formula editor. |
+| 29 | What does the customer see? | The product labelled "Buildanta recommended" with a visible change control. If brands ever fund a slot, that is disclosed separately as sponsored — Indian advertising rules expect paid placement to be labelled. |
+| 30 | A BOQ line whose category holds no product? | Show the quantity with a "request pricing" action into the bulk-quote flow. The customer still gets a complete material list and Buildanta captures the demand signal. |
+| 31 | The 99 demo products? | Delete once mappings are repointed. They appear in 300 `MaterialEstimateItem` rows, so check what those histories need before removing anything. |
+| 32 | Estimate pricing? | Estimates show **live** prices with a disclaimer. The **quotation** is the frozen commercial document — a quotation whose total moves after it is sent is not a quotation. |
+
+### Why this is cheap
+
+`CalculatorProductMapping` already carries `categoryId`, `qualityTier`, `preferred` and `priority`.
+The ranked-list-per-tier model is exactly what those columns were designed for. No migration is
+needed for the mapping itself — only for whatever the recommendations page needs beyond it.
+
 ## URL scheme (decision 21)
 
 Canonical content lives on the category node. Lens context is a query parameter, mirroring the
@@ -259,6 +281,45 @@ Both are type-clean with 47/47 unit tests passing. Neither is browser-verified: 
 not bind a port in this environment, and the pre-existing `storefront` launch config fails the
 same way. Worth solving separately, since local browser verification is the team's definition of
 done.
+
+### 2026-08-08 — phase 2 analysis changed the plan again
+
+`packages/database/src/propose-taxonomy-merge.ts` (read-only) was written to propose the tree B to
+tree A mapping. It found the real problem is not the two trees.
+
+Of 126 published products, each assigned to exactly one category:
+
+- **99 are `Buildanta Calculator Demo`** seeded test data, in economy/standard/premium triplets,
+  filed directly on root departments with no subcategory. They were published and publicly visible.
+- **27 are real branded products** (UltraTech, Tata Tiscon, Polycab, Jaquar, Hindware, Fenesta,
+  Godrej, Dr. Fixit, CenturyPly, Sika, Legrand, Philips and others), all on tree B.
+- **0 products sit on tree A.**
+
+So "keep tree A, move tree B onto it" is really: file 27 real products into a 154-node taxonomy.
+Of those, 5 map by name onto an existing tree A node, 22 have no equivalent and need a decision or
+a new node. `Plumbing & Sanitary`, `Bricks & Blocks` and `Steel & TMT` have no tree A structure at
+all.
+
+The 99 demo products are not disposable in isolation: they back 174 `CalculatorProductMapping`
+rows and 300 `MaterialEstimateItem` rows. Deleting them is only safe once decision 25 has
+repointed the mappings to categories. That dependency is what produced decision set three.
+
+Honest state of the catalogue: 27 real products across 11 departments. The wizard hides empty
+branches, so it will look thin until stock grows. That is accepted — the engine, mapping table and
+admin surfaces are needed regardless of catalogue size and do not get easier later.
+
+## Revised phase order
+
+Decision set three inserts calculator work, and phase 2 is now smaller than phase 0 implied.
+
+- **Phase 2a** — repoint the 174 calculator mappings from fake variants to `categoryId`.
+- **Phase 2b** — resolve the 300 `MaterialEstimateItem` rows, then delete the 99 demo products.
+- **Phase 2c** — file the 27 real products into tree A. 5 are automatic; I propose the other 22
+  line by line for approval before anything moves. Retire tree B.
+- **Phase 4b** — the dedicated recommendations page (decisions 27 to 29), with margin and stock
+  shown as decision support.
+- **Phase 6b** — BOQ lines resolve through the wizard, pre-filled and labelled, with the
+  no-product-yet state from decision 30.
 
 ## Completion contract
 

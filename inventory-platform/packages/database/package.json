@@ -21,6 +21,9 @@
         "db:verify-phase3": "tsx src/verify-phase3.ts",
         "db:migrate-old-catalog": "tsx src/migrate-old-catalog.ts",
         "db:audit-category-tree": "tsx src/audit-category-tree.ts",
+        "db:propose-taxonomy-merge": "tsx src/propose-taxonomy-merge.ts",
+        "db:propose-calculator-mapping": "tsx src/propose-calculator-category-mapping.ts",
+        "db:create-missing-categories": "tsx src/create-missing-categories.ts",
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {

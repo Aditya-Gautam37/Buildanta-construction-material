@@ -1,7 +1,6 @@
 import { childrenOf, getCatalogSnapshot, rootNodes, type StoreProduct } from "../live-catalog";
 import { ProductCard } from "../product-browser";
 import { ServiceabilityChecker } from "../serviceability-checker";
-import { GuidedProductFinder } from "../guided-product-finder";
 
 const categoryFallbacks = [
   { terms: ["electrical", "wire", "switch"], src: "/demo/products/copper-wire.png" },
@@ -76,6 +75,5 @@ export default async function Categories({ searchParams }: { searchParams: Promi
         </article>;
       })}</div> : <div className="category-empty"><h2>No matching categories</h2><p>Try another product, category or brand name.</p><a href="/categories">Clear search</a></div>}
     </section>
-    <GuidedProductFinder mode="category" selection={roots[0]?.name || ""} products={catalog.products} options={roots.map((category) => category.name)} categoryGroups={categoryGroups} />
   </main>;
 }

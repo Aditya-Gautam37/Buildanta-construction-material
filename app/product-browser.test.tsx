@@ -93,12 +93,21 @@ describe("ProductBrowser", () => {
     expect(names).toEqual(["Beta", "Gamma", "Alpha"]);
   });
 
-  it("keeps the buying assistant optional until the customer asks for help", () => {
+  // Category and room shopping is guided by the wizard now, which reaches this
+  // grid only at the end of a journey. Offering a second assistant here would
+  // be a competing way to do the thing the customer just finished doing.
+  it("offers no buying assistant once the wizard has done the narrowing", () => {
     render(<ProductBrowser mode="category" products={products} options={options} initial="Cement & Structure" />);
 
-    expect(screen.queryByText("Find the right product in under a minute.")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Help me choose" }));
-    expect(screen.getByText("Find the right product in under a minute.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Help me choose" })).not.toBeInTheDocument();
+  });
+
+  // Stage planning is a different job: it works out quantities from an area,
+  // which the wizard does not do, so it keeps its assistant.
+  it("keeps the stage planner available on request", () => {
+    render(<ProductBrowser mode="stage" products={products} options={options} initial="Cement & Structure" />);
+
+    expect(screen.getByRole("button", { name: "Help me choose" })).toBeInTheDocument();
   });
 
   it("replaces an unavailable catalogue image with a relevant local fallback", () => {

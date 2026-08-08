@@ -7,8 +7,8 @@ import { clearDeliveryPincode, DELIVERY_PIN_STORAGE_KEY, DELIVERY_PIN_UPDATED_EV
 
 type ChromeProps = {
   categories: { name: string; slug: string }[];
-  rooms: string[];
-  stages: string[];
+  rooms: { name: string; slug: string }[];
+  stages: { name: string; slug: string }[];
   inventoryHref: string;
   customerName?: string;
 };
@@ -65,8 +65,8 @@ export function Header({ categories, rooms, stages, customerName }: ChromeProps)
       </div>
       <div className="header-navigation">
         <nav className="desktop-nav" aria-label="Primary">
-          <div className={navGroupClass("/by-stage")}><a href="/by-stage">Shop by Stage <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown">{stages.slice(0, 8).map((name) => <a href={`/by-stage?stage=${encodeURIComponent(name)}`} key={name}>{name}</a>)}</div></div>
-          <div className={navGroupClass("/by-room")}><a href="/by-room">Shop by Room <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown">{rooms.map((name) => <a href={`/by-room?room=${encodeURIComponent(name)}`} key={name}>{name}</a>)}</div></div>
+          <div className={navGroupClass("/by-stage")}><a href="/by-stage">Shop by Stage <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown">{stages.slice(0, 8).map((stage) => <a href={`/by-stage/${stage.slug}`} key={stage.slug}>{stage.name}</a>)}</div></div>
+          <div className={navGroupClass("/by-room")}><a href="/by-room">Shop by Room <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown">{rooms.map((room) => <a href={`/by-room/${room.slug}`} key={room.slug}>{room.name}</a>)}</div></div>
           <div className={navGroupClass("/categories")}><a href="/categories">All Categories <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown">{categories.slice(0, 8).map((category) => <a href={`/categories/${category.slug}`} key={category.slug}>{category.name}</a>)}</div></div>
           <div className={navGroupClass("/calculators")}><a href="/calculators">Design & Calculators</a></div>
           <div className={navGroupClass("/more")}><a href="/more">More Services <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown compact"><a href="/professionals">Find Professionals</a><a href="/bulk-quotes">Get Bulk Quotes</a><a href="/list-product">List your Products</a></div></div>
@@ -89,7 +89,7 @@ export function Footer({ categories, rooms, stages, inventoryHref }: ChromeProps
       <div className="footer-main">
         <div className="footer-brand"><a className="wordmark" href="/"><img src="/logo.png" alt="" /><strong>Buildanta</strong></a><p>Construction materials, professional discovery and quotation support in one connected platform.</p><span className="footer-live"><i /> Catalogue synchronized with Inventory</span><small>Serving project enquiries with delivery confirmation by PIN code.</small></div>
         <FooterColumn title="Shop materials" links={categories.slice(0, 6).map((item) => ({ label: item.name, href: `/categories/${item.slug}` }))} />
-        <FooterColumn title="Plan your project" links={[{ label: "Complete material planner", href: "/calculators/complete-construction-material" }, ...stages.slice(0, 2).map((name) => ({ label: name, href: `/by-stage?stage=${encodeURIComponent(name)}` })), ...rooms.slice(0, 2).map((name) => ({ label: name, href: `/by-room?room=${encodeURIComponent(name)}` }))]} />
+        <FooterColumn title="Plan your project" links={[{ label: "Complete material planner", href: "/calculators/complete-construction-material" }, ...stages.slice(0, 2).map((stage) => ({ label: stage.name, href: `/by-stage/${stage.slug}` })), ...rooms.slice(0, 2).map((room) => ({ label: room.name, href: `/by-room/${room.slug}` }))]} />
         <FooterColumn title="Buildanta services" links={[{ label: "Material Calculators", href: "/calculators" }, { label: "Get Bulk Quotes", href: "/bulk-quotes" }, { label: "Find Professionals", href: "/professionals" }, { label: "Customer Account", href: "/account" }]} />
         <div className="footer-column footer-staff"><span className="footer-title">For your team</span><p>Manage published products, images, stock, calculators and enquiries in the separate operations workspace.</p><a href={inventoryHref}>Open Inventory Management [new]</a></div>
       </div>

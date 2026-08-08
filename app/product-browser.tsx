@@ -3,7 +3,6 @@
 import { type SyntheticEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { availabilityLabel, availabilityStatusLabel, type PublicAvailability, type StoreProduct } from "./live-catalog";
 import { StageQuestionnaire } from "./by-stage/stage-questionnaire";
-import { GuidedProductFinder } from "./guided-product-finder";
 import { DELIVERY_PIN_CLEARED_EVENT, DELIVERY_PIN_STORAGE_KEY, saveDeliveryPincode } from "./delivery-location";
 
 type Mode = "stage" | "room" | "category";
@@ -120,7 +119,7 @@ export function ProductBrowser({ mode, products, options, initial = "", query = 
     </nav>
     <section className="results-panel">
       <section className="commerce-hero">
-        <div className="commerce-hero-copy"><p>BUILDANTA MATERIAL STORE · {String(selectionIndex + 1).padStart(2, "0")}</p><h1>{selection || "Construction materials"}</h1><span>{description}</span><div className="commerce-hero-actions"><button onClick={() => document.getElementById("product-results")?.scrollIntoView({ behavior: "smooth" })}>Shop {scopedProducts.length} products <b>→</b></button><button className="secondary" onClick={() => setFinderOpen(true)}>Help me choose</button></div><dl><div><dt>Products</dt><dd>{scopedProducts.length}</dd></div><div><dt>Starting at</dt><dd>{startingPrice ? `₹${startingPrice.toLocaleString("en-IN")}` : "Get quote"}</dd></div><div><dt>Delivery</dt><dd>{locationState === "serviceable" ? `To ${pincode}` : "Check PIN"}</dd></div></dl></div>
+        <div className="commerce-hero-copy"><p>BUILDANTA MATERIAL STORE · {String(selectionIndex + 1).padStart(2, "0")}</p><h1>{selection || "Construction materials"}</h1><span>{description}</span><div className="commerce-hero-actions"><button onClick={() => document.getElementById("product-results")?.scrollIntoView({ behavior: "smooth" })}>Shop {scopedProducts.length} products <b>→</b></button>{mode === "stage" && <button className="secondary" onClick={() => setFinderOpen(true)}>Help me choose</button>}</div><dl><div><dt>Products</dt><dd>{scopedProducts.length}</dd></div><div><dt>Starting at</dt><dd>{startingPrice ? `₹${startingPrice.toLocaleString("en-IN")}` : "Get quote"}</dd></div><div><dt>Delivery</dt><dd>{locationState === "serviceable" ? `To ${pincode}` : "Check PIN"}</dd></div></dl></div>
         <div className="commerce-hero-visual"><img src={heroImage} alt={`${selection} shopping collection`} decoding="async" fetchPriority="high" onError={(event) => recoverProductImage(event, heroProduct ? productImageFallback(heroProduct) : "/images/buildanta-v2/foundation-planning-v2.webp")} /><span>Curated collection</span><small>Selected for {selection}</small></div>
       </section>
 
@@ -128,7 +127,7 @@ export function ProductBrowser({ mode, products, options, initial = "", query = 
 
       {locationState !== "serviceable" && <form className={`location-filter-bar commerce-location ${locationState}`} onSubmit={event=>{event.preventDefault();void checkLocation(pincode)}}><div><strong>Where should we deliver?</strong><span>{locationState==="unsupported"?"Area not yet serviceable · Manual quotation available":locationState==="error"?"Enter a valid 6-digit PIN code":"Enter PIN once—we'll remember it across the store."}</span></div><label><span className="sr-only">Delivery PIN code</span><input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={pincode} onChange={event=>setPincode(event.target.value.replace(/\D/g,""))} placeholder="Enter PIN code"/></label><button disabled={locationState==="loading"}>{locationState==="loading"?"Checking...":"Set location"}</button></form>}
 
-      {finderOpen && <section className="commerce-finder-shell"><button className="commerce-finder-close" onClick={() => setFinderOpen(false)} aria-label="Close product finder">Close ×</button>{mode === "stage" ? <StageQuestionnaire key={selection} stage={selection} products={scopedProducts} deliveryPincode={pincode} /> : <GuidedProductFinder key={`${mode}-${selection}`} mode={mode} selection={selection} products={scopedProducts} />}</section>}
+      {finderOpen && mode === "stage" && <section className="commerce-finder-shell"><button className="commerce-finder-close" onClick={() => setFinderOpen(false)} aria-label="Close product finder">Close ×</button><StageQuestionnaire key={selection} stage={selection} products={scopedProducts} deliveryPincode={pincode} /></section>}
 
       <section className="commerce-products" id="product-results">
         <div className="commerce-products-heading"><div><span>SHOP LIVE PRODUCTS</span><h2>{selection}</h2><p>{visible.length} products ready to compare</p></div><button className="commerce-filter-button" onClick={() => setFiltersOpen((open) => !open)} aria-expanded={filtersOpen}>Filters {filtersOpen ? "×" : "+"}</button></div>

@@ -107,7 +107,7 @@ export default async function Home() {
       <section className="home-section">
         <SectionTitle>Shop by Construction Stage</SectionTitle>
         <div className="stage-panel">
-          {stages.map((stage, index) => <a href={`/by-stage?stage=${encodeURIComponent(stage.name)}`} className="stage-item" key={stage.id}><span className="stage-icon">{materialIcons[index % materialIcons.length]}</span><strong>{stage.name}</strong>{index < stages.length - 1 && <i>›</i>}</a>)}
+          {stages.map((stage, index) => <a href={`/by-stage/${stage.slug}`} className="stage-item" key={stage.id}><span className="stage-icon">{materialIcons[index % materialIcons.length]}</span><strong>{stage.name}</strong>{index < stages.length - 1 && <i>›</i>}</a>)}
         </div>
       </section>
 

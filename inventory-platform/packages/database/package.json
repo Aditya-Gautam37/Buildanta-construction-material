@@ -20,6 +20,7 @@
         "db:verify-phase2": "tsx src/verify-phase2.ts",
         "db:verify-phase3": "tsx src/verify-phase3.ts",
         "db:migrate-old-catalog": "tsx src/migrate-old-catalog.ts",
+        "db:audit-category-tree": "tsx src/audit-category-tree.ts",
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {

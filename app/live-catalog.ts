@@ -115,6 +115,19 @@ async function fetchCollection<T>(path: string): Promise<T[]> {
   return payload as T[];
 }
 
+// Products and categories are the catalogue; without them there is nothing to
+// show and we fall back. Everything else only enriches what is already there,
+// so a single failing endpoint degrades that one facet instead of replacing the
+// whole storefront with demo data.
+async function fetchEnrichment<T>(path: string): Promise<T[]> {
+  try {
+    return await fetchCollection<T>(path);
+  } catch (error) {
+    console.error(`Inventory API ${path} unavailable; continuing without it.`, error);
+    return [];
+  }
+}
+
 function expandWithAncestors(names: string[], nodes: CatalogNode[]) {
   const nodesByName = new Map(nodes.map((node) => [node.name, node]));
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
@@ -246,10 +259,10 @@ export const getCatalogSnapshot = cache(async (): Promise<CatalogSnapshot> => {
     const [products, categories, stages, rooms, brands, variants] = await Promise.all([
       fetchCollection<ApiProduct>("products"),
       fetchCollection<ApiTreeNode>("categories"),
-      fetchCollection<ApiTreeNode>("stages"),
-      fetchCollection<ApiTreeNode>("rooms"),
-      fetchCollection<ApiBrand>("brands"),
-      fetchCollection<ApiVariant>("product-variants"),
+      fetchEnrichment<ApiTreeNode>("stages"),
+      fetchEnrichment<ApiTreeNode>("rooms"),
+      fetchEnrichment<ApiBrand>("brands"),
+      fetchEnrichment<ApiVariant>("product-variants"),
     ]);
     const normalize = (item:ApiTreeNode):CatalogNode => ({id:item.id,name:item.name,slug:item.slug,parentId:item.parentId??null,description:item.description??null,imageUrl:item.imageUrl??null,icon:item.icon??null,sortOrder:item.sortOrder??0,featured:item.featured??false,published:item.published??true,seoTitle:item.seoTitle??null,seoDescription:item.seoDescription??null,childCount:item._count?.children??0,productCount:item._count?.products??0});
     const normalizedCategories = categories.map(normalize).sort((a,b)=>a.sortOrder-b.sortOrder||a.name.localeCompare(b.name));

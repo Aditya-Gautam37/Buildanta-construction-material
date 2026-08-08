@@ -3,11 +3,14 @@ import { notFound } from "next/navigation";
 import { childrenOf, getCatalogSnapshot, type CatalogNode } from "../../live-catalog";
 import { ProductBrowser } from "../../product-browser";
 
-type CategoryPageProps = { params: Promise<{ slug: string }>; searchParams: Promise<{ q?: string }> };
+// Category slugs are hierarchical: CategoriesService derives them as
+// `parent.slug + "/" + name`, so most published categories are multi-segment.
+// A catch-all keeps both shapes reachable at the same public URL.
+type CategoryPageProps = { params: Promise<{ slug: string[] }>; searchParams: Promise<{ q?: string }> };
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const [{ slug }, catalog] = await Promise.all([params, getCatalogSnapshot()]);
-  const category = catalog.categories.find((item) => item.slug === slug);
+  const category = catalog.categories.find((item) => item.slug === slug.join("/"));
   if (!category) return {};
   const description = `Browse live ${category.name.toLowerCase()} products, specifications and project quote options on Buildanta.`;
   return { title: category.name, description, openGraph: { title: `${category.name} | Buildanta`, description } };
@@ -15,7 +18,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 
 export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
   const [{ slug }, { q = "" }, catalog] = await Promise.all([params, searchParams, getCatalogSnapshot()]);
-  const category = catalog.categories.find((item) => item.slug === slug);
+  const category = catalog.categories.find((item) => item.slug === slug.join("/"));
   if (!category) notFound();
   const byId = new Map(catalog.categories.map((item) => [item.id, item]));
   const crumbs: CatalogNode[] = [];

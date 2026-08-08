@@ -10,7 +10,7 @@ import { ProductBrowser } from "../../product-browser";
 // A catch-all keeps both shapes reachable at the same public URL.
 type CategoryPageProps = {
   params: Promise<{ slug: string[] }>;
-  searchParams: Promise<{ q?: string; room?: string; brand?: string }>;
+  searchParams: Promise<{ q?: string; room?: string; stage?: string; brand?: string }>;
 };
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 }
 
 export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
-  const [{ slug }, { q = "", room: roomSlug = "", brand: brandFilter = "" }, catalog] = await Promise.all([
+  const [{ slug }, { q = "", room: roomSlug = "", stage: stageSlug = "", brand: brandFilter = "" }, catalog] = await Promise.all([
     params,
     searchParams,
     getCatalogSnapshot(),
@@ -30,14 +30,20 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   const category = catalog.categories.find((item) => item.slug === slug.join("/"));
   if (!category) notFound();
 
-  // The room narrows which departments are offered and which subcategories are
-  // hidden. It deliberately does not filter products by their room tag: with a
-  // thin catalogue that would empty most screens for no benefit.
-  const room = roomSlug ? rootNodes(catalog.rooms).find((node) => node.slug === roomSlug) : undefined;
-  const excluded = excludedIdsFor(room);
+  // A lens narrows which departments are offered and which subcategories are
+  // hidden. It deliberately does not filter products by their room or stage
+  // tag: with a thin catalogue that would empty most screens for no benefit.
+  // Room and stage behave identically here, so one variable carries either.
+  const lensParam = roomSlug ? "room" : stageSlug ? "stage" : "";
+  const lens = roomSlug
+    ? rootNodes(catalog.rooms).find((node) => node.slug === roomSlug)
+    : stageSlug
+      ? rootNodes(catalog.stages).find((node) => node.slug === stageSlug)
+      : undefined;
+  const excluded = excludedIdsFor(lens);
   const carry = (extra: Record<string, string> = {}) => {
     const query = new URLSearchParams();
-    if (room) query.set("room", room.slug);
+    if (lens && lensParam) query.set(lensParam, lens.slug);
     for (const [key, value] of Object.entries(extra)) if (value) query.set(key, value);
     const encoded = query.toString();
     return encoded ? `?${encoded}` : "";
@@ -58,11 +64,11 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       </span>)}
     </nav>
 
-    {(room || brandFilter) && (
+    {(lens || brandFilter) && (
       <div className="wizard-chips" aria-label="Active filters">
         <span>Narrowed by</span>
-        {room && <a className="wizard-chip" href={`/categories/${step.current.slug}${brandFilter ? `?brand=${encodeURIComponent(brandFilter)}` : ""}`}>
-          {room.name} <b aria-hidden="true">×</b><span className="sr-only">Remove the {room.name} filter</span>
+        {lens && <a className="wizard-chip" href={`/categories/${step.current.slug}${brandFilter ? `?brand=${encodeURIComponent(brandFilter)}` : ""}`}>
+          {lens.name} <b aria-hidden="true">×</b><span className="sr-only">Remove the {lens.name} filter</span>
         </a>}
         {brandFilter && <a className="wizard-chip" href={`/categories/${step.current.slug}${carry()}`}>
           {brandFilter} <b aria-hidden="true">×</b><span className="sr-only">Remove the {brandFilter} filter</span>
@@ -72,7 +78,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
     <div className="page-intro category-page-intro">
       <div>
-        <p>{room ? `${room.name.toUpperCase()} · BUILDANTA` : "BUILDANTA CATEGORY"}</p>
+        <p>{lens ? `${lens.name.toUpperCase()} · BUILDANTA` : "BUILDANTA CATEGORY"}</p>
         <h1>{step.current.name}</h1>
         <span>{step.current.description || "Compare live products from approved suppliers and request project pricing."}</span>
         <small>{scoped.length} published {scoped.length === 1 ? "product" : "products"} in this section</small>

@@ -26,6 +26,21 @@ export const hierarchyCreateSchema = z.object({
 
 export const hierarchyUpdateSchema = hierarchyCreateSchema.partial().strict();
 
+// A full replacement rather than add/remove calls: the curation screen edits a
+// whole room at once, and replacing makes the request idempotent and the final
+// state obvious from the payload alone.
+export const taxonomyLinksReplaceSchema = z.object({
+  includes: z.array(z.object({
+    categoryId: id,
+    sortOrder: z.number().int().min(0).max(100000).optional(),
+  })).max(200),
+  excludes: z.array(id).max(500).optional(),
+}).strict();
+
+export const hierarchyImageSchema = z.object({
+  imageUrl: z.string().url().max(2048).nullable(),
+}).strict();
+
 export const categoryCreateSchema = z.object({
   name: z.string().trim().min(1).max(160),
   parentId: id.nullable().optional(),

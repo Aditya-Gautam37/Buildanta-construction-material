@@ -298,6 +298,40 @@ export const nestRoomSchema = z.object({
   parentId: z.string().nullable(),
 });
 export const nestRoomListSchema = z.array(nestRoomSchema);
+
+// Rooms and stages answer the same question, so one shape serves both. The
+// owner is implied by which endpoint returned it.
+export const taxonomyCategoryLinkSchema = z.object({
+  id: z.string(),
+  categoryId: z.string(),
+  mode: z.enum(['INCLUDE', 'EXCLUDE']),
+  sortOrder: z.number(),
+  category: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      slug: z.string(),
+      published: z.boolean(),
+      parentId: z.string().nullable(),
+    })
+    .optional(),
+});
+export const taxonomyCategoryLinkListSchema = z.array(taxonomyCategoryLinkSchema);
+
+export const taxonomyLinksQueryInput = z.object({
+  owner: z.enum(['rooms', 'stages']),
+  ownerId: z.string().trim().min(1),
+});
+
+export const replaceTaxonomyLinksInput = z.object({
+  owner: z.enum(['rooms', 'stages']),
+  ownerId: z.string().trim().min(1),
+  includes: z.array(
+    z.object({ categoryId: z.string().trim().min(1), sortOrder: z.number().int().min(0).optional() }),
+  ),
+  excludes: z.array(z.string().trim().min(1)).optional(),
+  accessToken: z.string().trim().min(1),
+});
 export const nestSupplierSchema = z.object({
   id: z.string(),
   name: z.string(),

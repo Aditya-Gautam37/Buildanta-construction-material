@@ -1,7 +1,7 @@
 "use client"
 
 import type { Dispatch, SetStateAction } from "react"
-import { Plus } from "lucide-react"
+import { Layers3, Plus } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {
   Card,
@@ -37,6 +37,7 @@ type RoomsTabProps = {
   handleCreateRoom: () => void
   handleEditRoom: (node: RoomNode) => void
   handleDeleteRoom: (node: RoomNode) => void
+  onMapCategories: (node: RoomNode) => void
 }
 
 export function RoomsTab({
@@ -56,7 +57,9 @@ export function RoomsTab({
   handleCreateRoom,
   handleEditRoom,
   handleDeleteRoom,
+  onMapCategories,
 }: RoomsTabProps) {
+  const topLevelRooms = roomsByParent.get(null) ?? []
   return (
     <TabsContent value="rooms" className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -93,6 +96,39 @@ export function RoomsTab({
             onAddChild={(node) => openCreateRoomDialog({ id: node.id, name: node.name })}
             onDelete={(node) => handleDeleteRoom(node as RoomNode)}
           />
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-200 bg-white">
+        <CardContent className="space-y-3 p-4">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-950">Guided shopping</h3>
+            <p className="text-sm text-slate-600">
+              Which departments a shopper sees after choosing a room, and in what order.
+            </p>
+          </div>
+
+          {topLevelRooms.length === 0 ? (
+            <p className="text-sm text-slate-500">Create a room first.</p>
+          ) : (
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {topLevelRooms.map((room) => (
+                <li key={room.id}>
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-left text-sm hover:bg-slate-50"
+                    onClick={() => onMapCategories(room)}
+                  >
+                    <span className="text-slate-900">{room.name}</span>
+                    <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                      <Layers3 className="size-3.5" />
+                      Map categories
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </CardContent>
       </Card>
 

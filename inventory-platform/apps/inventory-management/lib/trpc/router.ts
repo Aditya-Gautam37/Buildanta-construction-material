@@ -5,6 +5,7 @@ import { productRoutes } from './routes/products';
 import { roomRoutes } from './routes/rooms';
 import { stageRoutes } from './routes/stages';
 import { supplierRoutes } from './routes/suppliers';
+import { taxonomyLinkRoutes } from './routes/taxonomy-links';
 import { variantRoutes } from './routes/variants';
 
 export const appRouter = t.router({
@@ -15,6 +16,7 @@ export const appRouter = t.router({
   ...supplierRoutes,
   ...brandRoutes,
   ...variantRoutes,
+  ...taxonomyLinkRoutes,
 });
 
 export type AppRouter = typeof appRouter;

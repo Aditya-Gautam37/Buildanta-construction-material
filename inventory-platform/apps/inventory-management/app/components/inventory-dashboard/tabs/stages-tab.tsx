@@ -1,7 +1,7 @@
 "use client"
 
 import type { Dispatch, SetStateAction } from "react"
-import { Plus } from "lucide-react"
+import { Layers3, Plus } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {
   Card,
@@ -37,6 +37,7 @@ type StagesTabProps = {
   handleCreateStage: () => void
   handleEditStage: (node: StageNode) => void
   handleDeleteStage: (node: StageNode) => void
+  onMapCategories: (node: StageNode) => void
 }
 
 export function StagesTab({
@@ -56,7 +57,9 @@ export function StagesTab({
   handleCreateStage,
   handleEditStage,
   handleDeleteStage,
+  onMapCategories,
 }: StagesTabProps) {
+  const topLevelStages = stagesByParent.get(null) ?? []
   return (
     <TabsContent value="stages" className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -93,6 +96,39 @@ export function StagesTab({
             onAddChild={(node) => openCreateStageDialog({ id: node.id, name: node.name })}
             onDelete={(node) => handleDeleteStage(node as StageNode)}
           />
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-200 bg-white">
+        <CardContent className="space-y-3 p-4">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-950">Guided shopping</h3>
+            <p className="text-sm text-slate-600">
+              Which departments a shopper sees after choosing a build stage, and in what order.
+            </p>
+          </div>
+
+          {topLevelStages.length === 0 ? (
+            <p className="text-sm text-slate-500">Create a stage first.</p>
+          ) : (
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {topLevelStages.map((stage) => (
+                <li key={stage.id}>
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-left text-sm hover:bg-slate-50"
+                    onClick={() => onMapCategories(stage)}
+                  >
+                    <span className="text-slate-900">{stage.name}</span>
+                    <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                      <Layers3 className="size-3.5" />
+                      Map categories
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </CardContent>
       </Card>
 

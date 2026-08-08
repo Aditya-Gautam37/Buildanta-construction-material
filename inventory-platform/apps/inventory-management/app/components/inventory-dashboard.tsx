@@ -27,6 +27,7 @@ import { MetricCard } from "./inventory-dashboard/metric-card"
 import { BrandsTab } from "./inventory-dashboard/tabs/brands-tab"
 import { CategoriesTab } from "./inventory-dashboard/tabs/categories-tab"
 import { ProductsTab } from "./inventory-dashboard/tabs/products-tab"
+import { CategoryMappingDialog, type MappingOwner } from "./inventory-dashboard/category-mapping-dialog"
 import { RoomsTab } from "./inventory-dashboard/tabs/rooms-tab"
 import { StagesTab } from "./inventory-dashboard/tabs/stages-tab"
 import { SuppliersTab } from "./inventory-dashboard/tabs/suppliers-tab"
@@ -67,6 +68,7 @@ export default function InventoryDashboard({
   const [isStageDialogOpen, setIsStageDialogOpen] = useState(false)
   const [stageDialogParent, setStageDialogParent] = useState<{ id: string; name: string } | null>(null)
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false)
+  const [mappingOwner, setMappingOwner] = useState<MappingOwner | null>(null)
   const [roomDialogParent, setRoomDialogParent] = useState<{ id: string; name: string } | null>(null)
   const [newCategoryName, setNewCategoryName] = useState("")
   const [newCategorySlug, setNewCategorySlug] = useState("")
@@ -1562,6 +1564,7 @@ export default function InventoryDashboard({
                 handleCreateStage={handleCreateStage}
                 handleEditStage={handleEditStage}
                 handleDeleteStage={handleDeleteStage}
+                onMapCategories={(node) => setMappingOwner({ kind: "stages", id: node.id, name: node.name })}
               />
 
               <RoomsTab
@@ -1581,6 +1584,7 @@ export default function InventoryDashboard({
                 handleCreateRoom={handleCreateRoom}
                 handleEditRoom={handleEditRoom}
                 handleDeleteRoom={handleDeleteRoom}
+                onMapCategories={(node) => setMappingOwner({ kind: "rooms", id: node.id, name: node.name })}
               />
 
               <BrandsTab
@@ -1711,6 +1715,13 @@ export default function InventoryDashboard({
               setDeleteDialog={setDeleteDialog}
               onConfirm={handleConfirmDeleteDialog}
               isConfirming={isConfirmingDelete}
+            />
+
+            <CategoryMappingDialog
+              owner={mappingOwner}
+              categories={categories}
+              onClose={() => setMappingOwner(null)}
+              runWithAccessToken={runWithAccessToken}
             />
           </section>
 

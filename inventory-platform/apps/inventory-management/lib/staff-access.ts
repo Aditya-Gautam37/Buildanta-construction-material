@@ -5,7 +5,7 @@ import { prisma, UserRole } from "@workspace/db"
 import { syncAuthenticatedUser } from "@/lib/auth/sync-user"
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server"
 
-const staffRoles: UserRole[] = [UserRole.ADMIN, UserRole.DATA_ENTRY, UserRole.CATALOG_MANAGER, UserRole.SALES, UserRole.WAREHOUSE_MANAGER, UserRole.PROCUREMENT, UserRole.FINANCE, UserRole.SUPPORT]
+export const staffRoles: UserRole[] = [UserRole.ADMIN, UserRole.DATA_ENTRY, UserRole.CATALOG_MANAGER, UserRole.SALES, UserRole.WAREHOUSE_MANAGER, UserRole.PROCUREMENT, UserRole.FINANCE, UserRole.SUPPORT]
 
 export async function requireStaffAccess(returnTo: string, options?: { allowedRoles?: UserRole[] }): Promise<{ accessToken: string; role: UserRole }> {
   const supabase = await createSupabaseServerClient()

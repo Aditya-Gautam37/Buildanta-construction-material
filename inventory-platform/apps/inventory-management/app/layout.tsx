@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@workspace/ui/components/sonner";
-import { prisma, UserRole } from "@workspace/db";
+import { prisma } from "@workspace/db";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
+import { staffRoles } from "@/lib/staff-access";
 import InventoryShell from "./inventory-shell";
 import "@workspace/ui/globals.css"
 
@@ -41,7 +42,6 @@ export default async function RootLayout({
     data: { user },
   } = await supabase.auth.getUser();
   const profile = user ? await prisma.user.findUnique({ where: { id: user.id }, select: { role: true } }) : null;
-  const calculatorRoles: UserRole[] = [UserRole.ADMIN, UserRole.CATALOG_MANAGER, UserRole.DATA_ENTRY, UserRole.SALES, UserRole.SUPPORT];
 
   return (
     <html
@@ -49,7 +49,7 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full min-w-0 overflow-x-hidden bg-[#f4f7fa] text-slate-950">
-        <InventoryShell userEmail={user?.email ?? null} role={profile?.role ?? null} canUseCalculators={Boolean(profile && calculatorRoles.includes(profile.role))} signOutAction={handleSignOut}>
+        <InventoryShell userEmail={user?.email ?? null} role={profile?.role ?? null} canUseCalculators={Boolean(profile && staffRoles.includes(profile.role))} signOutAction={handleSignOut}>
           {children}
         </InventoryShell>
         <Toaster position="top-right" richColors />

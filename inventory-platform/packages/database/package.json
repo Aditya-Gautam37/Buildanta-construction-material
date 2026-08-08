@@ -26,6 +26,7 @@
         "db:create-missing-categories": "tsx src/create-missing-categories.ts",
         "db:repoint-calculator-mappings": "tsx src/repoint-calculator-mappings.ts",
         "db:delete-demo-products": "tsx src/delete-calculator-demo-products.ts",
+        "db:merge-duplicate-categories": "tsx src/merge-duplicate-categories.ts",
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {

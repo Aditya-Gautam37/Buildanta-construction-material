@@ -5,7 +5,7 @@ import {
   type CartQuantityAdjustment,
   type CartVariantPurchaseRules,
 } from '../common/cart-eligibility';
-import { publicAvailabilityForStock, type PublicAvailability } from '../common/public-catalogue';
+import { publicAvailabilityForBalances, type PublicAvailability } from '../common/public-catalogue';
 import { withSerializableRetry } from '../common/serializable-transaction';
 import { PrismaService } from '../database/prisma.service';
 import { QuoteRequestsService } from '../quote-requests/quote-requests.service';
@@ -62,7 +62,7 @@ export type CartSummary = {
 export type CartMutationResult = CartSummary & { adjustment: CartQuantityAdjustment | null };
 
 const CART_INCLUDE = {
-  items: { include: { variant: { include: { product: true } } } },
+  items: { include: { variant: { include: { product: true, inventoryBalances: true } } } },
 } satisfies Prisma.CartInclude;
 
 type CartWithItems = Prisma.CartGetPayload<{ include: typeof CART_INCLUDE }>;
@@ -148,12 +148,11 @@ export class CartService {
       const livePrice = variant.price != null ? Number(variant.price) : Number(product.sellingPrice);
       const snapshot = item.unitPriceSnapshot != null ? Number(item.unitPriceSnapshot) : null;
       const priceChanged = snapshot != null && livePrice !== snapshot;
-      const availability = publicAvailabilityForStock({
-        stockTracked: variant.stockTracked,
-        stockQuantity: variant.stockQuantity,
-        reservedQuantity: variant.reservedQuantity,
-        lowStockThreshold: variant.lowStockThreshold,
-      });
+      // Use the same location-aware source as the public catalogue. The
+      // ProductVariant stock columns are only a rollup of physical and reserved
+      // quantities, so they ignore blocked, damaged and quarantined stock and
+      // would let the cart look more available than the product page.
+      const availability = publicAvailabilityForBalances(variant.inventoryBalances);
       const active = variant.status === VariantStatus.ACTIVE && product.status === ProductStatus.PUBLISHED;
       const eligible = decision.eligible && active;
       const issues = [...decision.issues];
@@ -291,7 +290,7 @@ export class CartService {
     const cart = await this.prisma.client.cart.findFirst({
       where: scope,
       orderBy: { updatedAt: 'desc' },
-      include: { items: { include: { variant: { include: { product: true } } } }, quotation: { include: { items: true } } },
+      include: { ...CART_INCLUDE, quotation: { include: { items: true } } },
     });
     if (!cart) throw new BadRequestException('Your cart is empty.');
 

@@ -18,6 +18,14 @@ type FakeVariant = {
   reservedQuantity: number;
   lowStockThreshold: number;
   status: VariantStatus;
+  inventoryBalances: Array<{
+    physicalQuantity: number;
+    reservedQuantity: number;
+    blockedQuantity: number;
+    damagedQuantity: number;
+    quarantineQuantity: number;
+    lowStockThreshold: number;
+  }>;
   product: { id: string; name: string; status: ProductStatus; sellingPrice: number };
 };
 
@@ -38,6 +46,14 @@ function makeVariant(overrides: Partial<FakeVariant> = {}): FakeVariant {
     reservedQuantity: 0,
     lowStockThreshold: 5,
     status: VariantStatus.ACTIVE,
+    inventoryBalances: [{
+      physicalQuantity: 100,
+      reservedQuantity: 0,
+      blockedQuantity: 0,
+      damagedQuantity: 0,
+      quarantineQuantity: 0,
+      lowStockThreshold: 5,
+    }],
     product: { id: 'product-1', name: 'Test Product', status: ProductStatus.PUBLISHED, sellingPrice: 100 },
     ...overrides,
   };
@@ -284,6 +300,54 @@ describe('CartService', () => {
     expect(reread.lines[0]!.adjustment?.message).toBe(
       'Quantity adjusted from 2 to 10 because the minimum order quantity is 10.',
     );
+  });
+
+  it('does not count damaged or quarantined stock as available', async () => {
+    const { service, variants } = setup();
+    variants.set('variant-1', makeVariant({
+      // The rollup columns still look healthy, but almost all of it is unsellable.
+      stockQuantity: 100,
+      reservedQuantity: 0,
+      inventoryBalances: [{
+        physicalQuantity: 100,
+        reservedQuantity: 0,
+        blockedQuantity: 10,
+        damagedQuantity: 60,
+        quarantineQuantity: 30,
+        lowStockThreshold: 5,
+      }],
+    }));
+
+    const summary = await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 1 });
+
+    expect(summary.lines[0]!.availability).toBe('OUT_OF_STOCK');
+  });
+
+  it('reports low stock once usable quantity falls to the threshold', async () => {
+    const { service, variants } = setup();
+    variants.set('variant-1', makeVariant({
+      inventoryBalances: [{
+        physicalQuantity: 20,
+        reservedQuantity: 5,
+        blockedQuantity: 0,
+        damagedQuantity: 10,
+        quarantineQuantity: 0,
+        lowStockThreshold: 5,
+      }],
+    }));
+
+    const summary = await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 1 });
+
+    expect(summary.lines[0]!.availability).toBe('LOW_STOCK');
+  });
+
+  it('falls back to enquiry when a variant has no stock records at all', async () => {
+    const { service, variants } = setup();
+    variants.set('variant-1', makeVariant({ inventoryBalances: [] }));
+
+    const summary = await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 1 });
+
+    expect(summary.lines[0]!.availability).toBe('ENQUIRY');
   });
 
   it('enforces cart ownership when updating or removing a line item', async () => {

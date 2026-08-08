@@ -24,6 +24,7 @@
         "db:propose-taxonomy-merge": "tsx src/propose-taxonomy-merge.ts",
         "db:propose-calculator-mapping": "tsx src/propose-calculator-category-mapping.ts",
         "db:create-missing-categories": "tsx src/create-missing-categories.ts",
+        "db:repoint-calculator-mappings": "tsx src/repoint-calculator-mappings.ts",
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {

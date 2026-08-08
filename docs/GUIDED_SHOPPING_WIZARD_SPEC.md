@@ -321,6 +321,43 @@ Decision set three inserts calculator work, and phase 2 is now smaller than phas
 - **Phase 6b** — BOQ lines resolve through the wizard, pre-filled and labelled, with the
   no-product-yet state from decision 30.
 
+### 2026-08-08 — categories created, calculator repointed
+
+Ten categories created (`db:create-missing-categories`, idempotent, dry-runs by default).
+`Plumbing & Sanitary` had no children at all and now has Water Supply Pipes, Soil & Waste Pipes,
+Pipe Fittings, Valves & Taps and Water Tanks. Tiles gained Tile Adhesives & Grouts with two
+children; `Wires & Cables` gained Earth Continuity Wire; `Bricks` gained Block Jointing Adhesive.
+Verified in a browser: `/categories/plumbing-sanitary` now renders a real drill-down.
+
+159 of 174 calculator mappings repointed to `categoryId` (`db:repoint-calculator-mappings`).
+The variant pointers were **deliberately kept**. Removing them in the same step would have left
+every calculator estimate priceless until phase 6b can resolve a category through the wizard.
+When the demo products are deleted in phase 2b, `onDelete: SetNull` clears those pointers on its
+own. Verified: 159 rows hold both pointers, 0 hold neither.
+
+Two output keys deferred, needing a decision:
+
+- `putty` — wall putty is an interior finishing material and no category exists. `Exterior Putty`
+  is a different product. Wants a new `Wall Putty` under Paints.
+- `sanitary_fixture_set` — a bundle spanning WC, basin and taps, so no single category is right.
+
+Corrections to earlier entries in this log: `Steel & TMT` was reported as having no structure; it
+has 14 categories, and the earlier check only counted flat-slug children directly under the root.
+Only `Bricks & Blocks` and `Plumbing & Sanitary` were genuinely empty. The "two parallel trees"
+model was also too simple — they interleave, with tree A nodes hanging under tree B parents
+(`Electrical > Wires & Cables` is tree B with a tree A child). Phase 2c is therefore de-duplicating
+sibling pairs inside one mixed tree, not retiring a whole tree.
+
+Also outstanding: 86 of 238 categories are unpublished, and they are disproportionately the
+well-structured ones. `Cement & Structure > Bricks` and its six children are hidden, which is why
+the new `Block Jointing Adhesive` resolves by direct URL but does not appear when browsing down
+from the department. Publishing them changes what customers see catalogue-wide and needs a
+decision.
+
+Lesson worth keeping: category **names are not unique** in this tree. Two `Primer` nodes sit under
+Paints and two `AAC Blocks` under Cement & Structure. Any script that resolves categories must key
+on slug, so a wrong target fails loudly instead of silently selecting the wrong folder.
+
 ## Completion contract
 
 This is a structural pivot, not an experiment. It is not finished when the room journey works.

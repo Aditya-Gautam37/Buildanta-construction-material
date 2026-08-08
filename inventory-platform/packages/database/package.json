@@ -27,6 +27,7 @@
         "db:repoint-calculator-mappings": "tsx src/repoint-calculator-mappings.ts",
         "db:delete-demo-products": "tsx src/delete-calculator-demo-products.ts",
         "db:merge-duplicate-categories": "tsx src/merge-duplicate-categories.ts",
+        "db:seed-taxonomy-links": "tsx src/seed-taxonomy-links.ts",
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {

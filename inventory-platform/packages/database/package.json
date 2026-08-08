@@ -25,6 +25,7 @@
         "db:propose-calculator-mapping": "tsx src/propose-calculator-category-mapping.ts",
         "db:create-missing-categories": "tsx src/create-missing-categories.ts",
         "db:repoint-calculator-mappings": "tsx src/repoint-calculator-mappings.ts",
+        "db:delete-demo-products": "tsx src/delete-calculator-demo-products.ts",
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {

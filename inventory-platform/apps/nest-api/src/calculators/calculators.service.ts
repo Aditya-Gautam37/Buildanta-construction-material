@@ -191,6 +191,22 @@ export class CalculatorsService {
     return { definition, version: definition.versions[0] };
   }
 
+  // A mapping names the broadest correct material, e.g. "Cement". Stock is
+  // filed at the leaf, e.g. "Cement > High Strength (OPC 53)". Matching only
+  // direct membership would leave a mapped material unpriced while the product
+  // sits one level below it.
+  private async publishedCategoryTreeIds(categoryId: string): Promise<string[]> {
+    const rows = await this.prisma.client.$queryRaw<Array<{ id: string }>>`
+      WITH RECURSIVE tree AS (
+        SELECT id FROM "Category" WHERE id = ${categoryId} AND published = true
+        UNION ALL
+        SELECT child.id FROM "Category" child JOIN tree ON child."parentId" = tree.id WHERE child.published = true
+      )
+      SELECT id FROM tree
+    `;
+    return rows.map((row) => row.id);
+  }
+
   private async resolveProduct(mapping: { categoryId: string | null; productId: string | null; variantId: string | null }): Promise<ResolvedProduct | null> {
     if (mapping.variantId) {
       const variant = await this.prisma.client.productVariant.findFirst({
@@ -202,11 +218,17 @@ export class CalculatorsService {
       });
       return variant ? { product: variant.product, variant: { id: variant.id, sku: variant.sku, price: variant.price, unit: variant.unit, minimumOrderQuantity: variant.minimumOrderQuantity } } : null;
     }
+    const scopeByCategory = !mapping.productId && Boolean(mapping.categoryId);
+    const categoryIds = scopeByCategory ? await this.publishedCategoryTreeIds(mapping.categoryId!) : [];
+    // An unpublished mapped category yields no ids. Dropping the filter here
+    // would match any published product at all, so refuse instead.
+    if (scopeByCategory && categoryIds.length === 0) return null;
+    if (!mapping.productId && !mapping.categoryId) return null;
     const product = await this.prisma.client.product.findFirst({
       where: {
         status: ProductStatus.PUBLISHED,
         ...(mapping.productId ? { id: mapping.productId } : {}),
-        ...(!mapping.productId && mapping.categoryId ? { categories: { some: { id: mapping.categoryId, published: true } } } : {}),
+        ...(categoryIds.length > 0 ? { categories: { some: { id: { in: categoryIds }, published: true } } } : {}),
         variants: { some: { status: VariantStatus.ACTIVE } },
       },
       select: {

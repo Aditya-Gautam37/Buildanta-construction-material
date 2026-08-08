@@ -15,6 +15,7 @@ const node = (overrides: Partial<CatalogNode> = {}): CatalogNode => ({
   name: "Cement",
   slug: "cement",
   parentId: null,
+  categoryLinks: [],
   description: null,
   imageUrl: null,
   icon: null,

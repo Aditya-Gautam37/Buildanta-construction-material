@@ -24,7 +24,7 @@ const materialIcons = ["▣", "▥", "⌁", "◉", "◒", "▦", "⌂", "✦", "
 const discoveryTiles = [
   { eyebrow: "MATERIALS", title: "Shop all products", detail: "Cement, steel, electrical, tiles and more", href: "/categories", image: "/demo/products/cement.png", tone: "light" },
   { eyebrow: "PROJECT", title: "Plan by build stage", detail: "Get guided quantities before choosing products", href: "/by-stage", image: "/images/buildanta-v2/foundation-planning-v2.webp", tone: "image" },
-  { eyebrow: "SPACES", title: "Find products by room", detail: "Kitchen, bathroom, bedroom and living spaces", href: "/by-room", image: "/livingroom.jpg", tone: "image" },
+  { eyebrow: "SPACES", title: "Find products by room", detail: "We narrow it down with you, one choice at a time", href: "/by-room", image: "/livingroom.jpg", tone: "image" },
   { eyebrow: "CALCULATE", title: "Estimate your materials", detail: "Area-based construction planning tools", href: "/calculators", image: "/demo/hero/project-planning.png", tone: "dark" },
   { eyebrow: "PRICING", title: "Request a bulk quote", detail: "One enquiry for your complete material list", href: "/bulk-quotes", image: "/demo/products/tmt-steel.png", tone: "light" },
   { eyebrow: "EXPERTS", title: "Find professionals", detail: "Connect with builders, architects and contractors", href: "/professionals", image: "/images/buildanta-v2/professionals-network-v2.webp", tone: "image" },
@@ -114,7 +114,7 @@ export default async function Home() {
       <section className="home-section">
         <SectionTitle>Shop by Room</SectionTitle>
         <div className="room-grid">
-          {rooms.map((room) => <a href={`/by-room?room=${encodeURIComponent(room.name)}`} className="room-card" key={room.id}><img src={roomImages[room.name] || "/livingroom.jpg"} alt={`${room.name} interior and construction materials`} loading="lazy" decoding="async" /><strong>{room.name}</strong></a>)}
+          {rooms.map((room) => <a href={`/by-room/${room.slug}`} className="room-card" key={room.id}><img src={room.imageUrl || roomImages[room.name] || "/livingroom.jpg"} alt={`${room.name} interior and construction materials`} loading="lazy" decoding="async" /><strong>{room.name}</strong></a>)}
         </div>
       </section>
 

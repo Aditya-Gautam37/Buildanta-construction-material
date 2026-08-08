@@ -11,7 +11,8 @@ const DEFAULT_API_URL = process.env.NODE_ENV === "development"
   ? "http://localhost:5173"
   : "https://buildanta-api.vercel.app";
 
-type ApiTreeNode = { id: string; name: string; slug: string; parentId: string | null; description?: string | null; imageUrl?: string | null; icon?: string | null; sortOrder?: number; featured?: boolean; published?: boolean; seoTitle?: string | null; seoDescription?: string | null; _count?: { children: number; products: number } };
+type ApiCategoryLink = { categoryId: string; mode: "INCLUDE" | "EXCLUDE"; sortOrder?: number };
+type ApiTreeNode = { id: string; name: string; slug: string; parentId: string | null; description?: string | null; imageUrl?: string | null; icon?: string | null; sortOrder?: number; featured?: boolean; published?: boolean; seoTitle?: string | null; seoDescription?: string | null; categoryLinks?: ApiCategoryLink[]; _count?: { children: number; products: number } };
 type ApiBrand = {
   id: string;
   name: string;
@@ -59,7 +60,8 @@ type ApiVariant = {
   quantityIncrement?: number;
 };
 
-export type CatalogNode = { id: string; name: string; slug: string; parentId: string | null; description: string | null; imageUrl: string | null; icon: string | null; sortOrder: number; featured: boolean; published: boolean; seoTitle: string | null; seoDescription: string | null; childCount: number; productCount: number };
+export type CategoryLink = { categoryId: string; mode: "INCLUDE" | "EXCLUDE"; sortOrder: number };
+export type CatalogNode = { id: string; name: string; slug: string; parentId: string | null; description: string | null; imageUrl: string | null; icon: string | null; sortOrder: number; featured: boolean; published: boolean; seoTitle: string | null; seoDescription: string | null; categoryLinks: CategoryLink[]; childCount: number; productCount: number };
 export type CatalogBrand = {
   id: string;
   name: string;
@@ -74,6 +76,7 @@ export type StoreProduct = {
   name: string;
   brand: string;
   categories: string[];
+  categoryIds: string[];
   category: string;
   categorySlug: string;
   stages: string[];
@@ -180,6 +183,9 @@ export function mapProducts(products: ApiProduct[], variants: ApiVariant[], cate
     const firstDetailedVariant = detailedVariants[0];
     const firstSummaryVariant = product.variants?.[0];
     const rawCategories = (product.categories || []).map((item) => item.name);
+    // Ids as well as names: category names are not unique across the tree, so
+    // anything that must be exact (the wizard) matches on id.
+    const rawCategoryIds = (product.categories || []).flatMap((item) => (item.id ? [item.id] : []));
     const categoryNames = expandWithAncestors(rawCategories, categories);
     const stageNames = expandWithAncestors(product.stage || [], stages);
     const roomNames = expandWithAncestors(product.room || [], rooms);
@@ -204,6 +210,7 @@ export function mapProducts(products: ApiProduct[], variants: ApiVariant[], cate
       name: product.name,
       brand: product.brand,
       categories: categoryNames,
+      categoryIds: rawCategoryIds,
       category: primaryCategory,
       categorySlug: categoryNode?.slug || slugify(primaryCategory),
       stages: stageNames,
@@ -239,7 +246,7 @@ export function mapProducts(products: ApiProduct[], variants: ApiVariant[], cate
 }
 
 export function fallbackSnapshot(): CatalogSnapshot {
-  const node = (id:string,name:string,slug:string):CatalogNode => ({ id,name,slug,parentId:null,description:null,imageUrl:null,icon:null,sortOrder:0,featured:false,published:true,seoTitle:null,seoDescription:null,childCount:0,productCount:0 });
+  const node = (id:string,name:string,slug:string):CatalogNode => ({ id,name,slug,parentId:null,description:null,imageUrl:null,icon:null,sortOrder:0,featured:false,published:true,seoTitle:null,seoDescription:null,categoryLinks:[],childCount:0,productCount:0 });
   const categories: CatalogNode[] = fallbackCategories.map((item, index) => node(`fallback-category-${index}`,item.name,item.slug));
   const stages: CatalogNode[] = fallbackStages.map(([, name], index) => node(`fallback-stage-${index}`,name,slugify(name)));
   const rooms: CatalogNode[] = fallbackRooms.map((item, index) => node(`fallback-room-${index}`,item.name,slugify(item.name)));
@@ -264,7 +271,7 @@ export const getCatalogSnapshot = cache(async (): Promise<CatalogSnapshot> => {
       fetchEnrichment<ApiBrand>("brands"),
       fetchEnrichment<ApiVariant>("product-variants"),
     ]);
-    const normalize = (item:ApiTreeNode):CatalogNode => ({id:item.id,name:item.name,slug:item.slug,parentId:item.parentId??null,description:item.description??null,imageUrl:item.imageUrl??null,icon:item.icon??null,sortOrder:item.sortOrder??0,featured:item.featured??false,published:item.published??true,seoTitle:item.seoTitle??null,seoDescription:item.seoDescription??null,childCount:item._count?.children??0,productCount:item._count?.products??0});
+    const normalize = (item:ApiTreeNode):CatalogNode => ({id:item.id,name:item.name,slug:item.slug,parentId:item.parentId??null,description:item.description??null,imageUrl:item.imageUrl??null,icon:item.icon??null,sortOrder:item.sortOrder??0,featured:item.featured??false,published:item.published??true,seoTitle:item.seoTitle??null,seoDescription:item.seoDescription??null,categoryLinks:(item.categoryLinks??[]).map((link)=>({categoryId:link.categoryId,mode:link.mode,sortOrder:link.sortOrder??0})),childCount:item._count?.children??0,productCount:item._count?.products??0});
     const normalizedCategories = categories.map(normalize).sort((a,b)=>a.sortOrder-b.sortOrder||a.name.localeCompare(b.name));
     const normalizedStages = stages.map(normalize);
     const normalizedRooms = rooms.map(normalize);

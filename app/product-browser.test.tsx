@@ -10,6 +10,7 @@ function makeProduct(overrides: Partial<StoreProduct>): StoreProduct {
     name: "Product 1",
     brand: "Buildanta",
     categories: [],
+    categoryIds: [],
     category: "Cement & Structure",
     categorySlug: "cement-structure",
     stages: [],

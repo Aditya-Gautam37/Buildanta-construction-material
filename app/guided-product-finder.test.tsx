@@ -10,6 +10,7 @@ function product(name: string, price: number, overrides: Partial<StoreProduct> =
     name,
     brand: "Buildanta",
     categories: ["Cement"],
+    categoryIds: [],
     category: "Cement",
     categorySlug: "cement",
     stages: [],

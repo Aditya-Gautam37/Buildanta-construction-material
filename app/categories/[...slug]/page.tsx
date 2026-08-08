@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { childrenOf, getCatalogSnapshot, type CatalogNode } from "../../live-catalog";
+import { childrenOf, getCatalogSnapshot, rootNodes, type CatalogNode } from "../../live-catalog";
+import { ancestryOf, brandOptions, excludedIdsFor, productsInSubtree, resolveStep } from "../../guided-wizard";
+import { WizardOptionGrid } from "../../wizard-option-grid";
 import { ProductBrowser } from "../../product-browser";
 
 // Category slugs are hierarchical: CategoriesService derives them as
 // `parent.slug + "/" + name`, so most published categories are multi-segment.
 // A catch-all keeps both shapes reachable at the same public URL.
-type CategoryPageProps = { params: Promise<{ slug: string[] }>; searchParams: Promise<{ q?: string }> };
+type CategoryPageProps = {
+  params: Promise<{ slug: string[] }>;
+  searchParams: Promise<{ q?: string; room?: string; brand?: string }>;
+};
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const [{ slug }, catalog] = await Promise.all([params, getCatalogSnapshot()]);
@@ -17,42 +22,115 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 }
 
 export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
-  const [{ slug }, { q = "" }, catalog] = await Promise.all([params, searchParams, getCatalogSnapshot()]);
+  const [{ slug }, { q = "", room: roomSlug = "", brand: brandFilter = "" }, catalog] = await Promise.all([
+    params,
+    searchParams,
+    getCatalogSnapshot(),
+  ]);
   const category = catalog.categories.find((item) => item.slug === slug.join("/"));
   if (!category) notFound();
-  const byId = new Map(catalog.categories.map((item) => [item.id, item]));
-  const crumbs: CatalogNode[] = [];
-  let cursor: CatalogNode | undefined = category;
-  while (cursor) {
-    crumbs.unshift(cursor);
-    cursor = cursor.parentId ? byId.get(cursor.parentId) : undefined;
-  }
-  const descendants: CatalogNode[] = [];
-  const collect = (node: CatalogNode) => {
-    descendants.push(node);
-    childrenOf(catalog.categories, node.id).forEach(collect);
+
+  // The room narrows which departments are offered and which subcategories are
+  // hidden. It deliberately does not filter products by their room tag: with a
+  // thin catalogue that would empty most screens for no benefit.
+  const room = roomSlug ? rootNodes(catalog.rooms).find((node) => node.slug === roomSlug) : undefined;
+  const excluded = excludedIdsFor(room);
+  const carry = (extra: Record<string, string> = {}) => {
+    const query = new URLSearchParams();
+    if (room) query.set("room", room.slug);
+    for (const [key, value] of Object.entries(extra)) if (value) query.set(key, value);
+    const encoded = query.toString();
+    return encoded ? `?${encoded}` : "";
   };
-  collect(category);
-  const children = childrenOf(catalog.categories, category.id);
-  const categoryGroups = Object.fromEntries(descendants.map((node) => {
-    const names: string[] = [];
-    const collectNames = (current: CatalogNode) => {
-      names.push(current.name);
-      childrenOf(catalog.categories, current.id).forEach(collectNames);
-    };
-    collectNames(node);
-    return [node.name, names];
-  }));
-  const productCountFor = (node: CatalogNode) => {
-    const accepted = categoryGroups[node.name] ?? [node.name];
-    return catalog.products.filter((product) => accepted.some((name) => product.categories.includes(name))).length;
-  };
-  const productCount = productCountFor(category);
+
+  const step = resolveStep(catalog.categories, catalog.products, category.id, excluded);
+  const crumbs: CatalogNode[] = ancestryOf(catalog.categories, step.current.id);
+  const scoped = productsInSubtree(catalog.products, catalog.categories, step.current.id, excluded);
+  const brands = brandOptions(scoped);
+  const visibleProducts = brandFilter ? scoped.filter((product) => product.brand === brandFilter) : scoped;
+  const atLeaf = step.options.length === 0;
 
   return <main className="listing-page">
-    <nav className="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/categories">Categories</a>{crumbs.map((item, index) => <span key={item.id} className="breadcrumb-part">› {index === crumbs.length - 1 ? item.name : <a href={`/categories/${item.slug}`}>{item.name}</a>}</span>)}</nav>
-    <div className="page-intro category-page-intro"><div><p>BUILDANTA CATEGORY</p><h1>{category.name}</h1><span>{category.description || "Compare live products from approved suppliers and request project pricing."}</span><small>{productCount} published products across this category</small></div>{category.imageUrl && <img src={category.imageUrl} alt={`${category.name} materials`} />}</div>
-    {children.length > 0 && <section className="child-category-section"><div className="section-heading-row"><div><p>Continue browsing</p><h2>Shop {category.name} by type</h2><span>Choose a subcategory before comparing real products.</span></div></div><div className="child-category-grid">{children.map((item) => <a href={`/categories/${item.slug}`} key={item.id}><span>{item.imageUrl ? <img src={item.imageUrl} alt="" /> : <b>{item.name.slice(0, 1)}</b>}</span><div><h3>{item.name}</h3><p>{item.description || "Browse published products."}</p><small>{productCountFor(item)} products →</small></div></a>)}</div></section>}
-    <ProductBrowser mode="category" products={catalog.products} options={descendants.map((item) => item.name)} initial={category.name} query={q} categoryGroups={categoryGroups} />
+    <nav className="breadcrumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a><span>›</span><a href="/categories">Categories</a>
+      {crumbs.map((item, index) => <span key={item.id} className="breadcrumb-part">
+        › {index === crumbs.length - 1 ? item.name : <a href={`/categories/${item.slug}${carry()}`}>{item.name}</a>}
+      </span>)}
+    </nav>
+
+    {(room || brandFilter) && (
+      <div className="wizard-chips" aria-label="Active filters">
+        <span>Narrowed by</span>
+        {room && <a className="wizard-chip" href={`/categories/${step.current.slug}${brandFilter ? `?brand=${encodeURIComponent(brandFilter)}` : ""}`}>
+          {room.name} <b aria-hidden="true">×</b><span className="sr-only">Remove the {room.name} filter</span>
+        </a>}
+        {brandFilter && <a className="wizard-chip" href={`/categories/${step.current.slug}${carry()}`}>
+          {brandFilter} <b aria-hidden="true">×</b><span className="sr-only">Remove the {brandFilter} filter</span>
+        </a>}
+      </div>
+    )}
+
+    <div className="page-intro category-page-intro">
+      <div>
+        <p>{room ? `${room.name.toUpperCase()} · BUILDANTA` : "BUILDANTA CATEGORY"}</p>
+        <h1>{step.current.name}</h1>
+        <span>{step.current.description || "Compare live products from approved suppliers and request project pricing."}</span>
+        <small>{scoped.length} published {scoped.length === 1 ? "product" : "products"} in this section</small>
+      </div>
+      {step.current.imageUrl && <img src={step.current.imageUrl} alt={`${step.current.name} materials`} />}
+    </div>
+
+    {step.options.length > 0 && (
+      <WizardOptionGrid
+        heading={`Shop ${step.current.name.toLowerCase()} by type`}
+        subheading="Choose a type before comparing real products."
+        options={step.options.map((option) => ({
+          id: option.node.id,
+          name: option.node.name,
+          href: `/categories/${option.node.slug}${carry()}`,
+          description: option.node.description,
+          imageUrl: option.node.imageUrl,
+          productCount: option.productCount,
+        }))}
+      />
+    )}
+
+    {atLeaf && brands.length > 1 && (
+      <section className="wizard-brand-step" aria-label="Choose a brand">
+        <p>Shop by brand</p>
+        <div className="wizard-chip-row">
+          <a className={brandFilter ? "wizard-chip" : "wizard-chip selected"} href={`/categories/${step.current.slug}${carry()}`}>Any brand</a>
+          {brands.map((option) => (
+            <a
+              className={brandFilter === option.brand ? "wizard-chip selected" : "wizard-chip"}
+              href={`/categories/${step.current.slug}${carry({ brand: option.brand })}`}
+              key={option.brand}
+            >
+              {option.brand} <small>{option.productCount}</small>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+
+    {/* Products only at the end of the journey: an intermediate level that also
+        dumps a full grid is the overwhelm this replaces. */}
+    {atLeaf && (
+      visibleProducts.length > 0
+        ? <ProductBrowser
+            mode="category"
+            products={visibleProducts}
+            options={[step.current.name]}
+            initial={step.current.name}
+            query={q}
+            categoryGroups={{ [step.current.name]: [step.current.name] }}
+          />
+        : <section className="empty-panel">
+            <span aria-hidden="true">0</span>
+            <h2>No products here yet</h2>
+            <p>We can still source this. Tell us what you need and we will come back with pricing.</p>
+            <a className="button orange" href={`/bulk-quotes?product=${encodeURIComponent(step.current.name)}`}>Request pricing</a>
+          </section>
+    )}
   </main>;
 }

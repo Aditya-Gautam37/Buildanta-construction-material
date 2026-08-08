@@ -22,6 +22,7 @@ function product(name: string, price: number, minimumOrderQuantity = 1): StorePr
     name,
     brand: "Buildanta test brand",
     categories: [],
+    categoryIds: [],
     category: "Test",
     categorySlug: "test",
     stages: [],

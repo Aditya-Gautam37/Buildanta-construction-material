@@ -459,6 +459,7 @@ model Category {
   children       Category[] @relation("SubCategories")
   products       Product[]  @relation("CategoryToProduct")
   calculatorMappings CalculatorProductMapping[]
+  taxonomyLinks  TaxonomyCategoryLink[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -471,11 +472,13 @@ model Stage {
   id       String    @id @default(cuid())
   name     String
   slug     String    @unique
+  imageUrl String?
   parentId String?
   parent   Stage?    @relation("StageHierarchy", fields: [parentId], references: [id])
   children Stage[]   @relation("StageHierarchy")
   products Product[] @relation("ProductToStage")
   planningCoefficients PlanningCoefficient[]
+  categoryLinks TaxonomyCategoryLink[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -485,13 +488,55 @@ model Room {
   id       String    @id @default(cuid())
   name     String
   slug     String    @unique
+  imageUrl String?
   parentId String?
   parent   Room?     @relation("RoomHierarchy", fields: [parentId], references: [id])
   children Room[]    @relation("RoomHierarchy")
   products Product[] @relation("ProductToRoom")
+  categoryLinks TaxonomyCategoryLink[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/// Rooms and stages have no relation to categories, so the storefront cannot
+/// answer "what does a living room need" without one. Deriving it from product
+/// tags leaves the wizard silently incomplete while the catalogue is thin, so
+/// the link is explicit and staff-curated.
+///
+/// INCLUDE rows carry the mapping and its display order, normally at root
+/// category level. EXCLUDE rows hide one subcategory from one owner at any
+/// depth, so a room inherits new subcategories automatically but can still drop
+/// the few that do not belong.
+model TaxonomyCategoryLink {
+  id         String            @id @default(cuid())
+  ownerType  TaxonomyOwnerType
+  roomId     String?
+  room       Room?             @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  stageId    String?
+  stage      Stage?            @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  mode       TaxonomyLinkMode  @default(INCLUDE)
+  sortOrder  Int               @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([roomId, categoryId, mode])
+  @@unique([stageId, categoryId, mode])
+  @@index([ownerType, mode, sortOrder])
+  @@index([categoryId])
+}
+
+enum TaxonomyOwnerType {
+  ROOM
+  STAGE
+}
+
+enum TaxonomyLinkMode {
+  INCLUDE
+  EXCLUDE
 }
 
 // ==========================================

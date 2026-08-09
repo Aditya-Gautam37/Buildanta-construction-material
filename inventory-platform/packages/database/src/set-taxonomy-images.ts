@@ -12,6 +12,20 @@ import { Pool } from 'pg'
  * cement department.
  */
 const CATEGORY_IMAGES: Record<string, string> = {
+  // Departments first: this is the screen every journey opens on, so leaving it
+  // as eleven letters undoes most of the work. Several reuse the same file as
+  // their leaf, which is fine — a representative photograph is the point.
+  electrical: '/categories/copper-wires.png',
+  paints: '/categories/interior-emulsion.png',
+  'tiles-flooring': '/categories/glossy-floor-tiles.png',
+  'false-ceiling-drywall': '/categories/ceiling-systems.png',
+  waterproofing: '/categories/wall-waterproofing.png',
+  'plumbing-sanitary': '/categories/water-supply-pipes.png',
+  'sanitaryware-bathware': '/categories/toilets.png',
+  'cement-structure': '/demo/products/real/cement.jpg',
+  'steel-tmt': '/demo/products/real/steel.jpg',
+  'doors-windows': '/demo/products/real/openings.jpg',
+
   'plumbing-sanitary/water-supply-pipes': '/categories/water-supply-pipes.png',
   'tiles-flooring/tile-adhesives-and-grouts/tile-adhesive': '/categories/tile-adhesive.png',
   'electrical/wires-cables/copper-wires': '/categories/copper-wires.png',

@@ -29,6 +29,8 @@
         "db:merge-duplicate-categories": "tsx src/merge-duplicate-categories.ts",
         "db:seed-taxonomy-links": "tsx src/seed-taxonomy-links.ts",
         "db:verify-wizard-coverage": "tsx src/verify-wizard-coverage.ts",
+        "db:set-taxonomy-images": "tsx src/set-taxonomy-images.ts",
+        "db:set-brand-logos": "tsx src/set-brand-logos.ts",
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {

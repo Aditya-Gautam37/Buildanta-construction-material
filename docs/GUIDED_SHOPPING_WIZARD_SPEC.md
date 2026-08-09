@@ -1,6 +1,6 @@
 # Guided shopping wizard — specification
 
-Status: decided, not yet implemented. Recorded 2026-08-08.
+Status: implemented and live. Recorded 2026-08-08.
 
 ## Goal
 
@@ -357,6 +357,38 @@ decision.
 Lesson worth keeping: category **names are not unique** in this tree. Two `Primer` nodes sit under
 Paints and two `AAC Blocks` under Cement & Structure. Any script that resolves categories must key
 on slug, so a wrong target fails loudly instead of silently selecting the wrong folder.
+
+### 2026-08-08 — phases 3 to 8 complete
+
+The pivot is live. Every storefront entry point now opens the guided journey.
+
+- **Phase 3** — rooms and stages carry their category links in the list response;
+  guarded replace endpoints; room and stage writes gained the role check that
+  categories always had.
+- **Phase 4** — a curation dialog on both tabs: reorder departments, remove
+  them, hide individual subcategories.
+- **Phase 5** — the engine (`app/guided-wizard.ts`) and the room lens.
+  Verified in a browser: Living room > Paints > Exterior Paints lands on
+  Exterior Emulsion and the Asian Paints Apex Ultima.
+- **Phase 6** — stage and brand lenses, sharing one code path with room.
+- **Phase 7** — every inbound link rewritten, `/by-room` and `/by-stage` turned
+  into pickers, old query URLs 307 to the new paths, `GuidedProductFinder`
+  deleted, sitemap extended with room, stage and brand entries.
+- **Phase 8** — `db:verify-wizard-coverage` passes with zero blocking findings.
+
+Two bugs the tests caught before shipping: excluding a department hid its label
+while still counting the products beneath it, and counting was by category name
+while two `Primer` nodes existed under Paints.
+
+Both deferred calculator outputs are resolved. Wall putty has its own category
+rather than being forced into Exterior Putty, a different product. A bathroom
+fixture set maps to `Sanitaryware & Bathware` itself: it spans WC, basin and
+taps, so the department is the broadest correct answer and the wizard narrows
+from there.
+
+Known and accepted: 19 of 33 calculator outputs cannot price yet, because that
+stock does not exist. `Kitchen & Wardrobes` has no mapping for the same reason.
+Brand logos are absent on all 17 brands and are the customer's to upload.
 
 ## Completion contract
 

@@ -28,6 +28,7 @@
         "db:delete-demo-products": "tsx src/delete-calculator-demo-products.ts",
         "db:merge-duplicate-categories": "tsx src/merge-duplicate-categories.ts",
         "db:seed-taxonomy-links": "tsx src/seed-taxonomy-links.ts",
+        "db:verify-wizard-coverage": "tsx src/verify-wizard-coverage.ts",
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {

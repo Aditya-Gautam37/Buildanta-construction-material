@@ -37,7 +37,9 @@ const TARGETS: Record<string, string> = {
   plumbing_waste_40mm: 'plumbing-sanitary/soil-and-waste-pipes',
   plumbing_waste_50mm: 'plumbing-sanitary/soil-and-waste-pipes',
   primer: 'wall-primer',
+  putty: 'paints/wall-putty',
   pvc_conduit: 'pvc-conduits',
+  sanitary_fixture_set: 'sanitaryware-bathware',
   sand: 'sand',
   tile_adhesive: 'tiles-flooring/tile-adhesives-and-grouts/tile-adhesive',
   tiles: 'tiles-flooring/floor-tiles',
@@ -46,11 +48,12 @@ const TARGETS: Record<string, string> = {
   windows: 'doors-windows/windows',
 }
 
-// Left unmapped on purpose; both need a human decision, not a guess.
-const DEFERRED: Record<string, string> = {
-  putty: 'Wall putty is an interior finishing material and no category exists for it. Exterior Putty is a different product. Needs a new "Wall Putty" category under Paints.',
-  sanitary_fixture_set: 'A bathroom fixture set spans WC, basin and taps at once. It is a bundle, not a single material, so no single category is correct.',
-}
+// Both were deferred until a human decided. Wall putty now has its own
+// category rather than being forced into Exterior Putty, which is a different
+// product. A bathroom fixture set spans WC, basin and taps, so it maps to the
+// department itself: the broadest correct answer, from which the wizard
+// narrows, rather than a leaf that would be wrong two times in three.
+const DEFERRED: Record<string, string> = {}
 
 const APPLY = process.argv.includes('--apply')
 

@@ -71,6 +71,12 @@ const PLAN: Planned[] = [
     ],
   },
   {
+    parentPath: ['Paints'],
+    name: 'Wall Putty',
+    description: 'Cement and acrylic wall putty for levelling interior and exterior surfaces before painting.',
+    sortOrder: 55,
+  },
+  {
     parentPath: ['Electrical', 'Wires & Cables'],
     name: 'Earth Continuity Wire',
     description: 'Green earth continuity conductors for residential wiring circuits.',

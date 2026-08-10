@@ -84,8 +84,9 @@ function CartPageInner() {
       <div className={styles.summaryRow}><span>Items</span><strong>{summary.itemCount}</strong></div>
       {summary.requiresQuoteCount > 0 && <div className={styles.summaryRow}><span>Lines needing a quote</span><strong>{summary.requiresQuoteCount}</strong></div>}
       <div className={styles.summaryTotal}><span>Subtotal</span><span>{"₹"}{summary.subtotal.toLocaleString("en-IN")}</span></div>
-      <p className={styles.summaryNote}>GST, freight and final availability are confirmed once your quotation is priced by the Buildanta team.</p>
-      <button type="button" className={styles.convertButton} disabled={!hasEligibleLine} onClick={() => setConverting(true)}>Convert to Bulk Quote</button>
+      <p className={styles.summaryNote}>Pay cash on delivery. Final GST, freight and availability are confirmed on your order.</p>
+      <a className={styles.checkoutButton} href={hasEligibleLine ? "/checkout" : undefined} aria-disabled={!hasEligibleLine}>Proceed to checkout →</a>
+      <button type="button" className={styles.convertButton} disabled={!hasEligibleLine} onClick={() => setConverting(true)}>Or request a bulk quote</button>
       <button type="button" className={styles.clearButton} onClick={() => void clear()}>Clear cart</button>
     </aside>
   </div>;

@@ -32,7 +32,9 @@
 .summaryRow strong{color:#0f172a}
 .summaryTotal{display:flex;justify-content:space-between;margin:.8rem 0;border-top:1px solid #e7edf2;padding-top:.8rem;color:#102b3d;font-weight:850}
 .summaryNote{margin:.4rem 0 1rem;color:#71828d;font-size:.7rem;line-height:1.5}
-.convertButton{width:100%;border:0;border-radius:.85rem;background:#0b2b3f;padding:.85rem;color:#fff;font-size:.85rem;font-weight:850;cursor:pointer}
+.checkoutButton{display:block;width:100%;text-align:center;text-decoration:none;border:0;border-radius:.85rem;background:#e8590c;padding:.95rem;color:#fff;font-size:.9rem;font-weight:850;cursor:pointer;margin-bottom:.6rem}
+.checkoutButton[aria-disabled="true"]{opacity:.5;pointer-events:none}
+.convertButton{width:100%;border:1px solid #d5e0e7;border-radius:.85rem;background:#fff;padding:.75rem;color:#0b2b3f;font-size:.8rem;font-weight:850;cursor:pointer}
 .convertButton:disabled{opacity:.5;cursor:not-allowed}
 .clearButton{width:100%;margin-top:.6rem;border:1px solid #d5e0e7;border-radius:.85rem;background:#fff;padding:.7rem;color:#48606f;font-size:.78rem;font-weight:800;cursor:pointer}
 

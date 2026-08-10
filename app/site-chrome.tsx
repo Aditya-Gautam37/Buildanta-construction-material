@@ -66,9 +66,9 @@ export function Header({ categories, rooms, stages, brands, customerName }: Chro
       </div>
       <div className="header-navigation">
         <nav className="desktop-nav" aria-label="Primary">
+          <div className={`${navGroupClass("/categories")} categories-navigation`}><a href="/categories">All Categories <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown">{categories.slice(0, 8).map((category) => <a href={`/categories/${category.slug}`} key={category.slug}>{category.name}</a>)}</div></div>
           <div className={navGroupClass("/by-stage")}><a href="/by-stage">Shop by Stage <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown">{stages.slice(0, 8).map((stage) => <a href={`/by-stage/${stage.slug}`} key={stage.slug}>{stage.name}</a>)}</div></div>
           <div className={navGroupClass("/by-room")}><a href="/by-room">Shop by Room <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown">{rooms.map((room) => <a href={`/by-room/${room.slug}`} key={room.slug}>{room.name}</a>)}</div></div>
-          <div className={navGroupClass("/categories")}><a href="/categories">All Categories <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown">{categories.slice(0, 8).map((category) => <a href={`/categories/${category.slug}`} key={category.slug}>{category.name}</a>)}</div></div>
           <div className={navGroupClass("/brands")}><a href="/brands">Shop by Brand <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown">{brands.slice(0, 8).map((brand) => <a href={`/brands/${brand.slug}`} key={brand.slug}>{brand.name}</a>)}</div></div>
           <div className={navGroupClass("/calculators")}><a href="/calculators">Design & Calculators</a></div>
           <div className={navGroupClass("/more")}><a href="/more">More Services <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown compact"><a href="/professionals">Find Professionals</a><a href="/bulk-quotes">Get Bulk Quotes</a><a href="/list-product">List your Products</a></div></div>

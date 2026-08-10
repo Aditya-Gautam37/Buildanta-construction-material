@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { getCatalogSnapshot, rootNodes } from "./live-catalog";
 import { getProfessionals, professionalCategories } from "./professional-directory";
 import { defaultHomepageSlide, getHomepageContent } from "./homepage-content";
@@ -60,7 +59,7 @@ export default async function Home() {
     .slice(0, 8);
 
   return (
-    <main>
+    <main className="home-page">
       <HeroSlider slides={slides} />
 
       <section className="commerce-assurance" aria-label="Buildanta shopping benefits">
@@ -72,7 +71,7 @@ export default async function Home() {
 
       <section className="home-discovery" aria-labelledby="discovery-title">
         <div className="home-discovery-heading"><div><p>START YOUR BUILD JOURNEY</p><h2 id="discovery-title">What are you looking for?</h2></div><span>Choose the way you want to shop. Every path uses the same live Buildanta catalogue.</span></div>
-        <div className="discovery-grid">{discoveryTiles.map((tile) => <a className={`discovery-card ${tile.tone}`} href={tile.href} key={tile.title}><div><small>{tile.eyebrow}</small><h3>{tile.title}</h3><p>{tile.detail}</p><strong>Explore <span>→</span></strong></div><Image src={tile.image} alt={`${tile.title} on Buildanta`} width={560} height={320} sizes="(max-width: 760px) 40vw, (max-width: 1120px) 42vw, 220px" /></a>)}</div>
+        <div className="discovery-grid">{discoveryTiles.map((tile) => <a className={`discovery-card ${tile.tone}`} href={tile.href} key={tile.title}><div><small>{tile.eyebrow}</small><h3>{tile.title}</h3><p>{tile.detail}</p><strong>Explore <span>→</span></strong></div><img src={tile.image} alt={`${tile.title} on Buildanta`} width="560" height="320" loading="lazy" decoding="async" /></a>)}</div>
       </section>
 
       <section className="home-section brands-section">
@@ -104,14 +103,14 @@ export default async function Home() {
         <p className="project-planner-disclaimer">Preliminary planning only. Final quantities require architectural, structural and MEP drawings reviewed by qualified professionals.</p>
       </section>
 
-      <section className="home-section">
+      <section className="home-section stage-shopping-section">
         <SectionTitle>Shop by Construction Stage</SectionTitle>
         <div className="stage-panel">
           {stages.map((stage, index) => <a href={`/by-stage/${stage.slug}`} className="stage-item" key={stage.id}><span className="stage-icon">{materialIcons[index % materialIcons.length]}</span><strong>{stage.name}</strong>{index < stages.length - 1 && <i>›</i>}</a>)}
         </div>
       </section>
 
-      <section className="home-section">
+      <section className="home-section room-shopping-section">
         <SectionTitle>Shop by Room</SectionTitle>
         <div className="room-grid">
           {rooms.map((room) => <a href={`/by-room/${room.slug}`} className="room-card" key={room.id}><img src={room.imageUrl || roomImages[room.name] || "/livingroom.jpg"} alt={`${room.name} interior and construction materials`} loading="lazy" decoding="async" /><strong>{room.name}</strong></a>)}

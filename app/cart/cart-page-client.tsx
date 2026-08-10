@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CartProvider, useCart, type CartLine } from "../cart-context";
+import { CartProvider, useCart, useOptionalCart, type CartLine } from "../cart-context";
 import { availabilityStatusLabel } from "../live-catalog";
 import { ConvertToQuoteForm } from "./convert-to-quote-form";
 import styles from "./cart.module.css";
@@ -93,5 +93,6 @@ function CartPageInner() {
 }
 
 export function CartPageClient() {
-  return <CartProvider><CartPageInner /></CartProvider>;
+  const cart = useOptionalCart();
+  return cart ? <CartPageInner /> : <CartProvider><CartPageInner /></CartProvider>;
 }

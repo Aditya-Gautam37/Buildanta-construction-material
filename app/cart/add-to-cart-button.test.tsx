@@ -119,4 +119,20 @@ describe("AddToCartButton quantity adjustments", () => {
     );
     expect(screen.queryByText(/Quantity adjusted/)).not.toBeInTheDocument();
   });
+
+  it("prevents repeated submissions while a card add is in progress", async () => {
+    let resolveRequest: ((value: unknown) => void) | undefined;
+    const fetchMock = vi.fn().mockReturnValue(new Promise((resolve) => { resolveRequest = resolve; }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<AddToCartButton variantId="variant-1" compact productName="Premium Cement" />);
+    fireEvent.click(screen.getByRole("button", { name: "Add Premium Cement to cart" }));
+    const addingButton = screen.getByRole("button", { name: "Adding..." });
+    expect(addingButton).toBeDisabled();
+    fireEvent.click(addingButton);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    resolveRequest?.({ ok: true, json: async () => ({ adjustment: null }) });
+    await waitFor(() => expect(screen.getByRole("button", { name: "Added" })).toBeInTheDocument());
+  });
 });

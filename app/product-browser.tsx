@@ -1,9 +1,10 @@
 "use client";
 
-import { type SyntheticEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { availabilityLabel, availabilityStatusLabel, type PublicAvailability, type StoreProduct } from "./live-catalog";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { type PublicAvailability, type StoreProduct } from "./live-catalog";
 import { StageQuestionnaire } from "./by-stage/stage-questionnaire";
 import { DELIVERY_PIN_CLEARED_EVENT, DELIVERY_PIN_STORAGE_KEY, saveDeliveryPincode } from "./delivery-location";
+import { ProductCard, productImageFallback, recoverProductImage } from "./product-card";
 
 type Mode = "stage" | "room" | "category";
 
@@ -12,26 +13,6 @@ function matches(product: StoreProduct, mode: Mode, option: string, categoryGrou
   if (mode === "room") return product.rooms.includes(option);
   const acceptedCategories = categoryGroups?.[option] ?? [option];
   return acceptedCategories.some((category) => product.categories.includes(category));
-}
-
-function productImageFallback(product: Pick<StoreProduct, "name" | "category">) {
-  const label = `${product.name} ${product.category}`.toLowerCase();
-  if (/(paint|putty|finish)/.test(label)) return "/demo/products/real/paint.jpg";
-  if (/(tile|floor)/.test(label)) return "/demo/products/real/tiles.jpg";
-  if (/(bath|sanitary|plumb|faucet)/.test(label)) return "/demo/products/real/bath.jpg";
-  if (/(electric|wire|switch|light)/.test(label)) return "/demo/products/real/electrical.jpg";
-  if (/(steel|tmt|rebar|binding)/.test(label)) return "/demo/products/real/steel.jpg";
-  if (/(waterproof|chemical)/.test(label)) return "/demo/products/real/waterproofing.jpg";
-  if (/(door|window|glass|opening)/.test(label)) return "/demo/products/real/openings.jpg";
-  if (/(ceiling|gypsum|drywall)/.test(label)) return "/demo/products/real/ceiling.jpg";
-  return "/demo/products/real/cement.jpg";
-}
-
-function recoverProductImage(event: SyntheticEvent<HTMLImageElement>, fallback: string) {
-  const image = event.currentTarget;
-  if (image.dataset.fallbackApplied) return;
-  image.dataset.fallbackApplied = "true";
-  image.src = fallback;
 }
 
 function browserHeroImage(mode: Mode, selection: string, product?: StoreProduct) {
@@ -137,8 +118,4 @@ export function ProductBrowser({ mode, products, options, initial = "", query = 
       </section>
     </section>
   </div>;
-}
-
-export function ProductCard({ product,location }: { product: StoreProduct;location?:{availabilityStatus:PublicAvailability;leadTimeLabel:string;fulfilmentMode:string} }) {
-  return <article className="product-card"><a className={`product-visual ${product.image ? "has-image" : ""}`} href={`/products/${product.slug}`}><span className="product-brand">{product.brand}</span>{product.image ? <img src={product.image} alt={product.imageAlt} loading="lazy" decoding="async" onError={(event) => recoverProductImage(event, productImageFallback(product))} /> : <b>{product.category.split(" ")[0]}</b>}<i>{location?availabilityStatusLabel(location.availabilityStatus):availabilityLabel(product)}</i></a><div className="product-body"><p>{product.brand} / {product.unit}</p><a href={`/products/${product.slug}`}><h2>{product.name}</h2></a><p className="product-description">{product.description}</p>{location&&<small className="location-product-note">{location.fulfilmentMode==="PARTNER_STOCK"?"Available from partner":location.fulfilmentMode==="ON_REQUEST"?"Available on request":"Buildanta stock"}. {location.leadTimeLabel}.</small>}<div><span>{product.price > 0 ? <>Indicative <strong>{"\u20B9"}{product.price.toLocaleString("en-IN")}</strong></> : <strong>Request latest price</strong>}</span><a className="small-quote" href={`/bulk-quotes?product=${encodeURIComponent(product.name)}`}>Get quote</a></div></div></article>;
 }

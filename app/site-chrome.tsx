@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { UiIcon } from "./ui-icon";
 import { clearDeliveryPincode, DELIVERY_PIN_STORAGE_KEY, DELIVERY_PIN_UPDATED_EVENT } from "./delivery-location";
+import { useCart } from "./cart-context";
 
 type ChromeProps = {
   categories: { name: string; slug: string }[];
@@ -20,6 +21,7 @@ export function Header({ categories, rooms, stages, brands, customerName }: Chro
   const [deliveryPincode, setDeliveryPincode] = useState("");
   const router = useRouter();
   const pathname = usePathname();
+  const { summary: cartSummary, loading: cartLoading } = useCart();
 
   useEffect(() => {
     const syncStoredPincode = () => {
@@ -61,7 +63,7 @@ export function Header({ categories, rooms, stages, brands, customerName }: Chro
           <button aria-label="Search" type="submit"><UiIcon name="search" size={17} /><span className="sr-only">Search</span></button>
         </form>
         {deliveryPincode && <button className="header-location-mobile" onClick={resetDeliveryPincode} aria-label={`Change delivery PIN code ${deliveryPincode}`}><span>PIN</span>{deliveryPincode}</button>}
-        <div className="account-links">{customerName ? <a className="signup-button" href="/account">My Account</a> : <><a href="/login">Customer Login</a><a className="signup-button" href="/signup">Sign Up</a></>}</div>
+        <div className="account-links"><a className="header-cart" href="/cart" aria-label={`Cart with ${cartSummary.itemCount} items`}>Cart <span aria-hidden="true">{cartLoading ? "…" : cartSummary.itemCount}</span></a>{customerName ? <a className="signup-button" href="/account">My Account</a> : <><a href="/login">Customer Login</a><a className="signup-button" href="/signup">Sign Up</a></>}</div>
         <button className="menu-button" aria-label="Open menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}><i /><i /><i /></button>
       </div>
       <div className="header-navigation">
@@ -77,7 +79,7 @@ export function Header({ categories, rooms, stages, brands, customerName }: Chro
       </div>
       {menuOpen && <div className="mobile-drawer" onClick={(event) => { if ((event.target as HTMLElement).closest("a")) setMenuOpen(false); }}>
         <form className="mobile-search" onSubmit={submitSearch}><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search products..." /><button>Search</button></form>
-        <a href="/by-stage">By Stage</a><a href="/by-room">By Room</a><a href="/categories">Categories</a><a href="/brands">Brands</a><a href="/calculators">Calculators</a><a href="/professionals">Find Professionals</a><a href="/bulk-quotes">Get Bulk Quotes</a><a href="/list-product">List your Products</a>
+        <a href="/cart">Cart ({cartSummary.itemCount})</a><a href="/by-stage">By Stage</a><a href="/by-room">By Room</a><a href="/categories">Categories</a><a href="/brands">Brands</a><a href="/calculators">Calculators</a><a href="/professionals">Find Professionals</a><a href="/bulk-quotes">Get Bulk Quotes</a><a href="/list-product">List your Products</a>
         <div>{customerName ? <a className="signup-button" href="/account">My Account</a> : <><a href="/login">Customer Login</a><a className="signup-button" href="/signup">Sign Up</a></>}</div>
       </div>}
     </header>

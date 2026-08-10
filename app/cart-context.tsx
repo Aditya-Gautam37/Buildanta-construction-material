@@ -42,6 +42,12 @@ export type CartSummary = {
   hasBlockingIssues: boolean;
 };
 
+export type CartActionResult = {
+  ok: boolean;
+  adjustment: CartAdjustment | null;
+  error?: string;
+};
+
 const EMPTY_SUMMARY: CartSummary = { cartId: null, status: "ACTIVE", lines: [], lineCount: 0, itemCount: 0, subtotal: 0, requiresQuoteCount: 0, hasBlockingIssues: false };
 
 type CartContextValue = {
@@ -52,7 +58,7 @@ type CartContextValue = {
   notice: string | null;
   dismissNotice: () => void;
   refresh: () => Promise<void>;
-  addItem: (variantId: string, quantity: number) => Promise<boolean>;
+  addItem: (variantId: string, quantity: number) => Promise<CartActionResult>;
   updateItem: (itemId: string, quantity: number) => Promise<boolean>;
   removeItem: (itemId: string) => Promise<boolean>;
   clear: () => Promise<void>;
@@ -105,12 +111,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       const response = await fetch("/api/cart/items", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ variantId, quantity }) });
       const result = await parseSummary(response);
-      if (result.summary) { setSummary(result.summary); setNotice(result.adjustment?.message ?? null); return true; }
-      setError(result.error ?? "Unable to add this product to your cart.");
-      return false;
+      if (result.summary) {
+        setSummary(result.summary);
+        setNotice(result.adjustment?.message ?? null);
+        return { ok: true, adjustment: result.adjustment ?? null };
+      }
+      const nextError = result.error ?? "Unable to add this product to your cart.";
+      setError(nextError);
+      return { ok: false, adjustment: null, error: nextError };
     } catch {
-      setError("Unable to add this product to your cart.");
-      return false;
+      const nextError = "Unable to add this product to your cart.";
+      setError(nextError);
+      return { ok: false, adjustment: null, error: nextError };
     }
   }, []);
 
@@ -166,4 +178,8 @@ export function useCart() {
   const context = useContext(CartContext);
   if (!context) throw new Error("useCart must be used within a CartProvider.");
   return context;
+}
+
+export function useOptionalCart() {
+  return useContext(CartContext);
 }

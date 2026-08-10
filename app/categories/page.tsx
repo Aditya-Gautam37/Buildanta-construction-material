@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { childrenOf, getCatalogSnapshot, rootNodes, type StoreProduct } from "../live-catalog";
-import { ProductCard } from "../product-browser";
+import { ProductCard } from "../product-card";
 import { ServiceabilityChecker } from "../serviceability-checker";
 
 const categoryFallbacks = [

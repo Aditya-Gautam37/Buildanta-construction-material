@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCatalogSnapshot } from "../../live-catalog";
-import { ProductCard } from "../../product-browser";
+import { ProductCard } from "../../product-card";
 import { ProductDetailClient } from "../../product-detail-client";
 
 type ProductPageProps = { params: Promise<{ slug: string }> };

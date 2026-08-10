@@ -9,3 +9,8 @@
 .cartLink:hover{text-decoration:underline}
 .error{width:100%;margin:0;border-radius:.6rem;background:#fff0ee;padding:.55rem .7rem;color:#b42318;font-size:.72rem;font-weight:750}
 .notice{width:100%;margin:0;border-left:3px solid #e8944a;border-radius:.5rem;background:#fff7ec;padding:.55rem .7rem;color:#8a5320;font-size:.72rem;font-weight:700;line-height:1.45}
+.compact{width:100%;margin:0;gap:.45rem}
+.compact .addButton{width:100%;min-height:42px;border-radius:.65rem;background:#f2952c;padding:.65rem .8rem;font-size:.72rem;letter-spacing:.01em}
+.compact .addButton:hover{background:#d97d13}
+.compact .error,.compact .notice{font-size:.64rem;line-height:1.35}
+.addButton:focus-visible,.cartLink:focus-visible,.stepper button:focus-visible{outline:3px solid rgba(242,149,44,.28);outline-offset:2px}

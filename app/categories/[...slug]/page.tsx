@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { childrenOf, getCatalogSnapshot, rootNodes, type CatalogNode } from "../../live-catalog";
+import { getCatalogSnapshot, rootNodes, type CatalogNode } from "../../live-catalog";
 import { ancestryOf, brandOptions, excludedIdsFor, productsInSubtree, resolveStep } from "../../guided-wizard";
 import { WizardOptionGrid } from "../../wizard-option-grid";
 import { ProductBrowser } from "../../product-browser";
+import { curatedBrandLogoFor } from "../../brand-logos";
 
 // Category slugs are hierarchical: CategoriesService derives them as
 // `parent.slug + "/" + name`, so most published categories are multi-segment.
 // A catch-all keeps both shapes reachable at the same public URL.
-// A sentinel rather than an empty value: "the customer chose all brands" and
-// "the customer has not reached the brand step" must render differently.
-const ANY_BRAND = "all";
-
 type CategoryPageProps = {
   params: Promise<{ slug: string[] }>;
   searchParams: Promise<{ q?: string; room?: string; stage?: string; brand?: string }>;
@@ -65,12 +62,11 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   const brands = brandOptions(scoped);
   const logoFor = new Map(catalog.brands.map((brand) => [brand.name, brand.logo]));
   const atLeaf = step.options.length === 0;
-  // "All brands" is an answer to the brand question, not the absence of one, so
-  // it needs to be distinguishable from having never been asked.
-  const chosenAll = brandFilter === ANY_BRAND;
-  const needsBrandChoice = atLeaf && brands.length > 1 && !brandFilter;
-  const visibleProducts = brandFilter && !chosenAll
-    ? scoped.filter((product) => product.brand === brandFilter)
+  const selectedBrand = brands.some((option) => option.brand === brandFilter) ? brandFilter : "";
+  const needsBrandChoice = atLeaf && brands.length > 0 && !selectedBrand;
+  const canShowProducts = atLeaf && (brands.length === 0 || Boolean(selectedBrand));
+  const visibleProducts = selectedBrand
+    ? scoped.filter((product) => product.brand === selectedBrand)
     : scoped;
 
   return <main className="listing-page">
@@ -81,14 +77,14 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       </span>)}
     </nav>
 
-    {(lens || brandFilter) && (
+    {(lens || selectedBrand) && (
       <div className="wizard-chips" aria-label="Active filters">
         <span>Narrowed by</span>
         {lens && <a className="wizard-chip" href={`/categories/${step.current.slug}${carry({ [lensParam]: null })}`}>
           {lens.name} <b aria-hidden="true">×</b><span className="sr-only">Remove the {lens.name} filter</span>
         </a>}
-        {brandFilter && <a className="wizard-chip" href={`/categories/${step.current.slug}${carry({ brand: null })}`}>
-          {chosenAll ? "All brands" : brandFilter} <b aria-hidden="true">×</b><span className="sr-only">Choose a different brand</span>
+        {selectedBrand && <a className="wizard-chip" href={`/categories/${step.current.slug}${carry({ brand: null })}`}>
+          {selectedBrand} <b aria-hidden="true">×</b><span className="sr-only">Choose a different brand</span>
         </a>}
       </div>
     )}
@@ -118,38 +114,27 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       />
     )}
 
-    {/* Brand is a step of its own, not a filter above the results. Choosing a
-        maker is a real decision, and burying it in chips above a full grid asks
-        the customer to read every product first. Skipped when only one brand
-        stocks the leaf, since a screen with one button is ceremony. */}
+    {/* Brand is a required final wizard step. Product cards and their filters
+        stay hidden until the shopper has deliberately chosen a valid brand. */}
     {atLeaf && needsBrandChoice && (
       <WizardOptionGrid
-        heading={`Which brand of ${step.current.name.toLowerCase()}?`}
-        subheading="Pick a brand, or see everything we stock."
-        options={[
-          ...brands.map((option) => ({
+        heading={`Choose your ${step.current.name.toLowerCase()} brand`}
+        subheading="Select one brand to see its available products, specifications and project pricing."
+        variant="brand"
+        options={brands.map((option) => ({
             id: option.brand,
             name: option.brand,
             href: `/categories/${step.current.slug}${carry({ brand: option.brand })}`,
-            description: null,
-            imageUrl: logoFor.get(option.brand) ?? null,
+            description: `View ${option.brand} products available in this category.`,
+            imageUrl: curatedBrandLogoFor(option.brand) ?? logoFor.get(option.brand) ?? null,
             productCount: option.productCount,
-          })),
-          {
-            id: "__any__",
-            name: "All brands",
-            href: `/categories/${step.current.slug}${carry({ brand: ANY_BRAND })}`,
-            description: "Compare everything we stock here side by side.",
-            imageUrl: null,
-            productCount: scoped.length,
-          },
-        ]}
+          }))}
       />
     )}
 
     {/* Products only at the end of the journey: an intermediate level that also
         dumps a full grid is the overwhelm this replaces. */}
-    {atLeaf && !needsBrandChoice && (
+    {canShowProducts && (
       visibleProducts.length > 0
         ? <ProductBrowser
             mode="category"

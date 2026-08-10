@@ -336,14 +336,54 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
 .brand-rail { padding: 18px; border: 1px solid var(--e-line); border-radius: 5px; background: #f8f8f8; }
 .brand-track { gap: 16px; }
 .brand-track > .brand-card {
-  width: 175px;
-  min-height: 82px;
+  width: 180px;
+  min-height: 100px;
+  padding: 10px 13px 8px;
+  flex-direction: column;
+  gap: 7px;
   border-color: var(--e-line);
-  border-radius: 4px;
+  border-radius: 8px;
   background: #fff;
   box-shadow: none;
+  overflow: hidden;
+  transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
 }
-.brand-track > .brand-card:hover { border-color: #d4a45e; transform: translateY(-2px); }
+.brand-track > .brand-card .brand-mark.has-logo {
+  width: 100%;
+  height: 60px;
+  flex: 0 0 60px;
+  border-radius: 0;
+  background: #fff;
+}
+.brand-track > .brand-card .brand-mark.has-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform: scale(1);
+  transition: transform .26s ease;
+}
+.brand-track > .brand-card .brand-mark.fallback {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+}
+.brand-track > .brand-card > strong {
+  max-width: 100%;
+  color: #51606f;
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: center;
+}
+.brand-track > .brand-card:hover,
+.brand-track > .brand-card:focus-visible {
+  border-color: #d4a45e;
+  box-shadow: 0 12px 26px rgba(24, 39, 56, .11);
+  transform: translateY(-5px);
+}
+.brand-track > .brand-card:hover .brand-mark.has-logo img,
+.brand-track > .brand-card:focus-visible .brand-mark.has-logo img { transform: scale(1.045); }
+.brand-rail:hover .brand-track,
+.brand-rail:focus-within .brand-track { animation-play-state: paused; }
 
 /* Dense product marketplace band */
 .featured-products-section {
@@ -634,7 +674,25 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
   .discovery-card strong { left: 22px; bottom: 20px; }
 
   .brands-section { padding-top: 58px; }
-  .brand-rail { margin-right: -16px; margin-left: -16px; border-right: 0; border-left: 0; border-radius: 0; }
+  .brand-rail {
+    overflow-x: auto;
+    margin-right: -16px;
+    margin-left: -16px;
+    padding: 14px 16px 18px;
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+    scrollbar-width: thin;
+    scroll-snap-type: x proximity;
+  }
+  .brand-track { animation: none; }
+  .brand-track > .brand-card {
+    width: 150px;
+    min-height: 94px;
+    padding: 10px 12px 8px;
+    scroll-snap-align: start;
+  }
+  .brand-track > .brand-card .brand-mark.has-logo { height: 52px; flex-basis: 52px; }
   .featured-products-section, .category-showcase-section { margin-top: 58px; padding-top: 58px; padding-bottom: 58px; }
   .section-heading-row { display: block; }
   .section-heading-row .view-all { display: inline-flex; margin-top: 16px; }

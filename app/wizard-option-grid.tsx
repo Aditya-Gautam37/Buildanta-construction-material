@@ -21,16 +21,18 @@ export function WizardOptionGrid({
   heading,
   subheading,
   options,
+  variant = "category",
 }: {
   heading: string;
   subheading?: string;
   options: WizardGridOption[];
+  variant?: "category" | "brand";
 }) {
   const [showAll, setShowAll] = useState(false);
   const hidden = Math.max(0, options.length - MAX_VISIBLE_OPTIONS);
   const visible = showAll ? options : options.slice(0, MAX_VISIBLE_OPTIONS);
 
-  return <section className="child-category-section">
+  return <section className={`child-category-section ${variant === "brand" ? "brand-choice-section" : ""}`}>
     <div className="section-heading-row">
       <div>
         <p>Continue</p>
@@ -39,7 +41,7 @@ export function WizardOptionGrid({
       </div>
     </div>
 
-    <div className="child-category-grid">
+    <div className={`child-category-grid ${variant === "brand" ? "brand-choice-grid" : ""}`}>
       {visible.map((option) => (
         <a href={option.href} key={option.id}>
           <span>

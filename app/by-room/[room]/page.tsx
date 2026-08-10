@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCatalogSnapshot, rootNodes } from "../../live-catalog";
 import { departmentsFor } from "../../guided-wizard";
+import { ROOM_WIZARD_STEPS, WizardJourney } from "../../wizard-journey";
 import { WizardOptionGrid } from "../../wizard-option-grid";
 
 type RoomPageProps = { params: Promise<{ room: string }> };
@@ -28,12 +29,12 @@ export default async function RoomWizardEntry({ params }: RoomPageProps) {
   const departments = departmentsFor(room, catalog.categories, catalog.products);
   const totalProducts = departments.reduce((sum, option) => sum + option.productCount, 0);
 
-  return <main className="listing-page">
+  return <main className="listing-page wizard-landing-page">
     <nav className="breadcrumbs" aria-label="Breadcrumb">
       <a href="/">Home</a><span>›</span><a href="/by-room">Rooms</a><span>›</span><span className="breadcrumb-part">{room.name}</span>
     </nav>
 
-    <div className="page-intro category-page-intro">
+    <div className="page-intro category-page-intro wizard-intro">
       <div>
         <p>STEP 1 OF YOUR {room.name.toUpperCase()}</p>
         <h1>What are you working on?</h1>
@@ -42,6 +43,12 @@ export default async function RoomWizardEntry({ params }: RoomPageProps) {
       </div>
       {room.imageUrl && <img src={room.imageUrl} alt={`${room.name} interior`} />}
     </div>
+
+    <WizardJourney
+      steps={ROOM_WIZARD_STEPS}
+      currentStep={1}
+      selections={[{ label: "Room", value: room.name, href: "/by-room" }]}
+    />
 
     {departments.length > 0 ? (
       <WizardOptionGrid

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getCatalogSnapshot } from "../live-catalog";
+import { BRAND_WIZARD_STEPS, WizardJourney } from "../wizard-journey";
 import { WizardOptionGrid } from "../wizard-option-grid";
 
 export const metadata: Metadata = {
@@ -19,12 +20,12 @@ export default async function BrandsIndex() {
 
   const totalProducts = stocked.reduce((sum, entry) => sum + entry.products.length, 0);
 
-  return <main className="listing-page">
+  return <main className="listing-page wizard-landing-page">
     <nav className="breadcrumbs" aria-label="Breadcrumb">
       <a href="/">Home</a><span>›</span><span className="breadcrumb-part">Brands</span>
     </nav>
 
-    <div className="page-intro category-page-intro">
+    <div className="page-intro category-page-intro wizard-intro">
       <div>
         <p>SHOP BY BRAND</p>
         <h1>Which brand are you after?</h1>
@@ -33,10 +34,13 @@ export default async function BrandsIndex() {
       </div>
     </div>
 
+    <WizardJourney steps={BRAND_WIZARD_STEPS} currentStep={0} />
+
     {stocked.length > 0 ? (
       <WizardOptionGrid
         heading="Choose a brand"
         subheading="Every path uses the same live Buildanta catalogue."
+        variant="brand"
         options={stocked.map(({ brand, products }) => ({
           id: brand.id,
           name: brand.name,

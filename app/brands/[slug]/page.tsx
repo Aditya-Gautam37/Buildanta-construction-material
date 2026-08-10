@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCatalogSnapshot, type CatalogNode } from "../../live-catalog";
 import { ancestryOf } from "../../guided-wizard";
+import { BRAND_WIZARD_STEPS, WizardJourney } from "../../wizard-journey";
 import { WizardOptionGrid } from "../../wizard-option-grid";
 
 type BrandPageProps = { params: Promise<{ slug: string }> };
@@ -44,12 +45,12 @@ export default async function BrandEntry({ params }: BrandPageProps) {
   }
   const options = [...departments.values()].sort((a, b) => b.productCount - a.productCount || a.node.name.localeCompare(b.node.name));
 
-  return <main className="listing-page">
+  return <main className="listing-page wizard-landing-page">
     <nav className="breadcrumbs" aria-label="Breadcrumb">
       <a href="/">Home</a><span>›</span><a href="/categories">Categories</a><span>›</span><span className="breadcrumb-part">{brand.name}</span>
     </nav>
 
-    <div className="page-intro category-page-intro">
+    <div className="page-intro category-page-intro wizard-intro">
       <div>
         <p>BRAND · BUILDANTA</p>
         <h1>{brand.name}</h1>
@@ -58,6 +59,12 @@ export default async function BrandEntry({ params }: BrandPageProps) {
       </div>
       {brand.logo && <img src={brand.logo} alt={`${brand.name} logo`} />}
     </div>
+
+    <WizardJourney
+      steps={BRAND_WIZARD_STEPS}
+      currentStep={1}
+      selections={[{ label: "Brand", value: brand.name, href: "/brands" }]}
+    />
 
     <WizardOptionGrid
       heading={`What are you buying from ${brand.name}?`}

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCatalogSnapshot, rootNodes } from "../live-catalog";
 import { departmentsFor } from "../guided-wizard";
 import { constructionStageImageFor } from "../stage-images";
+import { STAGE_WIZARD_STEPS, WizardJourney } from "../wizard-journey";
 import { WizardOptionGrid } from "../wizard-option-grid";
 
 export default async function ByStage({ searchParams }: { searchParams: Promise<{ stage?: string }> }) {
@@ -18,12 +19,12 @@ export default async function ByStage({ searchParams }: { searchParams: Promise<
     .map((stage) => ({ stage, departments: departmentsFor(stage, catalog.categories, catalog.products) }))
     .filter((entry) => entry.departments.length > 0);
 
-  return <main className="listing-page stage-listing-page">
+  return <main className="listing-page stage-listing-page wizard-landing-page">
     <nav className="breadcrumbs" aria-label="Breadcrumb">
       <a href="/">Home</a><span>›</span><span className="breadcrumb-part">Build stages</span>
     </nav>
 
-    <div className="page-intro category-page-intro">
+    <div className="page-intro category-page-intro wizard-intro">
       <div>
         <p>SHOP BY BUILD STAGE</p>
         <h1>Where are you in the build?</h1>
@@ -31,6 +32,8 @@ export default async function ByStage({ searchParams }: { searchParams: Promise<
         <small>{options.length} {options.length === 1 ? "stage" : "stages"} ready to shop</small>
       </div>
     </div>
+
+    <WizardJourney steps={STAGE_WIZARD_STEPS} currentStep={0} />
 
     {options.length > 0 ? (
       <WizardOptionGrid

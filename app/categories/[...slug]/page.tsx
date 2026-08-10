@@ -5,6 +5,14 @@ import { ancestryOf, brandOptions, excludedIdsFor, productsInSubtree, resolveSte
 import { WizardOptionGrid } from "../../wizard-option-grid";
 import { ProductBrowser } from "../../product-browser";
 import { curatedBrandLogoFor, curatedBrandLogoScaleFor } from "../../brand-logos";
+import {
+  BRAND_WIZARD_STEPS,
+  CATEGORY_WIZARD_STEPS,
+  ROOM_WIZARD_STEPS,
+  STAGE_WIZARD_STEPS,
+  WizardJourney,
+  type WizardJourneySelection,
+} from "../../wizard-journey";
 
 // Category slugs are hierarchical: CategoriesService derives them as
 // `parent.slug + "/" + name`, so most published categories are multi-segment.
@@ -68,8 +76,35 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   const visibleProducts = selectedBrand
     ? scoped.filter((product) => product.brand === selectedBrand)
     : scoped;
+  const journeySteps = lensParam === "stage"
+    ? STAGE_WIZARD_STEPS
+    : lensParam === "room"
+      ? ROOM_WIZARD_STEPS
+      : brandFilter
+        ? BRAND_WIZARD_STEPS
+        : CATEGORY_WIZARD_STEPS;
+  const categoryStepIndex = journeySteps === STAGE_WIZARD_STEPS || journeySteps === ROOM_WIZARD_STEPS ? 2 : 1;
+  const brandStepIndex = journeySteps.length - 2;
+  const productStepIndex = journeySteps.length - 1;
+  const journeyStep = step.options.length > 0 ? categoryStepIndex : needsBrandChoice ? brandStepIndex : productStepIndex;
+  const journeySelections: WizardJourneySelection[] = [];
+  if (lens) {
+    journeySelections.push({
+      label: lensParam === "stage" ? "Stage" : "Room",
+      value: lens.name,
+      href: lensParam === "stage" ? "/by-stage" : "/by-room",
+    });
+  }
+  journeySelections.push({ label: "Category", value: step.current.name });
+  if (selectedBrand) {
+    journeySelections.push({
+      label: "Brand",
+      value: selectedBrand,
+      href: `/categories/${step.current.slug}${carry({ brand: null })}`,
+    });
+  }
 
-  return <main className="listing-page">
+  return <main className="listing-page wizard-landing-page">
     <nav className="breadcrumbs" aria-label="Breadcrumb">
       <a href="/">Home</a><span>›</span><a href="/categories">Categories</a>
       {crumbs.map((item, index) => <span key={item.id} className="breadcrumb-part">
@@ -89,7 +124,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       </div>
     )}
 
-    <div className="page-intro category-page-intro">
+    <div className="page-intro category-page-intro wizard-intro">
       <div>
         <p>{lens ? `${lens.name.toUpperCase()} · BUILDANTA` : "BUILDANTA CATEGORY"}</p>
         <h1>{step.current.name}</h1>
@@ -98,6 +133,8 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       </div>
       {step.current.imageUrl && <img src={step.current.imageUrl} alt={`${step.current.name} materials`} />}
     </div>
+
+    <WizardJourney steps={journeySteps} currentStep={journeyStep} selections={journeySelections} />
 
     {step.options.length > 0 && (
       <WizardOptionGrid

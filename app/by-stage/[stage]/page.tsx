@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getCatalogSnapshot, rootNodes } from "../../live-catalog";
 import { departmentsFor } from "../../guided-wizard";
 import { constructionStageImageFor } from "../../stage-images";
+import { STAGE_WIZARD_STEPS, WizardJourney } from "../../wizard-journey";
 import { WizardOptionGrid } from "../../wizard-option-grid";
 
 type StagePageProps = { params: Promise<{ stage: string }> };
@@ -30,12 +31,12 @@ export default async function StageWizardEntry({ params }: StagePageProps) {
   const totalProducts = departments.reduce((sum, option) => sum + option.productCount, 0);
   const stageImage = stage.imageUrl || constructionStageImageFor(stage.slug);
 
-  return <main className="listing-page">
+  return <main className="listing-page wizard-landing-page">
     <nav className="breadcrumbs" aria-label="Breadcrumb">
       <a href="/">Home</a><span>›</span><a href="/by-stage">Build stages</a><span>›</span><span className="breadcrumb-part">{stage.name}</span>
     </nav>
 
-    <div className="page-intro category-page-intro">
+    <div className="page-intro category-page-intro wizard-intro">
       <div>
         <p>STAGE · {stage.name.toUpperCase()}</p>
         <h1>What are you buying for this stage?</h1>
@@ -44,6 +45,12 @@ export default async function StageWizardEntry({ params }: StagePageProps) {
       </div>
       {stageImage && <img src={stageImage} alt={`${stage.name} construction stage`} />}
     </div>
+
+    <WizardJourney
+      steps={STAGE_WIZARD_STEPS}
+      currentStep={1}
+      selections={[{ label: "Stage", value: stage.name, href: "/by-stage" }]}
+    />
 
     {departments.length > 0 ? (
       <WizardOptionGrid

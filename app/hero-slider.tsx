@@ -23,7 +23,7 @@ export function HeroSlider({ slides }: { slides: HomepageSlide[] }) {
           <div className="hero-shade" />
           <div className="home-hero-copy">
             <p className="live-catalog-pill"><span /> Live catalogue powered by Buildanta Inventory</p>
-            <h1>{slide.title}</h1>
+            {slide.title && <h1>{slide.title}</h1>}
             {slide.subtitle && <p>{slide.subtitle}</p>}
             <div>
               {slide.ctaLabel && slide.ctaHref && <a className="button orange" href={slide.ctaHref} tabIndex={index === active ? 0 : -1}>{slide.ctaLabel}</a>}

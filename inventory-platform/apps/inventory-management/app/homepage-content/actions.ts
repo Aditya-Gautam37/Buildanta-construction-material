@@ -54,9 +54,11 @@ export async function saveHomepageSlideAction(input: HomepageSlideDraft) {
   try {
     await requireStaff()
     const title = input.title.trim()
-    const altText = input.altText.trim()
-    if (!title) throw new Error("Slide title is required.")
-    if (!altText) throw new Error("Image description is required for accessibility.")
+    // Title and image description are optional: an image-only slide is a valid
+    // choice. Alt text still matters for screen readers and SEO, so when it is
+    // left blank we fall back to the title, then to a generic banner label,
+    // rather than storing nothing.
+    const altText = input.altText.trim() || title || "Buildanta homepage banner"
     const data = {
       title,
       subtitle: optional(input.subtitle),

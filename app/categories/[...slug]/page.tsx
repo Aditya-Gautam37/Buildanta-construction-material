@@ -8,6 +8,10 @@ import { ProductBrowser } from "../../product-browser";
 // Category slugs are hierarchical: CategoriesService derives them as
 // `parent.slug + "/" + name`, so most published categories are multi-segment.
 // A catch-all keeps both shapes reachable at the same public URL.
+// A sentinel rather than an empty value: "the customer chose all brands" and
+// "the customer has not reached the brand step" must render differently.
+const ANY_BRAND = "all";
+
 type CategoryPageProps = {
   params: Promise<{ slug: string[] }>;
   searchParams: Promise<{ q?: string; room?: string; stage?: string; brand?: string }>;
@@ -41,10 +45,16 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       ? rootNodes(catalog.stages).find((node) => node.slug === stageSlug)
       : undefined;
   const excluded = excludedIdsFor(lens);
-  const carry = (extra: Record<string, string> = {}) => {
+  // Every answer the customer has given travels with them. Dropping the brand
+  // when they go a level deeper would silently undo a choice they just made.
+  const carry = (extra: Record<string, string | null> = {}) => {
     const query = new URLSearchParams();
     if (lens && lensParam) query.set(lensParam, lens.slug);
-    for (const [key, value] of Object.entries(extra)) if (value) query.set(key, value);
+    if (brandFilter) query.set("brand", brandFilter);
+    for (const [key, value] of Object.entries(extra)) {
+      if (value === null) query.delete(key);
+      else if (value) query.set(key, value);
+    }
     const encoded = query.toString();
     return encoded ? `?${encoded}` : "";
   };
@@ -53,8 +63,15 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   const crumbs: CatalogNode[] = ancestryOf(catalog.categories, step.current.id);
   const scoped = productsInSubtree(catalog.products, catalog.categories, step.current.id, excluded);
   const brands = brandOptions(scoped);
-  const visibleProducts = brandFilter ? scoped.filter((product) => product.brand === brandFilter) : scoped;
+  const logoFor = new Map(catalog.brands.map((brand) => [brand.name, brand.logo]));
   const atLeaf = step.options.length === 0;
+  // "All brands" is an answer to the brand question, not the absence of one, so
+  // it needs to be distinguishable from having never been asked.
+  const chosenAll = brandFilter === ANY_BRAND;
+  const needsBrandChoice = atLeaf && brands.length > 1 && !brandFilter;
+  const visibleProducts = brandFilter && !chosenAll
+    ? scoped.filter((product) => product.brand === brandFilter)
+    : scoped;
 
   return <main className="listing-page">
     <nav className="breadcrumbs" aria-label="Breadcrumb">
@@ -67,11 +84,11 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
     {(lens || brandFilter) && (
       <div className="wizard-chips" aria-label="Active filters">
         <span>Narrowed by</span>
-        {lens && <a className="wizard-chip" href={`/categories/${step.current.slug}${brandFilter ? `?brand=${encodeURIComponent(brandFilter)}` : ""}`}>
+        {lens && <a className="wizard-chip" href={`/categories/${step.current.slug}${carry({ [lensParam]: null })}`}>
           {lens.name} <b aria-hidden="true">×</b><span className="sr-only">Remove the {lens.name} filter</span>
         </a>}
-        {brandFilter && <a className="wizard-chip" href={`/categories/${step.current.slug}${carry()}`}>
-          {brandFilter} <b aria-hidden="true">×</b><span className="sr-only">Remove the {brandFilter} filter</span>
+        {brandFilter && <a className="wizard-chip" href={`/categories/${step.current.slug}${carry({ brand: null })}`}>
+          {chosenAll ? "All brands" : brandFilter} <b aria-hidden="true">×</b><span className="sr-only">Choose a different brand</span>
         </a>}
       </div>
     )}
@@ -101,27 +118,38 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       />
     )}
 
-    {atLeaf && brands.length > 1 && (
-      <section className="wizard-brand-step" aria-label="Choose a brand">
-        <p>Shop by brand</p>
-        <div className="wizard-chip-row">
-          <a className={brandFilter ? "wizard-chip" : "wizard-chip selected"} href={`/categories/${step.current.slug}${carry()}`}>Any brand</a>
-          {brands.map((option) => (
-            <a
-              className={brandFilter === option.brand ? "wizard-chip selected" : "wizard-chip"}
-              href={`/categories/${step.current.slug}${carry({ brand: option.brand })}`}
-              key={option.brand}
-            >
-              {option.brand} <small>{option.productCount}</small>
-            </a>
-          ))}
-        </div>
-      </section>
+    {/* Brand is a step of its own, not a filter above the results. Choosing a
+        maker is a real decision, and burying it in chips above a full grid asks
+        the customer to read every product first. Skipped when only one brand
+        stocks the leaf, since a screen with one button is ceremony. */}
+    {atLeaf && needsBrandChoice && (
+      <WizardOptionGrid
+        heading={`Which brand of ${step.current.name.toLowerCase()}?`}
+        subheading="Pick a brand, or see everything we stock."
+        options={[
+          ...brands.map((option) => ({
+            id: option.brand,
+            name: option.brand,
+            href: `/categories/${step.current.slug}${carry({ brand: option.brand })}`,
+            description: null,
+            imageUrl: logoFor.get(option.brand) ?? null,
+            productCount: option.productCount,
+          })),
+          {
+            id: "__any__",
+            name: "All brands",
+            href: `/categories/${step.current.slug}${carry({ brand: ANY_BRAND })}`,
+            description: "Compare everything we stock here side by side.",
+            imageUrl: null,
+            productCount: scoped.length,
+          },
+        ]}
+      />
     )}
 
     {/* Products only at the end of the journey: an intermediate level that also
         dumps a full grid is the overwhelm this replaces. */}
-    {atLeaf && (
+    {atLeaf && !needsBrandChoice && (
       visibleProducts.length > 0
         ? <ProductBrowser
             mode="category"

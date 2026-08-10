@@ -26,6 +26,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     categories: rootNodes(catalog.categories).map(({ name, slug }) => ({ name, slug })),
     rooms: rootNodes(catalog.rooms).map(({ name, slug }) => ({ name, slug })),
     stages: activeStages.map(({ name, slug }) => ({ name, slug })),
+    brands: catalog.brands.filter((brand) => catalog.products.some((product) => product.brand === brand.name)).map(({ name, slug }) => ({ name, slug })),
     inventoryHref: process.env.NEXT_PUBLIC_INVENTORY_MANAGEMENT_URL || (process.env.NODE_ENV === "development" ? "http://localhost:3002/dashboard" : "https://buildanta-monorepo-inventory-manage.vercel.app/dashboard"),
     customerName: customer?.firstName ?? customer?.displayName,
   };

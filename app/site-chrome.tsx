@@ -7,13 +7,14 @@ import { clearDeliveryPincode, DELIVERY_PIN_STORAGE_KEY, DELIVERY_PIN_UPDATED_EV
 
 type ChromeProps = {
   categories: { name: string; slug: string }[];
+  brands: { name: string; slug: string }[];
   rooms: { name: string; slug: string }[];
   stages: { name: string; slug: string }[];
   inventoryHref: string;
   customerName?: string;
 };
 
-export function Header({ categories, rooms, stages, customerName }: ChromeProps) {
+export function Header({ categories, rooms, stages, brands, customerName }: ChromeProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [deliveryPincode, setDeliveryPincode] = useState("");
@@ -68,6 +69,7 @@ export function Header({ categories, rooms, stages, customerName }: ChromeProps)
           <div className={navGroupClass("/by-stage")}><a href="/by-stage">Shop by Stage <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown">{stages.slice(0, 8).map((stage) => <a href={`/by-stage/${stage.slug}`} key={stage.slug}>{stage.name}</a>)}</div></div>
           <div className={navGroupClass("/by-room")}><a href="/by-room">Shop by Room <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown">{rooms.map((room) => <a href={`/by-room/${room.slug}`} key={room.slug}>{room.name}</a>)}</div></div>
           <div className={navGroupClass("/categories")}><a href="/categories">All Categories <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown">{categories.slice(0, 8).map((category) => <a href={`/categories/${category.slug}`} key={category.slug}>{category.name}</a>)}</div></div>
+          <div className={navGroupClass("/brands")}><a href="/brands">Shop by Brand <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown">{brands.slice(0, 8).map((brand) => <a href={`/brands/${brand.slug}`} key={brand.slug}>{brand.name}</a>)}</div></div>
           <div className={navGroupClass("/calculators")}><a href="/calculators">Design & Calculators</a></div>
           <div className={navGroupClass("/more")}><a href="/more">More Services <UiIcon name="chevron-down" size={14} /></a><div className="nav-dropdown compact"><a href="/professionals">Find Professionals</a><a href="/bulk-quotes">Get Bulk Quotes</a><a href="/list-product">List your Products</a></div></div>
         </nav>
@@ -75,7 +77,7 @@ export function Header({ categories, rooms, stages, customerName }: ChromeProps)
       </div>
       {menuOpen && <div className="mobile-drawer" onClick={(event) => { if ((event.target as HTMLElement).closest("a")) setMenuOpen(false); }}>
         <form className="mobile-search" onSubmit={submitSearch}><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search products..." /><button>Search</button></form>
-        <a href="/by-stage">By Stage</a><a href="/by-room">By Room</a><a href="/categories">Categories</a><a href="/calculators">Calculators</a><a href="/professionals">Find Professionals</a><a href="/bulk-quotes">Get Bulk Quotes</a><a href="/list-product">List your Products</a>
+        <a href="/by-stage">By Stage</a><a href="/by-room">By Room</a><a href="/categories">Categories</a><a href="/brands">Brands</a><a href="/calculators">Calculators</a><a href="/professionals">Find Professionals</a><a href="/bulk-quotes">Get Bulk Quotes</a><a href="/list-product">List your Products</a>
         <div>{customerName ? <a className="signup-button" href="/account">My Account</a> : <><a href="/login">Customer Login</a><a className="signup-button" href="/signup">Sign Up</a></>}</div>
       </div>}
     </header>

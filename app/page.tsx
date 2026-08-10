@@ -78,7 +78,7 @@ export default async function Home() {
       <section className="home-section brands-section">
         <h2>Trusted Brands</h2>
         <p className="section-subtitle">Choose a brand to shop everything we stock from them</p>
-        <div className="brand-rail" aria-label="Trusted brands"><div className="brand-track">{repeatedBrands.map((brand, index) => <a className="brand-card" href={`/brands/${brand.slug}`} key={`${brand.id}-${index}`}><BrandMark name={brand.name} logo={brand.logo} /><strong>{brand.name}</strong></a>)}</div></div>
+        <div className="brand-rail" aria-label="Trusted brands"><div className="brand-track">{repeatedBrands.map((brand, index) => <a className="brand-card" href={`/brands/${brand.slug}`} key={`${brand.id}-${index}`}><BrandMark name={brand.name} logo={brand.logo} /></a>)}</div></div>
       </section>
 
       <section className="home-section featured-products-section">

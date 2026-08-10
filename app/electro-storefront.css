@@ -1484,3 +1484,232 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
   }
   .wizard-option-section .child-category-grid > a { opacity: 1; transform: none; }
 }
+
+/* Compact construction-category catalogue cards */
+.taxonomy-page .category-directory { padding-bottom: 28px; }
+.taxonomy-page .taxonomy-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 18px;
+}
+.taxonomy-page .taxonomy-card {
+  height: 100%;
+  min-width: 0;
+  display: flex;
+  overflow: hidden;
+  flex-direction: column;
+  border: 1px solid #dce5e1;
+  border-radius: 17px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(13, 47, 74, .065);
+  transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+}
+.taxonomy-page .taxonomy-card:hover,
+.taxonomy-page .taxonomy-card:focus-within {
+  border-color: #eea46f;
+  box-shadow: 0 17px 38px rgba(13, 47, 74, .12);
+  transform: translateY(-4px);
+}
+.taxonomy-page .taxonomy-card:focus-within {
+  outline: 3px solid rgba(244, 123, 32, .14);
+  outline-offset: 2px;
+}
+.taxonomy-page .taxonomy-card-visual {
+  position: relative;
+  height: 196px;
+  flex: 0 0 196px;
+  display: block;
+  overflow: hidden;
+  border-bottom: 1px solid #e4ebe8;
+  background:
+    radial-gradient(circle at 50% 42%, #fff 0%, #f4f7f6 58%, #e9efed 100%);
+}
+.taxonomy-page .taxonomy-card-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  background: transparent;
+  padding: 12px;
+  transition: transform .24s ease;
+}
+.taxonomy-page .taxonomy-card:hover .taxonomy-card-visual img,
+.taxonomy-page .taxonomy-card:focus-within .taxonomy-card-visual img { transform: scale(1.025); }
+.taxonomy-page .taxonomy-card-visual > span {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  right: auto;
+  bottom: auto;
+  left: 12px;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, .3);
+  border-radius: 999px;
+  background: rgba(13, 47, 74, .94);
+  padding: 6px 10px;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 5px 14px rgba(13, 47, 74, .16);
+  backdrop-filter: blur(6px);
+}
+.taxonomy-page .taxonomy-card-visual > span.is-empty {
+  border-color: rgba(255, 255, 255, .52);
+  background: rgba(76, 91, 100, .9);
+  color: #f8faf9;
+}
+.taxonomy-page .taxonomy-card-visual > i {
+  top: 12px;
+  right: 12px;
+  border: 1px solid rgba(255, 255, 255, .35);
+  background: rgba(11, 119, 100, .93);
+  padding: 6px 9px;
+  font-size: 7px;
+  font-weight: 750;
+  box-shadow: 0 5px 14px rgba(11, 119, 100, .14);
+}
+.taxonomy-page .taxonomy-card-copy {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 17px 18px 15px;
+}
+.taxonomy-page .taxonomy-card-copy > p {
+  margin: 0 0 5px;
+  color: #e86f17;
+  font-size: 7px;
+  font-weight: 850;
+  letter-spacing: .13em;
+}
+.taxonomy-page .taxonomy-card-copy > a:not(.taxonomy-card-action) { width: fit-content; max-width: 100%; }
+.taxonomy-page .taxonomy-grid h3 {
+  margin: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  color: #0d2f4a;
+  font-size: 20px;
+  line-height: 1.2;
+  letter-spacing: -.035em;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.taxonomy-page .taxonomy-card-copy > a:not(.taxonomy-card-action):hover h3,
+.taxonomy-page .taxonomy-card-copy > a:not(.taxonomy-card-action):focus-visible h3 { color: #d96513; }
+.taxonomy-page .taxonomy-card-copy > a:focus-visible { border-radius: 4px; outline: 2px solid #f47b20; outline-offset: 3px; }
+.taxonomy-page .taxonomy-card-copy > span {
+  min-height: 0;
+  margin-top: 8px;
+  display: -webkit-box;
+  overflow: hidden;
+  color: #65747d;
+  font-size: 9px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+.taxonomy-page .taxonomy-card-copy > small {
+  margin-top: 7px;
+  overflow: hidden;
+  color: #385467;
+  font-size: 7px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.taxonomy-page .taxonomy-grid ul {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 13px 0 0;
+  border-top: 1px solid #e3e9e6;
+  padding: 12px 0 0;
+  list-style: none;
+}
+.taxonomy-page .taxonomy-grid li { min-width: 0; }
+.taxonomy-page .taxonomy-grid li a {
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #e5ebe8;
+  border-radius: 9px;
+  background: #f7f9f8;
+  padding: 7px 9px;
+  color: #52636c;
+  font-size: 8px;
+  font-weight: 650;
+  line-height: 1.3;
+  transition: border-color .2s ease, background-color .2s ease, color .2s ease, transform .2s ease;
+}
+.taxonomy-page .taxonomy-grid li a > span {
+  color: #f47b20;
+  font-size: 11px;
+  transition: transform .2s ease;
+}
+.taxonomy-page .taxonomy-grid li a:hover,
+.taxonomy-page .taxonomy-grid li a:focus-visible {
+  border-color: #f0ad7e;
+  background: #fff7f0;
+  color: #0d2f4a;
+  outline: none;
+  transform: translateY(-1px);
+}
+.taxonomy-page .taxonomy-grid li a:hover > span,
+.taxonomy-page .taxonomy-grid li a:focus-visible > span { transform: translateX(2px); }
+.taxonomy-page .taxonomy-card-action {
+  min-height: 43px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  border-top: 1px solid #dfe6e3;
+  padding: 13px 1px 0;
+  color: #0d2f4a;
+  font-size: 9px;
+  font-weight: 800;
+}
+.taxonomy-page .taxonomy-grid ul + .taxonomy-card-action { margin-top: 13px; }
+.taxonomy-page .taxonomy-card-action > span {
+  color: #f47b20;
+  font-size: 13px;
+  transition: transform .22s ease;
+}
+.taxonomy-page .taxonomy-card-action:hover { color: #d96513; }
+.taxonomy-page .taxonomy-card-action:hover > span,
+.taxonomy-page .taxonomy-card-action:focus-visible > span { transform: translateX(4px); }
+
+@media (max-width: 1180px) {
+  .taxonomy-page .taxonomy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .taxonomy-page .taxonomy-grid { grid-template-columns: 1fr; gap: 14px; }
+  .taxonomy-page .taxonomy-card-visual { height: 180px; flex-basis: 180px; }
+  .taxonomy-page .taxonomy-card-copy { padding: 15px 16px 14px; }
+  .taxonomy-page .taxonomy-grid h3 { font-size: 19px; }
+  .taxonomy-page .taxonomy-grid li a { min-height: 44px; }
+}
+
+@media (max-width: 420px) {
+  .taxonomy-page .taxonomy-grid ul { grid-template-columns: 1fr; }
+  .taxonomy-page .taxonomy-card-visual { height: 168px; flex-basis: 168px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .taxonomy-page .taxonomy-card,
+  .taxonomy-page .taxonomy-card *,
+  .taxonomy-page .taxonomy-card::before,
+  .taxonomy-page .taxonomy-card::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .taxonomy-page .taxonomy-card:hover,
+  .taxonomy-page .taxonomy-card:focus-within { transform: none; }
+}

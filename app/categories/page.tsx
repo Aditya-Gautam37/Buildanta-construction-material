@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { childrenOf, getCatalogSnapshot, rootNodes, type StoreProduct } from "../live-catalog";
 import { ProductCard } from "../product-browser";
 import { ServiceabilityChecker } from "../serviceability-checker";
@@ -39,7 +40,6 @@ export default async function Categories({ searchParams }: { searchParams: Promi
     return names;
   };
   const matchedProducts = needle ? catalog.products.filter((product) => `${product.name} ${product.brand} ${product.category} ${product.description} ${product.specs.join(" ")}`.toLowerCase().includes(needle)) : [];
-  const categoryGroups = Object.fromEntries(roots.map((category) => [category.name, descendantNames(category.id)]));
   const filtered = roots.filter((category) => {
     const children = childrenOf(catalog.categories, category.id);
     const products = categoryProducts(catalog.products, descendantNames(category.id));
@@ -67,8 +67,22 @@ export default async function Categories({ searchParams }: { searchParams: Promi
         const previewImage = category.imageUrl ?? livePreview?.image ?? fallbackImage(category.name);
         const brands = [...new Set(products.map((product) => product.brand))].slice(0, 3);
         return <article key={category.id} className="taxonomy-card">
-          <a className="taxonomy-card-visual" href={`/categories/${category.slug}`}><img src={previewImage} alt={`${category.name} materials`} loading="lazy" /><span>{products.length} {products.length === 1 ? "product" : "products"}</span>{livePreview && <i>Live Inventory image</i>}</a>
-          <div className="taxonomy-card-copy"><p>Construction category</p><a href={`/categories/${category.slug}`}><h3>{category.name}</h3></a><span>{category.description || (products.length ? `Featuring ${products.slice(0, 2).map((product) => product.name).join(" and ")}.` : "Products can be published here from Buildanta Inventory.")}</span>{brands.length > 0 && <small>{brands.join(" · ")}</small>}
+          <a className="taxonomy-card-visual" href={`/categories/${category.slug}`}>
+            <Image
+              src={previewImage}
+              alt={`${category.name} materials`}
+              fill
+              sizes="(max-width: 760px) calc(100vw - 32px), (max-width: 1180px) 50vw, 33vw"
+              unoptimized
+            />
+            <span className={products.length === 0 ? "is-empty" : undefined}>{products.length} {products.length === 1 ? "product" : "products"}</span>
+            {livePreview && <i>Live Inventory image</i>}
+          </a>
+          <div className="taxonomy-card-copy">
+            <p>Construction category</p>
+            <a href={`/categories/${category.slug}`}><h3>{category.name}</h3></a>
+            <span>{category.description || (products.length ? `Featuring ${products.slice(0, 2).map((product) => product.name).join(" and ")}.` : "Products can be published here from Buildanta Inventory.")}</span>
+            {brands.length > 0 && <small>{brands.join(" · ")}</small>}
             {children.length > 0 && <ul>{children.slice(0, 5).map((item) => <li key={item.id}><a href={`/categories/${item.slug}`}>{item.name}<span>›</span></a></li>)}</ul>}
             <a className="taxonomy-card-action" href={`/categories/${category.slug}`}>Explore {category.name} <span>→</span></a>
           </div>

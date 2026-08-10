@@ -32,6 +32,7 @@
         "db:set-taxonomy-images": "tsx src/set-taxonomy-images.ts",
         "db:set-brand-logos": "tsx src/set-brand-logos.ts",
         "db:setup-kanpur-location": "tsx src/setup-kanpur-location.ts",
+        "db:stock-kanpur-opening": "tsx src/stock-kanpur-opening.ts",
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {

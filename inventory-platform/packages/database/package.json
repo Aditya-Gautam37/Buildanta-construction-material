@@ -31,6 +31,7 @@
         "db:verify-wizard-coverage": "tsx src/verify-wizard-coverage.ts",
         "db:set-taxonomy-images": "tsx src/set-taxonomy-images.ts",
         "db:set-brand-logos": "tsx src/set-brand-logos.ts",
+        "db:setup-kanpur-location": "tsx src/setup-kanpur-location.ts",
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {

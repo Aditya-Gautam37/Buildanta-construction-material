@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import type { SyntheticEvent } from "react";
+import { useState, type SyntheticEvent } from "react";
 import { AddToCartButton } from "./cart/add-to-cart-button";
 import { availabilityLabel, availabilityStatusLabel, type PublicAvailability, type StoreProduct } from "./live-catalog";
 
@@ -13,7 +13,7 @@ export type ProductCardLocation = {
 
 export type ProductCardAction =
   | { kind: "add"; variant: StoreProduct["variants"][number] }
-  | { kind: "choose" }
+  | { kind: "choose"; variants: StoreProduct["variants"] }
   | { kind: "unavailable" }
   | { kind: "quote" };
 
@@ -28,7 +28,7 @@ export function resolveProductCardAction(product: StoreProduct, effectiveAvailab
     : [];
 
   if (purchasableVariants.length === 1) return { kind: "add", variant: purchasableVariants[0] };
-  if (purchasableVariants.length > 1) return { kind: "choose" };
+  if (purchasableVariants.length > 1) return { kind: "choose", variants: purchasableVariants };
   if (directVariants.length > 0) return { kind: "unavailable" };
   return { kind: "quote" };
 }
@@ -60,6 +60,29 @@ function deliveryNote(location: ProductCardLocation) {
       ? "Available on request"
       : "Buildanta stock";
   return `${source}. ${location.leadTimeLabel}.`;
+}
+
+function MultiVariantCartAction({ variants, productName }: { variants: StoreProduct["variants"]; productName: string }) {
+  const [open, setOpen] = useState(false);
+  const [variantId, setVariantId] = useState("");
+  const variant = variants.find((item) => item.id === variantId);
+
+  if (!open) {
+    return <button className="product-card-primary-link" type="button" onClick={() => setOpen(true)} aria-expanded="false" aria-label={`Add ${productName} to cart`}>Add to cart</button>;
+  }
+
+  return <div className="product-card-variant-picker">
+    <label>
+      <span>Choose variant</span>
+      <select value={variantId} onChange={(event) => setVariantId(event.target.value)} aria-label={`Choose variant for ${productName}`}>
+        <option value="">Select variant</option>
+        {variants.map((item) => <option value={item.id} key={item.id}>{item.label} / {item.sku}</option>)}
+      </select>
+    </label>
+    {variant
+      ? <AddToCartButton variantId={variant.id} minimumOrderQuantity={variant.minimumOrderQuantity} compact productName={productName} />
+      : <button className="product-card-select-disabled" type="button" disabled>Add to cart</button>}
+  </div>;
 }
 
 export function ProductCard({ product, location, badge, pricePrefix = "Indicative", homepage = false }: {
@@ -95,7 +118,7 @@ export function ProductCard({ product, location, badge, pricePrefix = "Indicativ
         <span className="product-card-price">{product.price > 0 ? <>{pricePrefix} <strong>₹{product.price.toLocaleString("en-IN")}</strong><small> / {product.unit}</small></> : <strong>Request latest price</strong>}</span>
         <div className="product-card-actions">
           {action.kind === "add" && <AddToCartButton variantId={action.variant.id} minimumOrderQuantity={action.variant.minimumOrderQuantity} compact productName={product.name} />}
-          {action.kind === "choose" && <a className="product-card-primary-link" href={productHref}>Choose options</a>}
+          {action.kind === "choose" && <MultiVariantCartAction variants={action.variants} productName={product.name} />}
           {action.kind === "unavailable" && <button className="product-card-unavailable" type="button" disabled>Unavailable</button>}
           <a className={`small-quote${action.kind === "quote" ? " product-card-primary-link" : " product-card-secondary-link"}`} href={quoteHref}>Get quote</a>
         </div>

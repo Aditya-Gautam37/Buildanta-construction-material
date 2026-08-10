@@ -87,13 +87,27 @@ describe("ProductCard purchase actions", () => {
     expect(screen.getByRole("link", { name: "Get quote" })).toHaveAttribute("href", "/bulk-quotes?product=Premium%20Cement");
   });
 
-  it("sends products with multiple direct variants to their existing detail route", () => {
+  it("uses an add-to-cart CTA and requires an exact selection for multiple variants", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ...emptySummary, cartId: "cart-1", lineCount: 1, itemCount: 1, adjustment: null }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
     const product = makeProduct({ variants: [makeVariant("variant-one"), makeVariant("variant-two")] });
 
     render(<ProductCard product={product} />);
+    fireEvent.click(screen.getByRole("button", { name: "Add Premium Cement to cart" }));
 
-    expect(screen.getByRole("link", { name: "Choose options" })).toHaveAttribute("href", "/products/premium-cement");
-    expect(screen.queryByRole("button", { name: /Add .* to cart/ })).not.toBeInTheDocument();
+    const variantSelect = screen.getByRole("combobox", { name: "Choose variant for Premium Cement" });
+    expect(variantSelect).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add to cart" })).toBeDisabled();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    fireEvent.change(variantSelect, { target: { value: "variant-two" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add Premium Cement to cart" }));
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Added" })).toBeInTheDocument());
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ variantId: "variant-two", quantity: 1 });
   });
 
   it("keeps quotation-only products out of the direct cart flow", () => {

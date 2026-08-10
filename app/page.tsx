@@ -4,6 +4,7 @@ import { defaultHomepageSlide, getHomepageContent } from "./homepage-content";
 import { HeroSlider } from "./hero-slider";
 import { HomepageProductCard } from "./homepage-product-card";
 import { BrandMark } from "./brand-mark";
+import { constructionStageImageFor } from "./stage-images";
 import { UiIcon } from "./ui-icon";
 
 const roomImages: Record<string, string> = {
@@ -106,7 +107,15 @@ export default async function Home() {
       <section className="home-section stage-shopping-section">
         <SectionTitle>Shop by Construction Stage</SectionTitle>
         <div className="stage-panel">
-          {stages.map((stage, index) => <a href={`/by-stage/${stage.slug}`} className="stage-item" key={stage.id}><span className="stage-icon">{materialIcons[index % materialIcons.length]}</span><strong>{stage.name}</strong>{index < stages.length - 1 && <i>›</i>}</a>)}
+          {stages.map((stage, index) => {
+            const image = constructionStageImageFor(stage.slug);
+            return <a href={`/by-stage/${stage.slug}`} className={`stage-item ${image ? "has-stage-image" : ""}`} key={stage.id}>
+              {image && <img className="stage-card-image" src={image} alt="" width="1672" height="941" loading="lazy" decoding="async" />}
+              <span className="stage-icon">{materialIcons[index % materialIcons.length]}</span>
+              <strong>{stage.name}</strong>
+              {index < stages.length - 1 && <i>›</i>}
+            </a>;
+          })}
         </div>
       </section>
 

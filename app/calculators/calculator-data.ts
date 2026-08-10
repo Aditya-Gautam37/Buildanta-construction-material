@@ -16,7 +16,7 @@ export type PublicCalculator = {
 
 const DEFAULT_API_URL = process.env.NODE_ENV === "development"
   ? "http://localhost:5173"
-  : "https://buildanta-monorepo-nest-api.vercel.app";
+  : "https://buildanta-api.vercel.app";
 
 const apiUrl = (process.env.INVENTORY_API_URL || DEFAULT_API_URL).replace(/\/$/, "");
 

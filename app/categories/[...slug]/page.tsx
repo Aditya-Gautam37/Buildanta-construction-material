@@ -4,7 +4,7 @@ import { getCatalogSnapshot, rootNodes, type CatalogNode } from "../../live-cata
 import { ancestryOf, brandOptions, excludedIdsFor, productsInSubtree, resolveStep } from "../../guided-wizard";
 import { WizardOptionGrid } from "../../wizard-option-grid";
 import { ProductBrowser } from "../../product-browser";
-import { curatedBrandLogoFor } from "../../brand-logos";
+import { curatedBrandLogoFor, curatedBrandLogoScaleFor } from "../../brand-logos";
 
 // Category slugs are hierarchical: CategoriesService derives them as
 // `parent.slug + "/" + name`, so most published categories are multi-segment.
@@ -127,6 +127,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
             href: `/categories/${step.current.slug}${carry({ brand: option.brand })}`,
             description: `View ${option.brand} products available in this category.`,
             imageUrl: curatedBrandLogoFor(option.brand) ?? logoFor.get(option.brand) ?? null,
+            imageScale: Math.min(curatedBrandLogoScaleFor(option.brand), 1.85),
             productCount: option.productCount,
           }))}
       />

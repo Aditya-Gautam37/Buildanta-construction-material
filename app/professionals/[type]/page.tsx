@@ -1,8 +1,19 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProfessionalCard } from "../../professional-card";
 import { categoryBySlug, getProfessionals } from "../../professional-directory";
 
-export default async function ProfessionalTypePage({ params }: { params: Promise<{ type: string }> }) {
+type ProfessionalTypePageProps = { params: Promise<{ type: string }> };
+
+export async function generateMetadata({ params }: ProfessionalTypePageProps): Promise<Metadata> {
+  const { type } = await params;
+  const category = categoryBySlug(type);
+  if (!category) return {};
+  const description = `Find verified ${category.title.toLowerCase()} on Buildanta. ${category.description}`;
+  return { title: category.title, description, openGraph: { title: `${category.title} | Buildanta`, description } };
+}
+
+export default async function ProfessionalTypePage({ params }: ProfessionalTypePageProps) {
   const { type } = await params;
   const category = categoryBySlug(type);
   if (!category) notFound();

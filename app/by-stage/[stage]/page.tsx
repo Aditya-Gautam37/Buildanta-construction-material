@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCatalogSnapshot, rootNodes } from "../../live-catalog";
 import { departmentsFor } from "../../guided-wizard";
+import { constructionStageImageFor } from "../../stage-images";
 import { WizardOptionGrid } from "../../wizard-option-grid";
 
 type StagePageProps = { params: Promise<{ stage: string }> };
@@ -27,6 +28,7 @@ export default async function StageWizardEntry({ params }: StagePageProps) {
 
   const departments = departmentsFor(stage, catalog.categories, catalog.products);
   const totalProducts = departments.reduce((sum, option) => sum + option.productCount, 0);
+  const stageImage = stage.imageUrl || constructionStageImageFor(stage.slug);
 
   return <main className="listing-page">
     <nav className="breadcrumbs" aria-label="Breadcrumb">
@@ -40,7 +42,7 @@ export default async function StageWizardEntry({ params }: StagePageProps) {
         <span>Pick a department and we will narrow it down with you, one choice at a time.</span>
         <small>{totalProducts} {totalProducts === 1 ? "product" : "products"} available for this stage</small>
       </div>
-      {stage.imageUrl && <img src={stage.imageUrl} alt={`${stage.name} construction stage`} />}
+      {stageImage && <img src={stageImage} alt={`${stage.name} construction stage`} />}
     </div>
 
     {departments.length > 0 ? (

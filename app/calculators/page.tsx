@@ -41,8 +41,8 @@ export default async function CalculatorsPage() {
     <section className={styles.hero}>
       <span className={styles.eyebrow}>Buildanta project planning</span>
       <h1>Plan quantities before requesting prices.</h1>
-      <p>Choose a full-project scope or use a specialist calculator. Every result uses a managed formula version, published Inventory products, PIN-code serviceability and the existing quotation workflow.</p>
-      <div className={styles.trust}><span>Square feet and metric inputs</span><span>Managed formula versions</span><span>Live catalogue mappings</span><span>One multi-item quotation</span></div>
+      <p>Choose a full-project scope or use a specialist calculator. Every result uses a managed formula version and produces material quantities even before products, prices or fulfilment details are configured.</p>
+      <div className={styles.trust}><span>Square feet and metric inputs</span><span>Managed formula versions</span><span>Quantity-first results</span><span>Inventory-connected estimates</span></div>
     </section>
 
     <section className={styles.content}>
@@ -57,7 +57,7 @@ export default async function CalculatorsPage() {
         return entries.length ? <section className={styles.calculatorGroup} key={group.title}><header><h3>{group.title}</h3><p>{group.description}</p></header><div className={styles.grid}>{entries.map((calculator) => <CalculatorCard calculator={calculator} key={calculator.id} />)}</div></section> : null;
       }) : <div className={styles.empty}>{calculatorResponse === null
         ? <><h2>Calculators are temporarily unavailable</h2><p>The Inventory API could not be reached. Please try again shortly.</p></>
-        : <><h2>Calculators are being configured</h2><p>Add real products and publish calculator mappings from Buildanta Inventory to make these tools available.</p></>}
+        : <><h2>Calculator formulas are not published yet</h2><p>Publish the reviewed quantity formulas from Buildanta Inventory. Product and price mappings can be added later.</p></>}
       </div>}
     </section>
   </main>;

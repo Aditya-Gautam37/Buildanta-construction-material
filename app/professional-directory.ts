@@ -1,6 +1,6 @@
 const DEFAULT_API_URL = process.env.NODE_ENV === "development"
   ? "http://localhost:5173"
-  : "https://buildanta-monorepo-nest-api.vercel.app";
+  : "https://buildanta-api.vercel.app";
 
 export const professionalCategories = [
   { slug: "contractors", type: "CONTRACTOR", title: "Contractors", singular: "Contractor", short: "C", description: "Execution experts for civil work, renovation and complete project delivery." },

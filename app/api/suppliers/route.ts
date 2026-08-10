@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       Metadata: { reference, company },
     }));
     const imageUrl = new URL(`/api/supplier-images/${reference}.${extension}`, request.url).toString();
-    const apiUrl = (process.env.INVENTORY_API_URL || (process.env.NODE_ENV === "development" ? "http://localhost:5173" : "https://buildanta-monorepo-nest-api.vercel.app")).replace(/\/$/, "");
+    const apiUrl = (process.env.INVENTORY_API_URL || (process.env.NODE_ENV === "development" ? "http://localhost:5173" : "https://buildanta-api.vercel.app")).replace(/\/$/, "");
     const apiResponse = await fetch(`${apiUrl}/supplier-submissions`, {
       method: "POST",
       headers: { "content-type": "application/json", accept: "application/json" },

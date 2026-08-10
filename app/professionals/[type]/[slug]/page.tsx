@@ -70,7 +70,7 @@ export default async function ProfessionalProfilePage({ params }: ProfilePagePro
           <p className="profile-kicker">SELECTED EXPERIENCE</p>
           <div className="professional-work-heading">
             <h2 id="selected-work-title">Representative project capabilities</h2>
-            <p>Demo portfolio content. Replace it with verified project details and an external portfolio link from Inventory before public launch.</p>
+            <p>A snapshot of the services {professional.name} regularly delivers. Ask directly for full project photos and references.</p>
           </div>
           <div className="professional-work-grid">
             {representativeWork.map((service, index) => <article key={service}><span>0{index + 1}</span><h3>{service}</h3><p>Planning, material coordination and delivery support tailored to the project brief.</p></article>)}

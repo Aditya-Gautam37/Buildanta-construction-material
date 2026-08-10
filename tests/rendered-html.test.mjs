@@ -109,3 +109,19 @@ test("calculator defaults are valid and each recalculation receives a fresh esti
   assert.match(wizard, /name="constructionScope" defaultValue="FULL_FINISH"/);
   assert.match(wizard, /Calculate all stages/);
 });
+
+test("the More page links only to real, working destinations", async () => {
+  const more = await readFile(new URL("../app/more/page.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(more, /Coming soon/);
+  assert.doesNotMatch(more, /href="#"/);
+  assert.match(more, /\/calculators/);
+});
+
+test("every professional-type page has its own metadata and no leaked placeholder copy", async () => {
+  const [typePage, profilePage] = await Promise.all([
+    readFile(new URL("../app/professionals/[type]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/professionals/[type]/[slug]/page.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(typePage, /generateMetadata/);
+  assert.doesNotMatch(profilePage, /before public launch|Demo portfolio content/i);
+});

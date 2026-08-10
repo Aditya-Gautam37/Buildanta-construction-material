@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCatalogSnapshot, rootNodes } from "../live-catalog";
 import { departmentsFor } from "../guided-wizard";
+import { constructionStageImageFor } from "../stage-images";
 import { WizardOptionGrid } from "../wizard-option-grid";
 
 export default async function ByStage({ searchParams }: { searchParams: Promise<{ stage?: string }> }) {
@@ -40,7 +41,7 @@ export default async function ByStage({ searchParams }: { searchParams: Promise<
           name: stage.name,
           href: `/by-stage/${stage.slug}`,
           description: `${departments.length} ${departments.length === 1 ? "department" : "departments"} to browse`,
-          imageUrl: stage.imageUrl,
+          imageUrl: constructionStageImageFor(stage.slug) || stage.imageUrl,
           productCount: departments.reduce((sum, option) => sum + option.productCount, 0),
         }))}
       />

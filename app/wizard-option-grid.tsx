@@ -9,6 +9,7 @@ export type WizardGridOption = {
   href: string;
   description?: string | null;
   imageUrl?: string | null;
+  imageScale?: number;
   productCount: number;
 };
 
@@ -45,7 +46,7 @@ export function WizardOptionGrid({
       {visible.map((option) => (
         <a href={option.href} key={option.id}>
           <span>
-            {option.imageUrl ? <img src={option.imageUrl} alt="" loading="lazy" /> : <b>{option.name.slice(0, 1)}</b>}
+            {option.imageUrl ? <img src={option.imageUrl} alt="" loading="lazy" decoding="async" style={option.imageScale ? { transform: `scale(${option.imageScale})` } : undefined} /> : <b>{option.name.slice(0, 1)}</b>}
           </span>
           <div>
             <h3>{option.name}</h3>

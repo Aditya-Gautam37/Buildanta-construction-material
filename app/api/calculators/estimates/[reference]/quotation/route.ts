@@ -1,6 +1,6 @@
 const DEFAULT_API_URL = process.env.NODE_ENV === "development"
   ? "http://localhost:5173"
-  : "https://buildanta-monorepo-nest-api.vercel.app";
+  : "https://buildanta-api.vercel.app";
 
 export async function POST(request: Request, { params }: { params: Promise<{ reference: string }> }) {
   const { reference } = await params;

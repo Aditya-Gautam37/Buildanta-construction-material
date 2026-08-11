@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CartLine = {
   itemId: string;
@@ -41,6 +41,9 @@ export function CheckoutClient() {
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState("");
   const [reference, setReference] = useState("");
+  // Stable across re-renders and retries: a double-tap on "place order" must not
+  // create two orders from one cart.
+  const idempotencyKey = useRef(crypto.randomUUID());
 
   useEffect(() => {
     fetch("/api/cart", { cache: "no-store" })
@@ -104,6 +107,7 @@ export function CheckoutClient() {
         deliveryPincode: address.pincode,
         projectType: "Residential construction",
         customerNotes: notes,
+        idempotencyKey: idempotencyKey.current,
       };
       const response = await fetch("/api/cart/convert-to-quote", {
         method: "POST",

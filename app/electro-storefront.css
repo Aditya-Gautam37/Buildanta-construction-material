@@ -325,7 +325,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
 .discovery-card strong { left: 30px; bottom: 27px; color: var(--e-orange-dark); font-size: 10px; }
 .discovery-card > img { padding: 20px 12px 18px 0; object-fit: contain; }
 .discovery-card.image > img { padding: 0; object-fit: cover; }
-.discovery-card.image::after { background: linear-gradient(90deg, #fff 28%, rgba(255,255,255,.8) 51%, transparent 78%); }
 .discovery-card.dark { border-color: #353535; background: linear-gradient(135deg, #303030, #474747); }
 .discovery-card.dark small, .discovery-card.dark strong { color: #ffb548; }
 

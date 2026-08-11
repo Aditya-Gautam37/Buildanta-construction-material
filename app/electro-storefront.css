@@ -717,7 +717,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
   .project-planner-section, .professional-section { padding-top: 64px; }
   .project-planner-copy { padding: 36px 24px; }
   .project-planner-copy h2 { font-size: 34px; }
-  .professional-grid { grid-template-columns: 1fr; }
+  .professional-type-grid { grid-template-columns: 1fr; }
   .why-section { width: calc(100% - 32px); margin-top: 58px; padding: 24px 16px; }
   .why-image { min-height: 145px; object-fit: cover; }
 

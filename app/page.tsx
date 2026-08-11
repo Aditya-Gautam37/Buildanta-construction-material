@@ -151,14 +151,14 @@ export default async function Home() {
 
       <section className="home-section professional-section">
         <div className="section-heading-row"><div><p>For professionals</p><h2>Find the right people for your project</h2><span>Connect with contractors, designers, builders and more.</span></div><a className="view-all" href="/professionals">Explore all professionals <span>→</span></a></div>
-        <div className="professional-grid">
+        <div className="professional-type-grid">
           {professionalCategories.map((category) => {
             const count = professionals.filter((item) => item.type === category.type).length;
             return <a href={`/professionals/${category.slug}`} className="professional-type-card" key={category.type}>
               <span className="professional-type-photo"><img src={professionalTypeImages[category.slug]} alt="" loading="lazy" decoding="async" /><b>{category.short}</b></span>
               <strong>{category.title}</strong>
               <p>{category.description}</p>
-              <small>{count} {count === 1 ? "profile" : "profiles"}</small>
+              <div className="professional-type-foot"><small>{count} {count === 1 ? "profile" : "profiles"}</small><i aria-hidden="true">→</i></div>
             </a>;
           })}
         </div>

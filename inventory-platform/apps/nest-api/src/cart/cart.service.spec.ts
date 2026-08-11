@@ -26,7 +26,7 @@ type FakeVariant = {
     quarantineQuantity: number;
     lowStockThreshold: number;
   }>;
-  product: { id: string; name: string; status: ProductStatus; sellingPrice: number };
+  product: { id: string; name: string; status: ProductStatus; sellingPrice: number; gstPercent?: number | null; images?: Array<{ src: string }> };
 };
 
 function makeVariant(overrides: Partial<FakeVariant> = {}): FakeVariant {
@@ -54,7 +54,7 @@ function makeVariant(overrides: Partial<FakeVariant> = {}): FakeVariant {
       quarantineQuantity: 0,
       lowStockThreshold: 5,
     }],
-    product: { id: 'product-1', name: 'Test Product', status: ProductStatus.PUBLISHED, sellingPrice: 100 },
+    product: { id: 'product-1', name: 'Test Product', status: ProductStatus.PUBLISHED, sellingPrice: 100, images: [] },
     ...overrides,
   };
 }
@@ -309,7 +309,7 @@ describe('CartService', () => {
 
   it('rejects adding a variant from an unpublished product', async () => {
     const { service, variants } = setup();
-    variants.set('variant-1', makeVariant({ product: { id: 'product-1', name: 'Test Product', status: ProductStatus.DRAFT, sellingPrice: 100 } }));
+    variants.set('variant-1', makeVariant({ product: { id: 'product-1', name: 'Test Product', status: ProductStatus.DRAFT, sellingPrice: 100, images: [] } }));
 
     await expect(
       service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 1 }),
@@ -590,7 +590,7 @@ describe('CartService', () => {
 
     it('reserves real stock and confirms the order at the correct total', async () => {
       const { service, variants, seedServiceable, seedBalance, balances, reservations, salesOrders } = setup();
-      variants.set('variant-1', makeVariant({ price: 414, unit: 'bag', product: { id: 'product-1', name: 'Cement', status: ProductStatus.PUBLISHED, sellingPrice: 414 } }));
+      variants.set('variant-1', makeVariant({ price: 414, unit: 'bag', product: { id: 'product-1', name: 'Cement', status: ProductStatus.PUBLISHED, sellingPrice: 414, images: [] } }));
       seedServiceable('208001', 'loc-1');
       seedBalance('variant-1', 'loc-1', 500, 0);
       await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 10 });
@@ -616,7 +616,7 @@ describe('CartService', () => {
       const { service, variants, seedServiceable, seedBalance } = setup();
       variants.set('variant-1', makeVariant({
         price: 1000, unit: 'unit',
-        product: { id: 'product-1', name: 'Taxed Item', status: ProductStatus.PUBLISHED, sellingPrice: 1000, gstPercent: 18 } as never,
+        product: { id: 'product-1', name: 'Taxed Item', status: ProductStatus.PUBLISHED, sellingPrice: 1000, gstPercent: 18, images: [] },
       }));
       seedServiceable('208001', 'loc-1');
       seedBalance('variant-1', 'loc-1', 100, 0);

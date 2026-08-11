@@ -95,6 +95,7 @@ export type CartLineSummary = {
   variantId: string;
   productId: string;
   productName: string;
+  imageUrl: string | null;
   sku: string;
   quantity: number;
   purchaseMode: PurchaseMode;
@@ -128,7 +129,16 @@ export type CartSummary = {
 export type CartMutationResult = CartSummary & { adjustment: CartQuantityAdjustment | null };
 
 const CART_INCLUDE = {
-  items: { include: { variant: { include: { product: true, inventoryBalances: true } } } },
+  items: {
+    include: {
+      variant: {
+        include: {
+          product: { include: { images: { orderBy: [{ primary: 'desc' }, { sortOrder: 'asc' }], take: 1 } } },
+          inventoryBalances: true,
+        },
+      },
+    },
+  },
 } satisfies Prisma.CartInclude;
 
 type CartWithItems = Prisma.CartGetPayload<{ include: typeof CART_INCLUDE }>;
@@ -236,6 +246,7 @@ export class CartService {
         variantId: variant.id,
         productId: product.id,
         productName: product.name,
+        imageUrl: product.images[0]?.src ?? null,
         sku: variant.sku,
         quantity,
         purchaseMode: variant.purchaseMode,

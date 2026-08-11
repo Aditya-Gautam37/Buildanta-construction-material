@@ -508,13 +508,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
 
 /* Professionals and trust */
 .professional-section { padding-top: 84px; }
-.professional-banner { min-height: 330px; border-radius: 6px; box-shadow: var(--e-shadow-md); }
-.professional-banner > img { height: 330px; }
-.professional-banner::after { background: linear-gradient(90deg, rgba(35,35,35,.48), rgba(35,35,35,.05) 55%), linear-gradient(180deg, transparent 25%, rgba(30,30,30,.92)); }
-.professional-banner-actions { top: 72px; gap: 14px; }
-.professional-banner-types { background: rgba(42,42,42,.85); }
-.professional-banner-types a:hover { background: var(--e-orange); }
-.professional-banner-types a > span { border-radius: 50%; }
+.professional-type-card { border-radius: 6px; box-shadow: var(--e-shadow-sm); }
+.professional-type-card:hover { box-shadow: var(--e-shadow-md); border-color: var(--e-orange); }
+.professional-type-card > span:first-child { border-radius: 50%; background: var(--e-orange-soft); color: var(--e-orange-dark); }
+.professional-type-card small { color: var(--e-orange-dark); }
 .why-section { margin-top: 76px; padding: 54px; border-radius: 6px; background: linear-gradient(135deg, #f5f5f5, #fff); box-shadow: inset 0 0 0 1px var(--e-line); }
 .why-section .section-title { margin-bottom: 26px; }
 .why-image { min-height: 190px; border-radius: 4px; box-shadow: var(--e-shadow-md); }
@@ -721,11 +718,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
   .project-planner-section, .professional-section { padding-top: 64px; }
   .project-planner-copy { padding: 36px 24px; }
   .project-planner-copy h2 { font-size: 34px; }
-  .professional-banner { min-height: 490px; }
-  .professional-banner > img { height: 490px; object-position: center; }
-  .professional-banner-actions { top: 38px; width: calc(100% - 32px); display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .professional-banner-types { grid-template-columns: 1fr; max-height: 330px; overflow-y: auto; }
-  .professional-banner-types a { min-height: 58px; }
+  .professional-grid { grid-template-columns: 1fr; }
   .why-section { width: calc(100% - 32px); margin-top: 58px; padding: 24px 16px; }
   .why-image { min-height: 145px; object-fit: cover; }
 
@@ -788,7 +781,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
   position: absolute;
   z-index: -1;
   inset: 0;
-  background: linear-gradient(90deg, rgba(5, 27, 42, .9) 0%, rgba(5, 27, 42, .56) 45%, rgba(5, 27, 42, .12) 100%), linear-gradient(0deg, rgba(5, 27, 42, .76), transparent 65%);
+  /* Anchored to the bottom only, so the photo itself stays bright and
+     legible — just enough scrim behind the label to keep it readable. */
+  background: linear-gradient(0deg, rgba(5, 27, 42, .88) 0%, rgba(5, 27, 42, .4) 38%, rgba(5, 27, 42, 0) 65%);
   pointer-events: none;
 }
 .stage-shopping-section .stage-card-image {

@@ -142,9 +142,18 @@ export default async function Home() {
       </section>
 
       <section className="home-section professional-section">
-        <SectionTitle>For Professionals</SectionTitle>
-        <div className="professional-banner"><img src="/images/buildanta-v2/professionals-network-v2.webp" alt="Indian construction professionals collaborating on a residential project" loading="lazy" decoding="async" /><div className="professional-banner-actions"><a className="button navy" href="/bulk-quotes">Get Bulk Quotes</a><a className="button orange" href="/list-product">List your Products</a></div><div className="professional-banner-types">{professionalCategories.map((category) => { const count = professionals.filter((item) => item.type === category.type).length; return <a href={`/professionals/${category.slug}`} key={category.type}><span>{category.short}</span><strong>{category.title}</strong><small>{count} profiles</small></a>; })}</div></div>
-        <a className="view-all" href="/professionals">Explore all professionals <span>→</span></a>
+        <div className="section-heading-row"><div><p>For professionals</p><h2>Find the right people for your project</h2><span>Connect with contractors, designers, builders and more.</span></div><a className="view-all" href="/professionals">Explore all professionals <span>→</span></a></div>
+        <div className="professional-grid">
+          {professionalCategories.map((category) => {
+            const count = professionals.filter((item) => item.type === category.type).length;
+            return <a href={`/professionals/${category.slug}`} className="professional-type-card" key={category.type}>
+              <span>{category.short}</span>
+              <strong>{category.title}</strong>
+              <p>{category.description}</p>
+              <small>{count} {count === 1 ? "profile" : "profiles"}</small>
+            </a>;
+          })}
+        </div>
       </section>
 
       <section className="home-section why-section">

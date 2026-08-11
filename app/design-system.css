@@ -62,7 +62,7 @@ input:hover,select:hover,textarea:hover{border-color:#9db0b8}input:focus,select:
 .room-card{border:1px solid var(--b-slate-200);border-radius:var(--b-radius-lg);background:#fff;box-shadow:var(--b-shadow-sm)}
 .room-card strong{color:var(--b-navy-900);background:#fff}.room-card img{height:175px}
 .category-showcase-visual{background:#f0f4f3}.category-showcase-visual>img{padding:.8rem;background:#f8faf9}
-.professional-banner{border-radius:var(--b-radius-xl);box-shadow:var(--b-shadow-lg)}
+.professional-type-card{border-radius:var(--b-radius-xl);box-shadow:var(--b-shadow-sm)}.professional-type-card:hover{box-shadow:var(--b-shadow-lg)}
 
 .listing-page,.taxonomy-page,.calculators-page,.more-page,.professionals-page,.product-page,.workflow-page,.account-dashboard{background:var(--b-canvas)}
 .page-intro,.category-hero,.professional-type-hero,.calculatorHero{border-bottom:1px solid var(--b-slate-200)}

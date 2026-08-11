@@ -148,12 +148,118 @@ function createFakePrisma() {
 
   const productVariant = {
     findUnique: jest.fn(async ({ where }: any) => variants.get(where.id) ?? null),
+    update: jest.fn(async ({ where, data }: any) => {
+      const variant = variants.get(where.id);
+      if (variant) Object.assign(variant, data);
+      return variant;
+    }),
   };
 
-  const client: any = { cart, cartItem, productVariant };
+  // --- Checkout-only fakes below. Deliberately minimal: each mirrors just
+  // enough Prisma behaviour for CartService.checkout() to run, seeded per test
+  // rather than trying to be a general-purpose in-memory Postgres.
+  let seq = 0;
+  const nextId = (prefix: string) => `${prefix}-${++seq}`;
+  const serviceableAreas = new Set<string>(); // pincodes that resolve to a service area
+  const serviceableLocations = new Map<string, string>(); // fulfilmentLocationId -> pincode set marker
+  const balances = new Map<string, any>(); // keyed by `${variantId}:${fulfilmentLocationId}`
+  const reservations: any[] = [];
+  const ledgerEntries: any[] = [];
+  const salesOrders = new Map<string, any>();
+  const salesOrderItems: any[] = [];
+
+  function seedServiceable(pincode: string, fulfilmentLocationId = 'loc-1') {
+    serviceableAreas.add(pincode);
+    serviceableLocations.set(fulfilmentLocationId, pincode);
+  }
+  function seedBalance(variantId: string, fulfilmentLocationId: string, physical: number, reserved = 0) {
+    const id = `${variantId}:${fulfilmentLocationId}`;
+    balances.set(id, {
+      id, variantId, fulfilmentLocationId,
+      physicalQuantity: physical, reservedQuantity: reserved,
+      blockedQuantity: 0, damagedQuantity: 0, quarantineQuantity: 0, inTransitQuantity: 0,
+      lowStockThreshold: 5,
+    });
+  }
+
+  const pincodeCoverage = {
+    findMany: jest.fn(async ({ where }: any) => (serviceableAreas.has(where.pincode) ? [{ serviceAreaId: 'area-1' }] : [])),
+  };
+  const fulfilmentServiceArea = {
+    findMany: jest.fn(async () => [...serviceableLocations.keys()].map((fulfilmentLocationId) => ({ fulfilmentLocationId }))),
+  };
+  const inventoryBalance = {
+    findMany: jest.fn(async ({ where }: any) => {
+      const locationIds: string[] = where.fulfilmentLocationId.in;
+      return [...balances.values()].filter((row) => row.variantId === where.variantId && locationIds.includes(row.fulfilmentLocationId));
+    }),
+    findUniqueOrThrow: jest.fn(async ({ where }: any) => {
+      const row = [...balances.values()].find((candidate) => candidate.id === where.id);
+      if (!row) throw new Error('balance not found');
+      return row;
+    }),
+    update: jest.fn(async ({ where, data }: any) => {
+      const row = [...balances.values()].find((candidate) => candidate.id === where.id)!;
+      if (data.reservedQuantity?.increment) row.reservedQuantity += data.reservedQuantity.increment;
+      return { ...row };
+    }),
+    aggregate: jest.fn(async ({ where }: any) => {
+      const rows = [...balances.values()].filter((row) => row.variantId === where.variantId);
+      return {
+        _sum: {
+          physicalQuantity: rows.reduce((sum, row) => sum + row.physicalQuantity, 0),
+          reservedQuantity: rows.reduce((sum, row) => sum + row.reservedQuantity, 0),
+        },
+      };
+    }),
+  };
+  const quotations = new Map<string, any>();
+  const quotation = {
+    create: jest.fn(async ({ data }: any) => {
+      const id = nextId('quotation');
+      const items = (data.items?.create ?? []).map((item: any) => ({ id: nextId('qitem'), ...item }));
+      const row = { ...data, id, items };
+      quotations.set(id, row);
+      return row;
+    }),
+    update: jest.fn(async ({ where, data }: any) => {
+      const row = quotations.get(where.id);
+      Object.assign(row, data);
+      return row;
+    }),
+  };
+  const quotationRevision = { create: jest.fn(async ({ data }: any) => ({ id: nextId('revision'), ...data })) };
+  const quotationApproval = { create: jest.fn(async ({ data }: any) => ({ id: nextId('approval'), ...data })) };
+  const salesOrder = {
+    create: jest.fn(async ({ data }: any) => {
+      const id = nextId('order');
+      const row = { id, ...data };
+      salesOrders.set(id, row);
+      return row;
+    }),
+  };
+  const salesOrderItem = {
+    create: jest.fn(async ({ data }: any) => {
+      const row = { id: nextId('orderitem'), ...data };
+      salesOrderItems.push(row);
+      return row;
+    }),
+  };
+  const inventoryReservation = { create: jest.fn(async ({ data }: any) => { const row = { id: nextId('reservation'), ...data }; reservations.push(row); return row; }) };
+  const inventoryLedgerEntry = { create: jest.fn(async ({ data }: any) => { const row = { id: nextId('ledger'), ...data }; ledgerEntries.push(row); return row; }) };
+
+  const client: any = {
+    cart, cartItem, productVariant,
+    pincodeCoverage, fulfilmentServiceArea, inventoryBalance,
+    quotation, quotationRevision, quotationApproval,
+    salesOrder, salesOrderItem, inventoryReservation, inventoryLedgerEntry,
+  };
   client.$transaction = jest.fn((callback: any) => callback(client));
 
-  return { client, carts, cartItems, variants };
+  return {
+    client, carts, cartItems, variants,
+    seedServiceable, seedBalance, balances, reservations, ledgerEntries, salesOrders, salesOrderItems,
+  };
 }
 
 function setup() {
@@ -468,6 +574,129 @@ describe('CartService', () => {
       await expect(service.convertToQuote({ guestToken: 'guest-none' }, {
         name: 'Aditi', email: 'a@b.com', phone: '9999999999', deliveryPincode: '208016', idempotencyKey: 'key-1',
       })).rejects.toBeInstanceOf(BadRequestException);
+    });
+  });
+
+  // checkout() is the reservation fix: unlike convertToQuote (a request for
+  // staff to price by hand), it must synthesise an already-priced quotation,
+  // accept it, and actually move stock from available into reserved in the
+  // same transaction — or a "confirmed" order is just a promise nothing backs.
+  describe('checkout', () => {
+    const address = {
+      name: 'Aditi', email: 'a@b.com', phone: '9999999999',
+      addressLine1: '12 Test Road', city: 'Kanpur', state: 'Uttar Pradesh', pincode: '208001',
+      deliveryMethod: 'STANDARD' as const, idempotencyKey: 'checkout-key-1',
+    };
+
+    it('reserves real stock and confirms the order at the correct total', async () => {
+      const { service, variants, seedServiceable, seedBalance, balances, reservations, salesOrders } = setup();
+      variants.set('variant-1', makeVariant({ price: 414, unit: 'bag', product: { id: 'product-1', name: 'Cement', status: ProductStatus.PUBLISHED, sellingPrice: 414 } }));
+      seedServiceable('208001', 'loc-1');
+      seedBalance('variant-1', 'loc-1', 500, 0);
+      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 10 });
+
+      const result = await service.checkout({ guestToken: 'guest-1' }, address);
+
+      expect(result.existing).toBe(false);
+      expect(result.orderReference).toMatch(/^SO-/);
+      expect(result.grandTotal).toBe(4140); // 10 x 414, no GST configured, free standard delivery
+      expect(result.deliveryCharge).toBe(0);
+
+      const balance = balances.get('variant-1:loc-1');
+      expect(balance.reservedQuantity).toBe(10); // stock actually moved, not just recorded
+      expect(reservations).toHaveLength(1);
+      expect(reservations[0]).toMatchObject({ quantity: 10, fulfilmentLocationId: 'loc-1' });
+      expect(salesOrders.size).toBe(1);
+
+      const cartAfter = await service.getSummary({ guestToken: 'guest-1' });
+      expect(cartAfter.cartId).toBeNull(); // cart converted, not left dangling
+    });
+
+    it('includes GST and the priority delivery charge in the total', async () => {
+      const { service, variants, seedServiceable, seedBalance } = setup();
+      variants.set('variant-1', makeVariant({
+        price: 1000, unit: 'unit',
+        product: { id: 'product-1', name: 'Taxed Item', status: ProductStatus.PUBLISHED, sellingPrice: 1000, gstPercent: 18 } as never,
+      }));
+      seedServiceable('208001', 'loc-1');
+      seedBalance('variant-1', 'loc-1', 100, 0);
+      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 2 });
+
+      const result = await service.checkout({ guestToken: 'guest-1' }, { ...address, deliveryMethod: 'EXPRESS' });
+
+      // 2 x 1000 = 2000 subtotal, 18% GST = 360, + 400 express = 2760
+      expect(result.deliveryCharge).toBe(400);
+      expect(result.grandTotal).toBe(2760);
+    });
+
+    it('refuses checkout to a PIN code nothing serves', async () => {
+      const { service, variants, seedBalance } = setup();
+      variants.set('variant-1', makeVariant());
+      seedBalance('variant-1', 'loc-1', 100, 0);
+      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 1 });
+
+      await expect(service.checkout({ guestToken: 'guest-1' }, { ...address, pincode: '999999' }))
+        .rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('reports the exact shortfall instead of overselling', async () => {
+      const { service, variants, seedServiceable, seedBalance, reservations } = setup();
+      variants.set('variant-1', makeVariant());
+      seedServiceable('208001', 'loc-1');
+      seedBalance('variant-1', 'loc-1', 5, 0); // only 5 physically on the shelf
+      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 20 });
+
+      await expect(service.checkout({ guestToken: 'guest-1' }, address)).rejects.toThrow(/only 5 .* available/i);
+      expect(reservations).toHaveLength(0); // nothing reserved on a failed checkout
+    });
+
+    it('will not reserve stock already claimed by someone else\'s reservation', async () => {
+      const { service, variants, seedServiceable, seedBalance } = setup();
+      variants.set('variant-1', makeVariant());
+      seedServiceable('208001', 'loc-1');
+      seedBalance('variant-1', 'loc-1', 10, 8); // 10 physical, 8 already reserved -> 2 available
+      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 5 });
+
+      await expect(service.checkout({ guestToken: 'guest-1' }, address)).rejects.toThrow(/only 2 .* available/i);
+    });
+
+    it('rejects all-or-nothing when a line needs a bulk quote instead of dropping it', async () => {
+      const { service, variants, seedServiceable, seedBalance, salesOrders } = setup();
+      variants.set('variant-direct', makeVariant({ id: 'variant-direct', price: 100 }));
+      variants.set('variant-bulk', makeVariant({
+        id: 'variant-bulk', price: 50, purchaseMode: PurchaseMode.DIRECT_AND_QUOTE, bulkQuoteThreshold: 10,
+      }));
+      seedServiceable('208001', 'loc-1');
+      seedBalance('variant-direct', 'loc-1', 100, 0);
+      seedBalance('variant-bulk', 'loc-1', 100, 0);
+      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-direct', quantity: 1 });
+      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-bulk', quantity: 15 });
+
+      await expect(service.checkout({ guestToken: 'guest-1' }, address)).rejects.toBeInstanceOf(ConflictException);
+      expect(salesOrders.size).toBe(0); // the eligible line was not silently checked out alone
+    });
+
+    it('returns the existing order on a same-key retry instead of reserving twice', async () => {
+      const { service, variants, seedServiceable, seedBalance, carts, reservations } = setup();
+      variants.set('variant-1', makeVariant());
+      seedServiceable('208001', 'loc-1');
+      seedBalance('variant-1', 'loc-1', 100, 0);
+      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 3 });
+
+      const first = await service.checkout({ guestToken: 'guest-1' }, address);
+      for (const row of carts.values()) {
+        row.quotation = { reference: first.quotationReference, salesOrder: { reference: first.orderReference, grandTotal: first.grandTotal, freightTotal: 0 } };
+      }
+
+      const retry = await service.checkout({ guestToken: 'guest-1' }, address);
+
+      expect(retry).toMatchObject({ orderReference: first.orderReference, existing: true });
+      expect(reservations).toHaveLength(1); // the retry did not create a second reservation
+    });
+
+    it('rejects checking out an empty cart', async () => {
+      const { service } = setup();
+      await expect(service.checkout({ guestToken: 'guest-none' }, address)).rejects.toBeInstanceOf(BadRequestException);
     });
   });
 });

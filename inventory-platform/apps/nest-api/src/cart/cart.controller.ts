@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Headers, Param, Patch, Post, Req, UseGua
 import type { z } from 'zod';
 import { CustomerJwtAuthGuard } from '../auth/guards/customer-jwt.auth.guard';
 import { OptionalCustomerJwtAuthGuard } from '../auth/guards/optional-customer-jwt.auth.guard';
-import { cartAddItemSchema, cartConvertToQuoteSchema, cartUpdateItemSchema } from '../common/request-schemas';
+import { cartAddItemSchema, cartCheckoutSchema, cartConvertToQuoteSchema, cartUpdateItemSchema } from '../common/request-schemas';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { CartService, type CartIdentity } from './cart.service';
 
@@ -64,6 +64,15 @@ export class CartController {
     @Body(new ZodValidationPipe(cartConvertToQuoteSchema)) input: z.infer<typeof cartConvertToQuoteSchema>,
   ) {
     return this.cartService.convertToQuote(identityFrom(request, guestToken), input);
+  }
+
+  @Post('checkout')
+  checkout(
+    @Req() request: OptionalUserRequest,
+    @Headers('x-buildanta-guest-cart') guestToken: string | undefined,
+    @Body(new ZodValidationPipe(cartCheckoutSchema)) input: z.infer<typeof cartCheckoutSchema>,
+  ) {
+    return this.cartService.checkout(identityFrom(request, guestToken), input);
   }
 }
 

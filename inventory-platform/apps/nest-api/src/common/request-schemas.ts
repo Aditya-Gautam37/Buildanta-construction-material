@@ -420,6 +420,20 @@ export const cartUpdateItemSchema = z.object({
   quantity: z.coerce.number().int().positive().max(1_000_000),
 }).strict();
 
+export const cartCheckoutSchema = z.object({
+  name: z.string().trim().min(2).max(160),
+  email: z.string().trim().email().max(320),
+  phone: z.string().trim().min(7).max(30),
+  addressLine1: z.string().trim().min(3).max(200),
+  addressLine2: z.string().trim().max(200).optional(),
+  city: z.string().trim().min(2).max(120),
+  state: z.string().trim().min(2).max(120),
+  pincode,
+  landmark: z.string().trim().max(200).optional(),
+  deliveryMethod: z.enum(['STANDARD', 'EXPRESS']),
+  idempotencyKey: z.string().trim().min(8).max(160),
+}).strict();
+
 export const cartConvertToQuoteSchema = z.object({
   name: z.string().trim().min(2).max(160),
   email: z.string().trim().email().max(320),

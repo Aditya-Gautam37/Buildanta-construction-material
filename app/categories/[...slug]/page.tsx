@@ -4,7 +4,7 @@ import { getCatalogSnapshot, rootNodes, type CatalogNode } from "../../live-cata
 import { ancestryOf, brandOptions, excludedIdsFor, productsInSubtree, resolveStep } from "../../guided-wizard";
 import { WizardOptionGrid } from "../../wizard-option-grid";
 import { ProductBrowser } from "../../product-browser";
-import { curatedBrandLogoFor, curatedBrandLogoScaleFor } from "../../brand-logos";
+import { brandShowroomImageFor } from "../../brand-showroom-images";
 import {
   BRAND_WIZARD_STEPS,
   CATEGORY_WIZARD_STEPS,
@@ -163,8 +163,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
             name: option.brand,
             href: `/categories/${step.current.slug}${carry({ brand: option.brand })}`,
             description: `View ${option.brand} products available in this category.`,
-            imageUrl: curatedBrandLogoFor(option.brand) ?? logoFor.get(option.brand) ?? null,
-            imageScale: Math.min(curatedBrandLogoScaleFor(option.brand), 1.85),
+            imageUrl: brandShowroomImageFor(option.brand) ?? logoFor.get(option.brand) ?? null,
             productCount: option.productCount,
           }))}
       />

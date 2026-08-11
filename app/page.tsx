@@ -22,6 +22,14 @@ const roomImages: Record<string, string> = {
 };
 const materialIcons = ["▣", "▥", "⌁", "◉", "◒", "▦", "⌂", "✦", "▤", "▱"];
 
+const professionalTypeImages: Record<string, string> = {
+  contractors: "/images/professionals-real/contractor.jpg",
+  "interior-designers": "/images/professionals-real/interior-designer.jpg",
+  builders: "/images/professionals-real/builder.jpg",
+  architects: "/images/professionals-real/architect.jpg",
+  "product-owners": "/images/professionals-real/product-owner.jpg",
+};
+
 const discoveryTiles = [
   { eyebrow: "MATERIALS", title: "Shop all products", detail: "Cement, steel, electrical, tiles and more", href: "/categories", image: "/demo/products/cement.png", tone: "light" },
   { eyebrow: "PROJECT", title: "Plan by build stage", detail: "Get guided quantities before choosing products", href: "/by-stage", image: "/images/buildanta-v2/foundation-planning-v2.webp", tone: "image" },
@@ -147,7 +155,7 @@ export default async function Home() {
           {professionalCategories.map((category) => {
             const count = professionals.filter((item) => item.type === category.type).length;
             return <a href={`/professionals/${category.slug}`} className="professional-type-card" key={category.type}>
-              <span>{category.short}</span>
+              <span className="professional-type-photo"><img src={professionalTypeImages[category.slug]} alt="" loading="lazy" decoding="async" /><b>{category.short}</b></span>
               <strong>{category.title}</strong>
               <p>{category.description}</p>
               <small>{count} {count === 1 ? "profile" : "profiles"}</small>

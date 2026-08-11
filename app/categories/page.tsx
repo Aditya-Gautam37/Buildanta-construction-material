@@ -2,6 +2,7 @@ import Image from "next/image";
 import { childrenOf, getCatalogSnapshot, rootNodes, type StoreProduct } from "../live-catalog";
 import { ProductCard } from "../product-card";
 import { ServiceabilityChecker } from "../serviceability-checker";
+import { categoryImageFor } from "../category-images";
 
 const categoryFallbacks = [
   { terms: ["electrical", "wire", "switch"], src: "/demo/products/copper-wire.png" },
@@ -64,7 +65,8 @@ export default async function Categories({ searchParams }: { searchParams: Promi
         const children = childrenOf(catalog.categories, category.id);
         const products = categoryProducts(catalog.products, descendantNames(category.id));
         const livePreview = products.find((product) => product.image);
-        const previewImage = category.imageUrl ?? livePreview?.image ?? fallbackImage(category.name);
+        const curatedImage = categoryImageFor(category.name);
+        const previewImage = curatedImage ?? category.imageUrl ?? livePreview?.image ?? fallbackImage(category.name);
         const brands = [...new Set(products.map((product) => product.brand))].slice(0, 3);
         return <article key={category.id} className="taxonomy-card">
           <a className="taxonomy-card-visual" href={`/categories/${category.slug}`}>
@@ -76,7 +78,7 @@ export default async function Categories({ searchParams }: { searchParams: Promi
               unoptimized
             />
             <span className={products.length === 0 ? "is-empty" : undefined}>{products.length} {products.length === 1 ? "product" : "products"}</span>
-            {livePreview && <i>Live Inventory image</i>}
+            {!curatedImage && livePreview && <i>Live Inventory image</i>}
           </a>
           <div className="taxonomy-card-copy">
             <p>Construction category</p>

@@ -6,6 +6,7 @@ import { HomepageProductCard } from "./homepage-product-card";
 import { BrandMark } from "./brand-mark";
 import { constructionStageImageFor } from "./stage-images";
 import { UiIcon } from "./ui-icon";
+import { categoryImageFor } from "./category-images";
 
 const roomImages: Record<string, string> = {
   "Living Room": "/livingroom.jpg",
@@ -131,8 +132,9 @@ export default async function Home() {
         <div className="category-showcase-grid">
           {categoryShowcase.map(({ category, products }, index) => {
             const preview = products[0];
-            return <a href={`/categories/${category.slug}`} className={`category-showcase-card ${preview?.image ? "has-image" : ""}`} key={category.id}>
-              <div className="category-showcase-visual">{preview?.image ? <img src={preview.image} alt="" loading="lazy" /> : <span>{materialIcons[index % materialIcons.length]}</span>}<b>{products.length} {products.length === 1 ? "product" : "products"}</b></div>
+            const categoryImage = categoryImageFor(category.name) ?? preview?.image;
+            return <a href={`/categories/${category.slug}`} className={`category-showcase-card ${categoryImage ? "has-image" : ""}`} key={category.id}>
+              <div className="category-showcase-visual">{categoryImage ? <img src={categoryImage} alt={`${category.name} materials`} loading="lazy" decoding="async" /> : <span>{materialIcons[index % materialIcons.length]}</span>}<b>{products.length} {products.length === 1 ? "product" : "products"}</b></div>
               <div><small>Construction category</small><h3>{category.name}</h3><p>{products.length ? products.slice(0, 2).map((product) => product.name).join(" · ") : "Products can be added from Buildanta Inventory."}</p><strong>Explore category <span>→</span></strong></div>
             </a>;
           })}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getCatalogSnapshot } from "../live-catalog";
 import { BRAND_WIZARD_STEPS, WizardJourney } from "../wizard-journey";
 import { WizardOptionGrid } from "../wizard-option-grid";
+import { brandShowroomImageFor } from "../brand-showroom-images";
 
 export const metadata: Metadata = {
   title: "Shop by brand",
@@ -46,7 +47,7 @@ export default async function BrandsIndex() {
           name: brand.name,
           href: `/brands/${brand.slug}`,
           description: brand.description || `${products.length === 1 ? "1 product" : `${products.length} products`} stocked`,
-          imageUrl: brand.logo,
+          imageUrl: brandShowroomImageFor(brand.name) ?? brand.logo,
           productCount: products.length,
         }))}
       />

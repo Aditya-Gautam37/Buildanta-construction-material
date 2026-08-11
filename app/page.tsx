@@ -31,12 +31,12 @@ const professionalTypeImages: Record<string, string> = {
 };
 
 const discoveryTiles = [
-  { eyebrow: "MATERIALS", title: "Shop all products", detail: "Cement, steel, electrical, tiles and more", href: "/categories", image: "/demo/products/cement.png", tone: "light" },
-  { eyebrow: "PROJECT", title: "Plan by build stage", detail: "Get guided quantities before choosing products", href: "/by-stage", image: "/images/buildanta-v2/foundation-planning-v2.webp", tone: "image" },
-  { eyebrow: "SPACES", title: "Find products by room", detail: "We narrow it down with you, one choice at a time", href: "/by-room", image: "/livingroom.jpg", tone: "image" },
-  { eyebrow: "CALCULATE", title: "Estimate your materials", detail: "Area-based construction planning tools", href: "/calculators", image: "/demo/hero/project-planning.png", tone: "dark" },
-  { eyebrow: "PRICING", title: "Request a bulk quote", detail: "One enquiry for your complete material list", href: "/bulk-quotes", image: "/demo/products/tmt-steel.png", tone: "light" },
-  { eyebrow: "EXPERTS", title: "Find professionals", detail: "Connect with builders, architects and contractors", href: "/professionals", image: "/images/buildanta-v2/professionals-network-v2.webp", tone: "image" },
+  { eyebrow: "MATERIALS", title: "Shop all products", detail: "Cement, steel, electrical, tiles and more", href: "/categories", image: "/images/journey-cards-real/shop-all-products.jpg", tone: "image" },
+  { eyebrow: "PROJECT", title: "Plan by build stage", detail: "Get guided quantities before choosing products", href: "/by-stage", image: "/images/journey-cards-real/plan-by-build-stage.jpg", tone: "image" },
+  { eyebrow: "SPACES", title: "Find products by room", detail: "We narrow it down with you, one choice at a time", href: "/by-room", image: "/images/journey-cards-real/find-products-by-room.jpg", tone: "image" },
+  { eyebrow: "CALCULATE", title: "Estimate your materials", detail: "Area-based construction planning tools", href: "/calculators", image: "/images/journey-cards-real/estimate-materials.jpg", tone: "image" },
+  { eyebrow: "PRICING", title: "Request a bulk quote", detail: "One enquiry for your complete material list", href: "/bulk-quotes", image: "/images/journey-cards-real/request-bulk-quote.jpg", tone: "image" },
+  { eyebrow: "EXPERTS", title: "Find professionals", detail: "Connect with builders, architects and contractors", href: "/professionals", image: "/images/journey-cards-real/find-professionals.jpg", tone: "image" },
 ] as const;
 
 function SectionTitle({ children }: { children: React.ReactNode }) {

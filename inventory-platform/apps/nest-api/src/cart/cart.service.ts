@@ -430,7 +430,10 @@ export class CartService {
         });
         if (flipped.count !== 1) throw new ConflictException('This cart was converted concurrently.');
         return result;
-      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }),
+      // Default Prisma transaction timeout (5s) is tuned for local latency. This
+      // function's serverless region and Supabase's database region are not the
+      // same, so round trips alone can approach that budget before any query runs.
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10_000, timeout: 20_000 }),
     );
   }
 
@@ -773,7 +776,11 @@ export class CartService {
           itemCount: pricedLines.length,
           existing: false,
         };
-      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }),
+      // Default Prisma transaction timeout (5s) is tuned for local latency. This
+      // transaction does ~15 sequential writes (quotation, revision, approval,
+      // sales order, per-line reservations and ledger entries), which can exceed
+      // that budget once cross-region round trips to Supabase are added up.
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10_000, timeout: 20_000 }),
     );
   }
 }

@@ -203,6 +203,17 @@ export class CartService {
     if (existing) return existing;
     const scope = identityScope(identity);
     if (!scope) throw new BadRequestException('Unable to identify the cart owner.');
+    if (scope.guestToken) {
+      // guestToken is unique across every cart, including converted ones. A
+      // returning guest whose previous cart already checked out would otherwise
+      // hit a unique-constraint crash here forever. The old cart's order is
+      // fully captured in its Quotation/SalesOrder, not this row, so it is safe
+      // to release the token the moment a new active cart actually needs it.
+      await this.prisma.client.cart.updateMany({
+        where: { guestToken: scope.guestToken, status: { not: CartStatus.ACTIVE } },
+        data: { guestToken: null },
+      });
+    }
     return this.prisma.client.cart.create({ data: scope, include: CART_INCLUDE });
   }
 

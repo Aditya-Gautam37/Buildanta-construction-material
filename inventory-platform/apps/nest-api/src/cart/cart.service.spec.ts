@@ -60,7 +60,13 @@ function makeVariant(overrides: Partial<FakeVariant> = {}): FakeVariant {
 }
 
 function matchesWhere(row: Record<string, unknown>, where: Record<string, unknown>) {
-  return Object.entries(where).every(([key, value]) => value === undefined || row[key] === value);
+  return Object.entries(where).every(([key, value]) => {
+    if (value === undefined) return true;
+    if (value && typeof value === 'object' && 'not' in (value as Record<string, unknown>)) {
+      return row[key] !== (value as { not: unknown }).not;
+    }
+    return row[key] === value;
+  });
 }
 
 function createFakePrisma() {
@@ -287,6 +293,29 @@ describe('CartService', () => {
     const second = await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 3 });
     expect(second.cartId).toBe(first.cartId);
     expect(second.itemCount).toBe(5);
+  });
+
+  it('lets a guest start a new cart after their previous cart converted (guestToken is unique)', async () => {
+    const { service, variants, carts } = setup();
+    variants.set('variant-1', makeVariant());
+    carts.set('old-cart', {
+      id: 'old-cart',
+      status: CartStatus.CONVERTED,
+      currency: 'INR',
+      conversionIdempotencyKey: 'key-1',
+      convertedAt: new Date(),
+      lastActivityAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      customerId: null,
+      guestToken: 'guest-returning',
+      quotation: null,
+    });
+
+    const summary = await service.addItem({ guestToken: 'guest-returning' }, { variantId: 'variant-1', quantity: 1 });
+
+    expect(summary.cartId).not.toBe('old-cart');
+    expect(summary.lineCount).toBe(1);
   });
 
   it('rejects adding a quote-only variant', async () => {

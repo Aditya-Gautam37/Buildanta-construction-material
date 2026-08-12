@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { resolveRouteAccess } from './route-access';
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -28,41 +29,17 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const pathname = request.nextUrl.pathname;
-  const protectedRoutes = ['/dashboard', '/profile'];
-  const authRoutes = ['/login', '/signup'];
-  const needsProfileCompletion = !user?.user_metadata?.firstName || !user?.user_metadata?.lastName;
+  // Role-specific checks (Admin/Finance-only actions, etc.) are unaffected by
+  // this: they still happen per-page via requireStaffAccess({ allowedRoles }).
+  const redirectTo = resolveRouteAccess({
+    pathname: request.nextUrl.pathname,
+    search: request.nextUrl.search,
+    isAuthenticated: Boolean(user),
+    needsProfileCompletion: !user?.user_metadata?.firstName || !user?.user_metadata?.lastName,
+    existingRedirectParam: request.nextUrl.searchParams.get('redirect'),
+  });
 
-  const isProtectedRoute = protectedRoutes.some((path) => pathname.startsWith(path));
-  const isAuthRoute = authRoutes.some((path) => pathname.startsWith(path));
-
-  if (isProtectedRoute && user && needsProfileCompletion && pathname !== '/profile/complete') {
-    const url = request.nextUrl.clone();
-    url.pathname = '/profile/complete';
-    url.searchParams.set('redirect', `${pathname}${request.nextUrl.search}`);
-    return NextResponse.redirect(url);
-  }
-
-  if (isProtectedRoute && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    url.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(url);
-  }
-
-  if (isAuthRoute && user && needsProfileCompletion) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/profile/complete';
-    url.searchParams.set('redirect', request.nextUrl.searchParams.get('redirect') || '/dashboard');
-    return NextResponse.redirect(url);
-  }
-
-  if (isAuthRoute && user) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
-    return NextResponse.redirect(url);
-  }
-
+  if (redirectTo) return NextResponse.redirect(new URL(redirectTo, request.url));
   return response;
 }
 

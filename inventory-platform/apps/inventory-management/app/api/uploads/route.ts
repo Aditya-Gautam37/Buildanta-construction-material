@@ -1,17 +1,7 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { prisma, UserRole } from "@workspace/db";
+import { prisma } from "@workspace/db";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
-
-const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
-const uploadRoles = new Set<UserRole>([
-  UserRole.ADMIN,
-  UserRole.CATALOG_MANAGER,
-  UserRole.DATA_ENTRY,
-]);
-
-function safeFileName(value: string) {
-  return value.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-").slice(-120);
-}
+import { safeFileName, validateUpload } from "@/lib/uploads/validate-upload";
 
 export async function POST(request: Request) {
   const sessionClient = await createSupabaseServerClient();
@@ -19,32 +9,25 @@ export async function POST(request: Request) {
     data: { user },
   } = await sessionClient.auth.getUser();
 
-  if (!user) {
-    return Response.json({ error: "Authentication required." }, { status: 401 });
-  }
-
-  const staff = await prisma.user.findUnique({
-    where: { id: user.id },
-    select: { role: true },
-  });
-  if (!staff || !uploadRoles.has(staff.role)) {
-    return Response.json({ error: "Inventory staff access is required." }, { status: 403 });
-  }
+  const staff = user
+    ? await prisma.user.findUnique({ where: { id: user.id }, select: { role: true } })
+    : null;
 
   const form = await request.formData();
   const file = form.get("file");
   const kind = form.get("kind");
-  if (!(file instanceof File) || (kind !== "product" && kind !== "brand" && kind !== "professional" && kind !== "homepage" && kind !== "category")) {
-    return Response.json({ error: "A valid image and upload kind are required." }, { status: 400 });
-  }
 
-  const maxBytes = Number(process.env.MAX_UPLOAD_BYTES ?? 5 * 1024 * 1024);
-  if (!allowedTypes.has(file.type)) {
-    return Response.json({ error: "Only JPEG, PNG, WebP, and AVIF images are supported." }, { status: 415 });
-  }
-  if (!Number.isFinite(maxBytes) || file.size < 1 || file.size > maxBytes) {
-    return Response.json({ error: `Images must be smaller than ${Math.round(maxBytes / 1024 / 1024)} MB.` }, { status: 413 });
-  }
+  const validation = validateUpload({
+    isAuthenticated: Boolean(user),
+    staffRole: staff?.role ?? null,
+    kind,
+    file: file instanceof File ? file : null,
+    maxBytes: Number(process.env.MAX_UPLOAD_BYTES ?? 5 * 1024 * 1024),
+  });
+  if (!validation.ok) return Response.json({ error: validation.error }, { status: validation.status });
+  // Narrowed by validateUpload above: isAuthenticated required user, file instanceof File required to pass.
+  const uploadFile = file as File;
+  const uploaderId = user!.id;
 
   const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publishableKey =
@@ -74,10 +57,10 @@ export async function POST(request: Request) {
       : kind === "homepage"
         ? process.env.SUPABASE_HOMEPAGE_IMAGES_BUCKET ?? process.env.SUPABASE_PRODUCT_IMAGES_BUCKET ?? "ProductImages"
       : process.env.SUPABASE_PRODUCT_IMAGES_BUCKET ?? "ProductImages";
-  const folder = kind === "category" ? "categories" : user.id;
-  const path = `${folder}/${crypto.randomUUID()}-${safeFileName(file.name || "image")}`;
-  const { error } = await storage.storage.from(bucket).upload(path, file, {
-    contentType: file.type,
+  const folder = kind === "category" ? "categories" : uploaderId;
+  const path = `${folder}/${crypto.randomUUID()}-${safeFileName(uploadFile.name || "image")}`;
+  const { error } = await storage.storage.from(bucket).upload(path, uploadFile, {
+    contentType: uploadFile.type,
     upsert: false,
   });
   if (error) {

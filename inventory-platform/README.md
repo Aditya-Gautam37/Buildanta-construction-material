@@ -142,6 +142,28 @@ Create product -> add variant and supplier -> publish -> customer discovers prod
 5. Keep the anon key in both public and server variables; it is intentionally
    public. Never expose the service-role key.
 
+## Observability (NestJS API)
+
+The API starts with structured logging and a global exception filter always
+on — no configuration needed. Every request is logged once, as one JSON line
+to stdout, with a request ID, method, route, status code and duration; a
+failed request additionally logs the error name, message and stack trace.
+Request bodies are never logged; anything that could identify a customer
+(name, email, phone, address) is redacted if it appears in a query string.
+The response also carries the same request ID back in an `x-request-id`
+header — include it when reporting an issue, it's the fastest way to find the
+matching log line.
+
+Error tracking (Sentry) is optional and fully inert until configured: set
+`SENTRY_DSN` (from your Sentry project's settings) to start reporting server
+errors (5xx) there; leave it unset and the app runs exactly the same, it just
+has no external error tracking. `SENTRY_ENVIRONMENT` and
+`SENTRY_TRACES_SAMPLE_RATE` are optional refinements — see `.env.example`.
+
+Required configuration (`DATABASE_URL`, a Supabase URL, a Supabase key) is
+checked at startup; the app refuses to boot with a clear message naming
+what's missing, rather than crashing on the first request that needs it.
+
 ## Quality commands
 
 ```bash

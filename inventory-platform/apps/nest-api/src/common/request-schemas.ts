@@ -445,3 +445,24 @@ export const cartConvertToQuoteSchema = z.object({
   customerNotes: z.string().trim().max(5_000).optional(),
   idempotencyKey: z.string().trim().min(8).max(160),
 }).strict();
+
+// Matches the reference format minted when a supplier starts a listing (see
+// SupplierSubmissionsService) — the format itself isn't secret, this just
+// rejects garbage before it reaches a database write.
+const listingReference = z.string().trim().regex(/^LP-\d{6}-[A-Z0-9]{6}$/, 'Invalid listing reference.');
+
+export const supplierSubmissionSchema = z.object({
+  reference: listingReference,
+  contactName: z.string().trim().min(1).max(160),
+  email: z.string().trim().email().max(320),
+  phone: z.string().trim().min(1).max(30),
+  company: z.string().trim().min(1).max(200),
+  productName: z.string().trim().min(1).max(200),
+  brand: z.string().trim().min(1).max(160),
+  category: z.string().trim().min(1).max(160),
+  unit: z.string().trim().min(1).max(60),
+  price: z.coerce.number().finite().nonnegative().max(100_000_000),
+  stock: z.coerce.number().int().nonnegative().max(100_000_000),
+  description: z.string().trim().min(1).max(5_000),
+  imageUrl: z.string().trim().url().max(2_000),
+}).strict();

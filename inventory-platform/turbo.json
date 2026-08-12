@@ -26,7 +26,11 @@
     "SUPABASE_HOMEPAGE_IMAGES_BUCKET",
     "MAX_UPLOAD_BYTES",
     "ALLOW_DEMO_SEED",
-    "CONFIRM_REAL_DATA_RESET"
+    "CONFIRM_REAL_DATA_RESET",
+    "SENTRY_DSN",
+    "SENTRY_ENVIRONMENT",
+    "SENTRY_TRACES_SAMPLE_RATE",
+    "CART_RATE_LIMIT_PER_MINUTE"
   ],
   "tasks": {
     "build": {
@@ -47,6 +51,9 @@
       "dependsOn": ["^db:generate"]
     },
     "test:unit": {
+      "dependsOn": ["^db:generate"]
+    },
+    "test:e2e": {
       "dependsOn": ["^db:generate"]
     },
     "dev": {

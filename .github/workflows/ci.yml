@@ -31,7 +31,7 @@ jobs:
         run: npm run test:unit
 
   inventory-platform:
-    name: Inventory platform (lint, typecheck, test)
+    name: Inventory platform (lint, typecheck, build, test)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -61,5 +61,17 @@ jobs:
       - name: Typecheck
         run: pnpm turbo run typecheck
 
+      - name: Generate Prisma client
+        run: pnpm --filter @workspace/db db:generate
+
+      # Real compilation, not just typecheck, for the app whose Vercel deploy
+      # skips its own build step (see apps/nest-api/vercel.json — it only
+      # regenerates the Prisma client, since Vercel's Node runtime transpiles
+      # api/index.ts without type-checking it). inventory-management's own
+      # `next build` already type-checks as part of Vercel's normal Next.js
+      # build, so it isn't duplicated here.
+      - name: Build nest-api
+        run: pnpm --filter nest-api build
+
       - name: Run tests
-        run: pnpm turbo run test test:unit
+        run: pnpm turbo run test test:unit test:e2e

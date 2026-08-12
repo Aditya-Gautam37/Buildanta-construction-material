@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import {
   CartStatus,
   InventoryLedgerType,
@@ -455,6 +455,26 @@ export class CartService {
     const scope = identityScope(identity);
     if (!scope) throw new BadRequestException('Unable to identify the cart owner.');
 
+    try {
+      return await this.runCheckoutTransaction(scope, input);
+    } catch (error) {
+      // Exceptions thrown deliberately above (bad PIN, out of stock, cart
+      // state conflicts, etc.) are already customer-safe — pass them through
+      // unchanged. Anything else reaching here is an infrastructure failure
+      // (transaction timeout, exhausted serialization retries) that must not
+      // leak a raw Prisma error/stack to the customer.
+      if (error instanceof BadRequestException || error instanceof ConflictException || error instanceof NotFoundException) throw error;
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        (error.code === 'P2028' || error.code === 'P2034')
+      ) {
+        throw new ServiceUnavailableException('We could not complete your order just now — please try again in a moment.');
+      }
+      throw error;
+    }
+  }
+
+  private async runCheckoutTransaction(scope: NonNullable<ReturnType<typeof identityScope>>, input: CartCheckoutInput): Promise<CartCheckoutResult> {
     return withSerializableRetry(() =>
       this.prisma.client.$transaction(async (tx) => {
         const cart = await tx.cart.findFirst({
@@ -498,19 +518,31 @@ export class CartService {
           throw new ConflictException(reason);
         }
 
-        const coveredAreas = await tx.pincodeCoverage.findMany({
-          where: { pincode: input.pincode, active: true, serviceArea: { active: true } },
-          select: { serviceAreaId: true },
-        });
-        if (!coveredAreas.length) throw new ConflictException('We do not deliver to this PIN code yet.');
-        const serviceAreaIds = coveredAreas.map((row) => row.serviceAreaId);
-
+        // Coverage + fulfilment-location resolution used to be two sequential
+        // round trips (find covered service areas, then find locations serving
+        // them). One nested-relation query does the same join server-side. The
+        // two distinct customer messages are worth keeping, so on the (rare,
+        // already-failing) empty-result path we pay one extra read to tell
+        // "not covered at all" apart from "covered but nothing serves it" —
+        // that cost never lands on the happy path.
         const serviceableLinks = await tx.fulfilmentServiceArea.findMany({
-          where: { serviceAreaId: { in: serviceAreaIds }, active: true, fulfilmentLocation: { active: true } },
+          where: {
+            active: true,
+            fulfilmentLocation: { active: true },
+            serviceArea: { active: true, pincodes: { some: { pincode: input.pincode, active: true } } },
+          },
           select: { fulfilmentLocationId: true },
         });
         const candidateLocationIds = [...new Set(serviceableLinks.map((row) => row.fulfilmentLocationId))];
-        if (!candidateLocationIds.length) throw new ConflictException('No fulfilment location currently serves this PIN code.');
+        if (!candidateLocationIds.length) {
+          const covered = await tx.pincodeCoverage.findFirst({
+            where: { pincode: input.pincode, active: true, serviceArea: { active: true } },
+            select: { id: true },
+          });
+          throw new ConflictException(
+            covered ? 'No fulfilment location currently serves this PIN code.' : 'We do not deliver to this PIN code yet.',
+          );
+        }
 
         // Resolve pricing and a stocked, serviceable location per line before
         // writing anything, so a stock shortfall is reported precisely.
@@ -646,14 +678,11 @@ export class CartService {
             decidedAt: now,
           },
         });
-        await tx.quotation.update({
-          where: { id: quotation.id },
-          data: {
-            status: QuotationStatus.QUOTED,
-            currentRevisionNumber: 1,
-            history: { create: { fromStatus: QuotationStatus.SUBMITTED, toStatus: QuotationStatus.QUOTED, reason: 'Auto-priced for direct checkout' } },
-          },
-        });
+        // currentRevisionNumber and the QUOTED->ACCEPTED transition are recorded
+        // together in the single update below rather than as two separate
+        // writes: nothing outside this still-open transaction can observe an
+        // intermediate QUOTED state, so a standalone write for it is a round
+        // trip with no visible effect.
 
         const orderReference = `SO-${now.toISOString().slice(2, 10).replaceAll('-', '')}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
         // COD orders get a longer hold than the 48h default used for
@@ -757,8 +786,9 @@ export class CartService {
           where: { id: quotation.id },
           data: {
             status: QuotationStatus.ACCEPTED,
+            currentRevisionNumber: 1,
             acceptedAt: now,
-            history: { create: { fromStatus: QuotationStatus.QUOTED, toStatus: QuotationStatus.ACCEPTED, reason: 'Order placed, stock reserved' } },
+            history: { create: { fromStatus: QuotationStatus.SUBMITTED, toStatus: QuotationStatus.ACCEPTED, reason: 'Auto-priced and accepted for direct checkout, stock reserved' } },
           },
         });
 
@@ -776,11 +806,15 @@ export class CartService {
           itemCount: pricedLines.length,
           existing: false,
         };
-      // Default Prisma transaction timeout (5s) is tuned for local latency. This
-      // transaction does ~15 sequential writes (quotation, revision, approval,
-      // sales order, per-line reservations and ledger entries), which can exceed
-      // that budget once cross-region round trips to Supabase are added up.
-      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10_000, timeout: 20_000 }),
+      // This transaction still does ~15 sequential writes (quotation, revision,
+      // approval, sales order, per-line reservations and ledger entries) after
+      // trimming the two redundant round trips above, and pays full cross-region
+      // latency to Supabase on every one of them. 8s is a real safety margin
+      // over the ~1-2s that costs at normal latency, not a substitute for the
+      // query reduction — if this budget is ever hit again, that means either
+      // latency regressed or a line was added to the transaction, not that the
+      // number needs raising again.
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 4_000, timeout: 8_000 }),
     );
   }
 }

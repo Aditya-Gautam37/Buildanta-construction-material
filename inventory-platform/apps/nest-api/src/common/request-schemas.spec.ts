@@ -1,4 +1,4 @@
-import { inventoryBalanceAdjustmentSchema, productCreateSchema, quotationCreateSchema, serviceAreaCreateSchema, stockTransferCreateSchema, supplierCreateSchema, variantCreateSchema } from "./request-schemas";
+import { inventoryBalanceAdjustmentSchema, productCreateSchema, quotationCreateSchema, serviceAreaCreateSchema, stockTransferCreateSchema, supplierCreateSchema, supplierSubmissionSchema, variantCreateSchema } from "./request-schemas";
 
 describe("API request schemas", () => {
   it("rejects a product without a name", () => {
@@ -56,5 +56,30 @@ describe("API request schemas", () => {
       ],
     }).success).toBe(true);
     expect(quotationCreateSchema.safeParse({ name: "A", email: "bad", phone: "1", deliveryPincode: "2080", items: [] }).success).toBe(false);
+  });
+
+  const validSupplierSubmission = {
+    reference: "LP-260801-DEMO01", contactName: "Demo Supplier", email: "supplier@example.com", phone: "9999999999",
+    company: "Buildanta Supply", productName: "Cement", brand: "Buildanta Pro", category: "Cement", unit: "bag",
+    price: 385, stock: 100, description: "Demo listing", imageUrl: "https://example.com/cement.png",
+  };
+
+  it("accepts a complete supplier submission", () => {
+    expect(supplierSubmissionSchema.safeParse(validSupplierSubmission).success).toBe(true);
+  });
+
+  it("rejects a supplier submission with a malformed listing reference", () => {
+    expect(supplierSubmissionSchema.safeParse({ ...validSupplierSubmission, reference: "bad" }).success).toBe(false);
+  });
+
+  it("rejects a supplier submission missing required fields", () => {
+    const incomplete: Partial<typeof validSupplierSubmission> = { ...validSupplierSubmission };
+    delete incomplete.description;
+    expect(supplierSubmissionSchema.safeParse(incomplete).success).toBe(false);
+  });
+
+  it("rejects a supplier submission with a negative price or a non-URL image", () => {
+    expect(supplierSubmissionSchema.safeParse({ ...validSupplierSubmission, price: -1 }).success).toBe(false);
+    expect(supplierSubmissionSchema.safeParse({ ...validSupplierSubmission, imageUrl: "not-a-url" }).success).toBe(false);
   });
 });

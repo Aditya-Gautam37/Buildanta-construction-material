@@ -30,16 +30,16 @@ async function main() {
     const variantIds = variants.map((variant) => variant.id)
 
     // Anything not SetNull would be silently destroyed, so refuse if present.
-    const blockers: Array<[string, number]> = [
-      ['ProductImage', await prisma.productImage.count({ where: { OR: [{ productId: { in: productIds } }, { variantId: { in: variantIds } }] } })],
-      ['CartItem', await prisma.cartItem.count({ where: { variantId: { in: variantIds } } })],
-      ['QuotationItem', await prisma.quotationItem.count({ where: { OR: [{ productId: { in: productIds } }, { variantId: { in: variantIds } }] } })],
-      ['SalesOrderItem', await prisma.salesOrderItem.count({ where: { variantId: { in: variantIds } } })],
-      ['InventoryBalance', await prisma.inventoryBalance.count({ where: { variantId: { in: variantIds } } })],
-      ['StockTransaction', await prisma.stockTransaction.count({ where: { variantId: { in: variantIds } } })],
-      ['Review', await prisma.review.count({ where: { productId: { in: productIds } } })],
-      ['HomepageProduct', await prisma.homepageProduct.count({ where: { productId: { in: productIds } } })],
-    ].filter(([, count]) => count > 0)
+    const blockers: Array<{ label: string; count: number }> = [
+      { label: 'ProductImage', count: await prisma.productImage.count({ where: { OR: [{ productId: { in: productIds } }, { variantId: { in: variantIds } }] } }) },
+      { label: 'CartItem', count: await prisma.cartItem.count({ where: { variantId: { in: variantIds } } }) },
+      { label: 'QuotationItem', count: await prisma.quotationItem.count({ where: { OR: [{ productId: { in: productIds } }, { variantId: { in: variantIds } }] } }) },
+      { label: 'SalesOrderItem', count: await prisma.salesOrderItem.count({ where: { variantId: { in: variantIds } } }) },
+      { label: 'InventoryBalance', count: await prisma.inventoryBalance.count({ where: { variantId: { in: variantIds } } }) },
+      { label: 'StockTransaction', count: await prisma.stockTransaction.count({ where: { variantId: { in: variantIds } } }) },
+      { label: 'Review', count: await prisma.review.count({ where: { productId: { in: productIds } } }) },
+      { label: 'HomepageProduct', count: await prisma.homepageProduct.count({ where: { productId: { in: productIds } } }) },
+    ].filter((blocker) => blocker.count > 0)
 
     const mappings = await prisma.calculatorProductMapping.count({ where: { OR: [{ productId: { in: productIds } }, { variantId: { in: variantIds } }] } })
     const estimateItems = await prisma.materialEstimateItem.count({ where: { OR: [{ productId: { in: productIds } }, { variantId: { in: variantIds } }] } })
@@ -53,7 +53,7 @@ async function main() {
 
     if (blockers.length > 0) {
       console.log('\nREFUSING — these would lose data:')
-      for (const [label, count] of blockers) console.log(`  ${label}: ${count}`)
+      for (const { label, count } of blockers) console.log(`  ${label}: ${count}`)
       process.exitCode = 1
       return
     }

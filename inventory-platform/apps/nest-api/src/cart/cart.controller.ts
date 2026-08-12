@@ -1,4 +1,6 @@
 import { Body, Controller, Delete, Get, Headers, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
+import { FriendlyThrottlerGuard } from '../common/friendly-throttler.guard';
 import type { z } from 'zod';
 import { CustomerJwtAuthGuard } from '../auth/guards/customer-jwt.auth.guard';
 import { OptionalCustomerJwtAuthGuard } from '../auth/guards/optional-customer-jwt.auth.guard';
@@ -15,7 +17,7 @@ function identityFrom(request: OptionalUserRequest, guestToken?: string): CartId
 }
 
 @Controller('cart')
-@UseGuards(OptionalCustomerJwtAuthGuard)
+@UseGuards(OptionalCustomerJwtAuthGuard, FriendlyThrottlerGuard)
 export class CartController {
   constructor(private readonly cartService: CartService) {}
 
@@ -66,7 +68,13 @@ export class CartController {
     return this.cartService.convertToQuote(identityFrom(request, guestToken), input);
   }
 
+  // Tighter than the controller's default: a real shopper checks out once,
+  // maybe retries once on a genuine error. This value is a decorator argument
+  // (evaluated at import time, not request time), so unlike the module-wide
+  // default above it can't safely read ConfigService — edit it directly here
+  // if it ever needs tuning.
   @Post('checkout')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   checkout(
     @Req() request: OptionalUserRequest,
     @Headers('x-buildanta-guest-cart') guestToken: string | undefined,

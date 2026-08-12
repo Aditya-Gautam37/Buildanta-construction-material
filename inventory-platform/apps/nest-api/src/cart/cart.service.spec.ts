@@ -1,272 +1,7 @@
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { CartStatus, ProductStatus, PurchaseMode, VariantStatus } from '@workspace/db';
 import { CartService } from './cart.service';
-
-type FakeVariant = {
-  id: string;
-  productId: string;
-  sku: string;
-  price: number;
-  unit: string;
-  purchaseMode: PurchaseMode;
-  minimumOrderQuantity: number;
-  maxDirectQuantity: number | null;
-  bulkQuoteThreshold: number | null;
-  quantityIncrement: number;
-  stockTracked: boolean;
-  stockQuantity: number;
-  reservedQuantity: number;
-  lowStockThreshold: number;
-  status: VariantStatus;
-  inventoryBalances: Array<{
-    physicalQuantity: number;
-    reservedQuantity: number;
-    blockedQuantity: number;
-    damagedQuantity: number;
-    quarantineQuantity: number;
-    lowStockThreshold: number;
-  }>;
-  product: { id: string; name: string; status: ProductStatus; sellingPrice: number; gstPercent?: number | null; images?: Array<{ src: string }> };
-};
-
-function makeVariant(overrides: Partial<FakeVariant> = {}): FakeVariant {
-  return {
-    id: 'variant-1',
-    productId: 'product-1',
-    sku: 'SKU-1',
-    price: 100,
-    unit: 'bag',
-    purchaseMode: PurchaseMode.DIRECT_ONLY,
-    minimumOrderQuantity: 1,
-    maxDirectQuantity: null,
-    bulkQuoteThreshold: null,
-    quantityIncrement: 1,
-    stockTracked: true,
-    stockQuantity: 100,
-    reservedQuantity: 0,
-    lowStockThreshold: 5,
-    status: VariantStatus.ACTIVE,
-    inventoryBalances: [{
-      physicalQuantity: 100,
-      reservedQuantity: 0,
-      blockedQuantity: 0,
-      damagedQuantity: 0,
-      quarantineQuantity: 0,
-      lowStockThreshold: 5,
-    }],
-    product: { id: 'product-1', name: 'Test Product', status: ProductStatus.PUBLISHED, sellingPrice: 100, images: [] },
-    ...overrides,
-  };
-}
-
-function matchesWhere(row: Record<string, unknown>, where: Record<string, unknown>) {
-  return Object.entries(where).every(([key, value]) => {
-    if (value === undefined) return true;
-    if (value && typeof value === 'object' && 'not' in (value as Record<string, unknown>)) {
-      return row[key] !== (value as { not: unknown }).not;
-    }
-    return row[key] === value;
-  });
-}
-
-function createFakePrisma() {
-  let cartSeq = 0;
-  let itemSeq = 0;
-  const carts = new Map<string, any>();
-  const cartItems = new Map<string, any>();
-  const variants = new Map<string, FakeVariant>();
-
-  function attach(row: any) {
-    const items = [...cartItems.values()]
-      .filter((item) => item.cartId === row.id)
-      .map((item) => ({ ...item, variant: variants.get(item.variantId) }));
-    return { ...row, items };
-  }
-
-  const cart = {
-    findFirst: jest.fn(async ({ where }: any) => {
-      const all = [...carts.values()].filter((row) => matchesWhere(row, where));
-      all.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
-      return all[0] ? attach(all[0]) : null;
-    }),
-    create: jest.fn(async ({ data }: any) => {
-      const id = `cart-${++cartSeq}`;
-      const now = new Date();
-      const row = {
-        id,
-        status: CartStatus.ACTIVE,
-        currency: 'INR',
-        conversionIdempotencyKey: null,
-        convertedAt: null,
-        lastActivityAt: now,
-        createdAt: now,
-        updatedAt: now,
-        customerId: null,
-        guestToken: null,
-        quotation: null,
-        ...data,
-      };
-      carts.set(id, row);
-      return attach(row);
-    }),
-    update: jest.fn(async ({ where, data }: any) => {
-      const row = carts.get(where.id);
-      Object.assign(row, data, { updatedAt: new Date() });
-      return attach(row);
-    }),
-    updateMany: jest.fn(async ({ where, data }: any) => {
-      const matched = [...carts.values()].filter((row) => matchesWhere(row, where));
-      for (const row of matched) Object.assign(row, data, { updatedAt: new Date() });
-      return { count: matched.length };
-    }),
-  };
-
-  const cartItem = {
-    upsert: jest.fn(async ({ where, create, update }: any) => {
-      const key = where.cartId_variantId;
-      const existing = [...cartItems.values()].find((item) => item.cartId === key.cartId && item.variantId === key.variantId);
-      if (existing) {
-        Object.assign(existing, update, { updatedAt: new Date() });
-        return existing;
-      }
-      const id = `item-${++itemSeq}`;
-      const now = new Date();
-      const row = { id, addedAt: now, updatedAt: now, ...create };
-      cartItems.set(id, row);
-      return row;
-    }),
-    update: jest.fn(async ({ where, data }: any) => {
-      const row = cartItems.get(where.id);
-      Object.assign(row, data, { updatedAt: new Date() });
-      return row;
-    }),
-    delete: jest.fn(async ({ where }: any) => {
-      const row = cartItems.get(where.id);
-      cartItems.delete(where.id);
-      return row;
-    }),
-    deleteMany: jest.fn(async ({ where }: any) => {
-      const toDelete = [...cartItems.values()].filter((item) => item.cartId === where.cartId);
-      for (const item of toDelete) cartItems.delete(item.id);
-      return { count: toDelete.length };
-    }),
-  };
-
-  const productVariant = {
-    findUnique: jest.fn(async ({ where }: any) => variants.get(where.id) ?? null),
-    update: jest.fn(async ({ where, data }: any) => {
-      const variant = variants.get(where.id);
-      if (variant) Object.assign(variant, data);
-      return variant;
-    }),
-  };
-
-  // --- Checkout-only fakes below. Deliberately minimal: each mirrors just
-  // enough Prisma behaviour for CartService.checkout() to run, seeded per test
-  // rather than trying to be a general-purpose in-memory Postgres.
-  let seq = 0;
-  const nextId = (prefix: string) => `${prefix}-${++seq}`;
-  const serviceableAreas = new Set<string>(); // pincodes that resolve to a service area
-  const serviceableLocations = new Map<string, string>(); // fulfilmentLocationId -> pincode set marker
-  const balances = new Map<string, any>(); // keyed by `${variantId}:${fulfilmentLocationId}`
-  const reservations: any[] = [];
-  const ledgerEntries: any[] = [];
-  const salesOrders = new Map<string, any>();
-  const salesOrderItems: any[] = [];
-
-  function seedServiceable(pincode: string, fulfilmentLocationId = 'loc-1') {
-    serviceableAreas.add(pincode);
-    serviceableLocations.set(fulfilmentLocationId, pincode);
-  }
-  function seedBalance(variantId: string, fulfilmentLocationId: string, physical: number, reserved = 0) {
-    const id = `${variantId}:${fulfilmentLocationId}`;
-    balances.set(id, {
-      id, variantId, fulfilmentLocationId,
-      physicalQuantity: physical, reservedQuantity: reserved,
-      blockedQuantity: 0, damagedQuantity: 0, quarantineQuantity: 0, inTransitQuantity: 0,
-      lowStockThreshold: 5,
-    });
-  }
-
-  const pincodeCoverage = {
-    findMany: jest.fn(async ({ where }: any) => (serviceableAreas.has(where.pincode) ? [{ serviceAreaId: 'area-1' }] : [])),
-  };
-  const fulfilmentServiceArea = {
-    findMany: jest.fn(async () => [...serviceableLocations.keys()].map((fulfilmentLocationId) => ({ fulfilmentLocationId }))),
-  };
-  const inventoryBalance = {
-    findMany: jest.fn(async ({ where }: any) => {
-      const locationIds: string[] = where.fulfilmentLocationId.in;
-      return [...balances.values()].filter((row) => row.variantId === where.variantId && locationIds.includes(row.fulfilmentLocationId));
-    }),
-    findUniqueOrThrow: jest.fn(async ({ where }: any) => {
-      const row = [...balances.values()].find((candidate) => candidate.id === where.id);
-      if (!row) throw new Error('balance not found');
-      return row;
-    }),
-    update: jest.fn(async ({ where, data }: any) => {
-      const row = [...balances.values()].find((candidate) => candidate.id === where.id)!;
-      if (data.reservedQuantity?.increment) row.reservedQuantity += data.reservedQuantity.increment;
-      return { ...row };
-    }),
-    aggregate: jest.fn(async ({ where }: any) => {
-      const rows = [...balances.values()].filter((row) => row.variantId === where.variantId);
-      return {
-        _sum: {
-          physicalQuantity: rows.reduce((sum, row) => sum + row.physicalQuantity, 0),
-          reservedQuantity: rows.reduce((sum, row) => sum + row.reservedQuantity, 0),
-        },
-      };
-    }),
-  };
-  const quotations = new Map<string, any>();
-  const quotation = {
-    create: jest.fn(async ({ data }: any) => {
-      const id = nextId('quotation');
-      const items = (data.items?.create ?? []).map((item: any) => ({ id: nextId('qitem'), ...item }));
-      const row = { ...data, id, items };
-      quotations.set(id, row);
-      return row;
-    }),
-    update: jest.fn(async ({ where, data }: any) => {
-      const row = quotations.get(where.id);
-      Object.assign(row, data);
-      return row;
-    }),
-  };
-  const quotationRevision = { create: jest.fn(async ({ data }: any) => ({ id: nextId('revision'), ...data })) };
-  const quotationApproval = { create: jest.fn(async ({ data }: any) => ({ id: nextId('approval'), ...data })) };
-  const salesOrder = {
-    create: jest.fn(async ({ data }: any) => {
-      const id = nextId('order');
-      const row = { id, ...data };
-      salesOrders.set(id, row);
-      return row;
-    }),
-  };
-  const salesOrderItem = {
-    create: jest.fn(async ({ data }: any) => {
-      const row = { id: nextId('orderitem'), ...data };
-      salesOrderItems.push(row);
-      return row;
-    }),
-  };
-  const inventoryReservation = { create: jest.fn(async ({ data }: any) => { const row = { id: nextId('reservation'), ...data }; reservations.push(row); return row; }) };
-  const inventoryLedgerEntry = { create: jest.fn(async ({ data }: any) => { const row = { id: nextId('ledger'), ...data }; ledgerEntries.push(row); return row; }) };
-
-  const client: any = {
-    cart, cartItem, productVariant,
-    pincodeCoverage, fulfilmentServiceArea, inventoryBalance,
-    quotation, quotationRevision, quotationApproval,
-    salesOrder, salesOrderItem, inventoryReservation, inventoryLedgerEntry,
-  };
-  client.$transaction = jest.fn((callback: any) => callback(client));
-
-  return {
-    client, carts, cartItems, variants,
-    seedServiceable, seedBalance, balances, reservations, ledgerEntries, salesOrders, salesOrderItems,
-  };
-}
+import { createFakePrisma, fakePrismaError, makeVariant } from './cart.test-support';
 
 function setup() {
   const fake = createFakePrisma();
@@ -726,6 +461,96 @@ describe('CartService', () => {
     it('rejects checking out an empty cart', async () => {
       const { service } = setup();
       await expect(service.checkout({ guestToken: 'guest-none' }, address)).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('prevents a second buyer from also getting the final unit', async () => {
+      const { service, variants, seedServiceable, seedBalance, balances } = setup();
+      variants.set('variant-1', makeVariant());
+      seedServiceable('208001', 'loc-1');
+      seedBalance('variant-1', 'loc-1', 1, 0); // exactly one unit left
+      await service.addItem({ guestToken: 'buyer-a' }, { variantId: 'variant-1', quantity: 1 });
+      await service.addItem({ guestToken: 'buyer-b' }, { variantId: 'variant-1', quantity: 1 });
+
+      // The fake has no equivalent of Postgres's own serialization-conflict
+      // detection for two truly concurrent transactions, so this drives the
+      // same outcome Serializable isolation guarantees in production:
+      // whichever checkout is ordered second sees the balance the first one
+      // already reserved, caught by the point-of-write recheck rather than a
+      // stale earlier read.
+      const first = await service.checkout({ guestToken: 'buyer-a' }, address);
+      expect(first.existing).toBe(false);
+
+      await expect(service.checkout({ guestToken: 'buyer-b' }, address)).rejects.toThrow(/out of stock/i);
+
+      expect(balances.get('variant-1:loc-1').reservedQuantity).toBe(1); // not double-booked
+    });
+
+    it('retries and succeeds after a transient serialization conflict', async () => {
+      const { service, variants, seedServiceable, seedBalance, client, salesOrders } = setup();
+      variants.set('variant-1', makeVariant());
+      seedServiceable('208001', 'loc-1');
+      seedBalance('variant-1', 'loc-1', 100, 0);
+      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 1 });
+
+      const realTransaction = client.$transaction.getMockImplementation()!;
+      let attempts = 0;
+      client.$transaction.mockImplementation((callback: any) => {
+        attempts += 1;
+        if (attempts === 1) return Promise.reject(fakePrismaError('P2034'));
+        return realTransaction(callback);
+      });
+
+      const result = await service.checkout({ guestToken: 'guest-1' }, address);
+
+      expect(attempts).toBe(2); // failed once, retried, succeeded
+      expect(result.existing).toBe(false);
+      expect(salesOrders.size).toBe(1);
+    });
+
+    it('returns a clean customer-facing error on a transaction timeout, without leaking the database error', async () => {
+      const { service, variants, seedServiceable, seedBalance, client } = setup();
+      variants.set('variant-1', makeVariant());
+      seedServiceable('208001', 'loc-1');
+      seedBalance('variant-1', 'loc-1', 100, 0);
+      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 1 });
+
+      // P2028 (transaction timeout) is not retryable, unlike P2034 above — it
+      // should surface once, translated, never as the raw Prisma error.
+      client.$transaction.mockImplementation(() => Promise.reject(fakePrismaError('P2028')));
+
+      const error: unknown = await service.checkout({ guestToken: 'guest-1' }, address).catch((caught) => caught);
+
+      expect(error).toBeInstanceOf(ServiceUnavailableException);
+      expect((error as ServiceUnavailableException).message).toMatch(/try again/i);
+      expect((error as ServiceUnavailableException).message).not.toMatch(/p2028|prisma|database/i);
+    });
+
+    it('rolls back every write, including an already-reserved earlier line, when a later line fails mid-transaction', async () => {
+      const { service, variants, seedServiceable, seedBalance, salesOrders, reservations, balances, client } = setup();
+      variants.set('variant-ok', makeVariant({ id: 'variant-ok', price: 100 }));
+      variants.set('variant-short', makeVariant({ id: 'variant-short', price: 50 }));
+      seedServiceable('208001', 'loc-1');
+      seedBalance('variant-ok', 'loc-1', 100, 0);
+      seedBalance('variant-short', 'loc-1', 5, 0);
+      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-ok', quantity: 1 });
+      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-short', quantity: 5 });
+
+      // Simulate a concurrent reservation landing on variant-short's stock
+      // right after variant-ok's line has already been written in this same
+      // attempt, so the failure happens mid-transaction rather than during
+      // up-front resolution (which would never reach any writes at all).
+      const realReservationCreate = client.inventoryReservation.create.getMockImplementation()!;
+      client.inventoryReservation.create.mockImplementationOnce(async (args: any) => {
+        balances.get('variant-short:loc-1').reservedQuantity = 5; // someone else just took all of it
+        return realReservationCreate(args);
+      });
+
+      await expect(service.checkout({ guestToken: 'guest-1' }, address)).rejects.toThrow(/sold out/i);
+
+      expect(salesOrders.size).toBe(0);
+      expect(reservations).toHaveLength(0); // variant-ok's reservation was rolled back, not left dangling
+      expect(balances.get('variant-ok:loc-1').reservedQuantity).toBe(0);
+      expect(balances.get('variant-short:loc-1').reservedQuantity).toBe(0); // the whole attempt reverted, including the injected mid-transaction change
     });
   });
 });

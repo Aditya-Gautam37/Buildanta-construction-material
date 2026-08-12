@@ -2,22 +2,14 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { AppModule } from '../src/app.module';
+import { configureApp } from '../src/bootstrap';
 
 // Reused across warm invocations of the same function instance.
 let appPromise: Promise<NestExpressApplication> | undefined;
 
 async function bootstrap(): Promise<NestExpressApplication> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  const origins = (process.env.CORS_ORIGINS ?? 'http://localhost:3002')
-    .split(',')
-    .map((value) => value.trim())
-    .filter(Boolean);
-  app.enableCors({
-    origin: origins,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  });
+  configureApp(app);
   await app.init();
   return app;
 }

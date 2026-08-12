@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm --filter @workspace/db db:generate",
+  "buildCommand": "pnpm --filter @workspace/db db:generate && pnpm --filter nest-api typecheck",
   "outputDirectory": "public",
   "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }]
 }

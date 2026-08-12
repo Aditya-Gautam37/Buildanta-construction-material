@@ -28,6 +28,7 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/throttler": "^6.5.0",
+    "@sentry/node": "^10.70.0",
     "@supabase/supabase-js": "^2.103.0",
     "@workspace/db": "workspace:*",
     "reflect-metadata": "^0.2.2",

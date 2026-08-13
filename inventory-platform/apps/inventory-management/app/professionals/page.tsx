@@ -2,6 +2,7 @@ import { prisma, UserRole } from "@workspace/db"
 import { requireStaffAccess } from "@/lib/staff-access"
 import type { ContractorPackageRecord, ProfessionalRecord, ProfessionalTypeValue } from "@/lib/professionals"
 import ProfessionalManager from "./professional-manager"
+import type { PackageEnquiryRecord } from "./enquiry-list"
 
 export default async function ProfessionalsPage() {
   await requireStaffAccess("/professionals", { allowedRoles: [UserRole.ADMIN, UserRole.DATA_ENTRY] })
@@ -59,5 +60,33 @@ export default async function ProfessionalsPage() {
     })),
   )
 
-  return <ProfessionalManager initialProfessionals={professionals} initialPackages={packages} />
+  const enquiryRows = await prisma.packageEnquiry.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 100,
+    include: { professional: { select: { name: true } } },
+  })
+
+  const enquiries: PackageEnquiryRecord[] = enquiryRows.map((row) => ({
+    id: row.id,
+    reference: row.reference,
+    professionalName: row.professional.name,
+    customerName: row.customerName,
+    customerPhone: row.customerPhone,
+    customerEmail: row.customerEmail,
+    projectLocation: row.projectLocation,
+    plotDimensions: row.plotDimensions,
+    areaSqFt: row.areaSqFt.toString(),
+    floors: row.floors,
+    constructionType: row.constructionType,
+    expectedStart: row.expectedStart,
+    requirement: row.requirement,
+    packageNameSnapshot: row.packageNameSnapshot,
+    rateSnapshot: row.rateSnapshot.toString(),
+    amountSnapshot: row.amountSnapshot.toString(),
+    status: row.status,
+    internalNotes: row.internalNotes,
+    createdAt: row.createdAt.toISOString(),
+  }))
+
+  return <ProfessionalManager initialProfessionals={professionals} initialPackages={packages} initialEnquiries={enquiries} />
 }

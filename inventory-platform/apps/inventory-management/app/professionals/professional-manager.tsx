@@ -20,6 +20,7 @@ import {
 import type { ContractorPackageRecord } from "@/lib/professionals"
 import { deleteProfessionalAction, saveProfessionalAction } from "./actions"
 import PackageManager from "./package-manager"
+import EnquiryList, { type PackageEnquiryRecord } from "./enquiry-list"
 
 function emptyDraft(type: ProfessionalTypeValue = "CONTRACTOR"): ProfessionalDraft {
   return {
@@ -40,9 +41,10 @@ function ProfessionalPhoto({ professional }: { professional: ProfessionalRecord 
   return <img src={professional.photoUrl} alt={professional.name} width={160} height={160} className="size-full object-cover" onError={() => setFailed(true)} />
 }
 
-export default function ProfessionalManager({ initialProfessionals, initialPackages = [] }: {
+export default function ProfessionalManager({ initialProfessionals, initialPackages = [], initialEnquiries = [] }: {
   initialProfessionals: ProfessionalRecord[]
   initialPackages?: ContractorPackageRecord[]
+  initialEnquiries?: PackageEnquiryRecord[]
 }) {
   const [professionals, setProfessionals] = useState(sortProfessionals(initialProfessionals))
   const [activeType, setActiveType] = useState<"ALL" | ProfessionalTypeValue>("ALL")
@@ -188,6 +190,8 @@ export default function ProfessionalManager({ initialProfessionals, initialPacka
           canHavePackages={professional.type === "CONTRACTOR"}
         />
       ))}
+
+      <EnquiryList enquiries={initialEnquiries} />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">

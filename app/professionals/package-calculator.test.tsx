@@ -30,7 +30,6 @@ function renderCalculator(packages: ContractorPackage[]) {
     <PackageCalculator
       packages={packages}
       professionalName="Aditya Gautam"
-      categorySlug="contractors"
       slug="aditya-gautam"
     />,
   );
@@ -102,16 +101,27 @@ describe("PackageCalculator", () => {
     expect(disclaimer.textContent).toMatch(/final cost depends on your site/i);
   });
 
-  it("carries the area and package through to the enquiry link", () => {
+  // The old link sent area and package as query parameters that /bulk-quotes
+  // silently discarded. The form now opens in place with that context intact.
+  it("opens the enquiry form in place, carrying the package and area", () => {
     renderCalculator([pkg()]);
     fireEvent.change(screen.getByLabelText(/Plot area/i), { target: { value: "1500" } });
-    const link = screen.getByRole("link", { name: /Enquire about Economy/i });
-    const href = link.getAttribute("href") ?? "";
+    fireEvent.click(screen.getByRole("button", { name: /Request a detailed quotation/i }));
 
-    expect(href).toContain("/bulk-quotes?");
-    expect(href).toContain("package=Economy");
-    expect(href).toContain("area=1500");
-    expect(href).toContain("professional=Aditya%20Gautam");
+    const form = screen.getByRole("heading", { name: /Request a detailed quotation/i })
+      .closest("form") as HTMLElement;
+
+    // The form states the package and area it is about, so the customer can
+    // see what they are enquiring on.
+    expect(within(form).getByText(/Economy/)).toBeInTheDocument();
+    expect(within(form).getByText(/1,500 sq ft/)).toBeInTheDocument();
+    expect(within(form).getByLabelText(/Your name/i)).toBeInTheDocument();
+    expect(within(form).getByLabelText(/Phone number/i)).toBeInTheDocument();
+  });
+
+  it("never links away to a page that would drop the enquiry context", () => {
+    const { container } = renderCalculator([pkg()]);
+    expect(container.querySelector('a[href*="bulk-quotes"]')).toBeNull();
   });
 
   it("omits a package whose rate is unusable rather than showing zero", () => {

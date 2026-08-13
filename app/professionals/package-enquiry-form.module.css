@@ -1,0 +1,34 @@
+.form{margin-top:16px;padding:22px 24px;border:1px solid #cfe0da;border-radius:14px;background:#f7fbf9}
+.form h4{margin:0 0 6px;color:var(--navy);font-size:17px;letter-spacing:-.02em}
+.summary{margin:0 0 16px;color:#3a4f5c;font-size:13px;line-height:1.55}
+.summary strong{color:#0f5c3f}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field > span{color:var(--navy);font-size:12px;font-weight:750}
+.field i{color:#b42318;font-style:normal}
+.field em{color:var(--muted);font-style:normal;font-weight:600}
+.input{width:100%;min-height:42px;padding:9px 12px;border:1px solid #cfd8e3;border-radius:9px;background:#fff;color:var(--navy);font-size:14px;font-family:inherit}
+.input:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 4px rgba(244,123,32,.14)}
+
+.consent{display:flex;align-items:flex-start;gap:9px;margin:6px 0 4px;color:#3a4f5c;font-size:12.5px;line-height:1.55}
+.consent input{margin-top:2px;width:17px;height:17px;flex:none}
+
+.error{margin:12px 0 0;padding:10px 13px;border:1px solid #f3c8c2;border-radius:9px;background:#fff6f5;color:#b42318;font-size:13px;font-weight:650}
+
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.submit{min-height:46px;padding:0 22px;border:0;border-radius:10px;background:var(--orange);color:#fff;font-size:14px;font-weight:750;cursor:pointer}
+.submit:hover:not(:disabled){background:#d8620f}
+.submit:disabled{opacity:.6;cursor:wait}
+.secondary{min-height:46px;padding:0 20px;border:1px solid #cfd8e3;border-radius:10px;background:#fff;color:var(--navy);font-size:14px;font-weight:700;cursor:pointer}
+.secondary:hover:not(:disabled){border-color:#9faabd}
+
+.note{margin:12px 0 0;color:var(--muted);font-size:11.5px;line-height:1.6}
+.sentBody{margin:0 0 16px;color:#3a4f5c;font-size:13.5px;line-height:1.65}
+.sentBody strong{color:#0f5c3f;font-family:ui-monospace,monospace}
+
+@media (max-width:760px){
+  .form{padding:18px 15px}
+  .grid{grid-template-columns:1fr}
+  .submit,.secondary{width:100%}
+}

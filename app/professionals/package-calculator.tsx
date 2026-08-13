@@ -10,6 +10,7 @@ import {
   type ContractorPackage,
   type PackageMaterial,
 } from "./package-estimate";
+import { PackageEnquiryForm } from "./package-enquiry-form";
 import styles from "./package-calculator.module.css";
 
 const QUICK_AREAS = [500, 900, 1200, 1800];
@@ -42,13 +43,13 @@ function MaterialList({ materials }: { materials: PackageMaterial[] }) {
   );
 }
 
-export function PackageCalculator({ packages, professionalName, categorySlug, slug }: {
+export function PackageCalculator({ packages, professionalName, slug }: {
   packages: ContractorPackage[];
   professionalName: string;
-  categorySlug: string;
   slug: string;
 }) {
   const [areaText, setAreaText] = useState(DEFAULT_AREA);
+  const [enquiringAbout, setEnquiringAbout] = useState<string | null>(null);
   const area = Number(areaText);
   const result = useMemo(() => estimatePackages(packages, area), [packages, area]);
 
@@ -138,12 +139,29 @@ export function PackageCalculator({ packages, professionalName, categorySlug, sl
                     </div>
                   ) : null}
 
-                  <a
+                  {/* Opens the form in place rather than linking away. The old
+                      link carried the area and package as query parameters that
+                      the destination silently discarded, so the context was
+                      lost exactly when it mattered. */}
+                  <button
+                    type="button"
                     className={styles.enquire}
-                    href={`/bulk-quotes?professional=${encodeURIComponent(professionalName)}&package=${encodeURIComponent(source.name)}&area=${encodeURIComponent(String(result.area))}&ref=${encodeURIComponent(`${categorySlug}/${slug}`)}`}
+                    onClick={() => setEnquiringAbout(estimate.packageId)}
+                    aria-expanded={enquiringAbout === estimate.packageId}
                   >
-                    Enquire about {source.name} <span aria-hidden="true">→</span>
-                  </a>
+                    Request a detailed quotation <span aria-hidden="true">→</span>
+                  </button>
+
+                  {enquiringAbout === estimate.packageId ? (
+                    <PackageEnquiryForm
+                      professionalSlug={slug}
+                      professionalName={professionalName}
+                      selected={source}
+                      area={result.area}
+                      estimate={estimate.totalCost}
+                      onClose={() => setEnquiringAbout(null)}
+                    />
+                  ) : null}
                 </article>
               );
             })}

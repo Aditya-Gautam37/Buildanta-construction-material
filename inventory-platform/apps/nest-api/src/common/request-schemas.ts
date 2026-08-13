@@ -502,6 +502,23 @@ export const materialRelatedProductsReplaceSchema = z.object({
   }).strict()).max(20),
 }).strict();
 
+// A package enquiry from an anonymous visitor. Note what is absent: no rate,
+// no total, no professionalId. The server reloads the package and computes the
+// amount itself, so there is nothing here for a caller to lie about.
+export const packageEnquirySchema = z.object({
+  customerName: z.string().trim().min(2).max(160),
+  customerPhone: z.string().trim().min(7).max(30),
+  customerEmail: z.string().trim().email().max(320).optional().or(z.literal('').transform(() => undefined)),
+  projectLocation: z.string().trim().max(200).optional(),
+  plotDimensions: z.string().trim().max(120).optional(),
+  areaSqFt: z.coerce.number().finite().positive().max(100_000),
+  floors: z.coerce.number().int().min(1).max(20).optional(),
+  constructionType: z.string().trim().max(120).optional(),
+  expectedStart: z.string().trim().max(120).optional(),
+  requirement: z.string().trim().max(5_000).optional(),
+  consent: z.literal(true, { errorMap: () => ({ message: 'Consent is required.' }) }),
+}).strict();
+
 export const supplierSubmissionSchema = z.object({
   reference: listingReference,
   contactName: z.string().trim().min(1).max(160),

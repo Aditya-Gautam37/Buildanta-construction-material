@@ -367,3 +367,40 @@ export async function reorderContractorPackageAction(id: string, direction: "up"
     return { ok: false as const, error: error instanceof Error ? error.message : "Unable to reorder packages." }
   }
 }
+
+// ---------------------------------------------------------------------------
+// Package enquiries
+// ---------------------------------------------------------------------------
+
+const ENQUIRY_STATUSES = [
+  "SUBMITTED", "REVIEWING", "PROFESSIONAL_CONTACTED", "CALLBACK_SCHEDULED",
+  "SITE_VISIT_SCHEDULED", "QUOTATION_PREPARED", "CLOSED", "CANCELLED",
+] as const
+
+export type PackageEnquiryStatusValue = (typeof ENQUIRY_STATUSES)[number]
+
+/**
+ * Updates an enquiry's progress and internal notes.
+ *
+ * Only these two fields are writable: the customer's details and the price
+ * snapshot are a record of what was submitted, and staff editing them after
+ * the fact would destroy exactly the history the snapshot exists to keep.
+ */
+export async function updatePackageEnquiryAction(
+  id: string,
+  input: { status: PackageEnquiryStatusValue; internalNotes: string | null },
+) {
+  try {
+    await requireStaff()
+    if (!ENQUIRY_STATUSES.includes(input.status)) throw new Error("Choose a valid status.")
+
+    await prisma.packageEnquiry.update({
+      where: { id },
+      data: { status: input.status, internalNotes: optional(input.internalNotes) },
+    })
+    revalidatePath("/professionals")
+    return { ok: true as const }
+  } catch (error) {
+    return { ok: false as const, error: error instanceof Error ? error.message : "Unable to update enquiry." }
+  }
+}

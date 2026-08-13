@@ -129,7 +129,6 @@ export default async function ProfessionalProfilePage({ params }: ProfilePagePro
         <PackageCalculator
           packages={professional.packages ?? []}
           professionalName={professional.name}
-          categorySlug={category.slug}
           slug={professional.slug}
         />
         <PackageComparison packages={professional.packages ?? []} />

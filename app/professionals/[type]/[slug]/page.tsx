@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { categoryBySlug, getProfessional } from "../../../professional-directory";
+import { formatLocation, SERVICE_CITY } from "../../location";
 
 type ProfilePageProps = { params: Promise<{ type: string; slug: string }> };
 
@@ -9,9 +10,11 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
   const category = categoryBySlug(type);
   const professional = category ? await getProfessional(slug) : null;
   if (!category || !professional || professional.type !== category.type) return {};
+  const location = formatLocation(professional.location) ?? SERVICE_CITY;
   return {
-    title: { absolute: `${professional.name} | ${category.singular} | Buildanta` },
-    description: professional.headline || `${professional.name}, ${category.singular.toLowerCase()} serving ${professional.location}.`,
+    title: { absolute: `${professional.name} | ${category.singular} in ${SERVICE_CITY} | Buildanta` },
+    description: professional.headline
+      || `${professional.name}, ${category.singular.toLowerCase()} serving ${location}.`,
   };
 }
 
@@ -22,61 +25,103 @@ export default async function ProfessionalProfilePage({ params }: ProfilePagePro
   const professional = await getProfessional(slug);
   if (!professional || professional.type !== category.type) notFound();
 
-  const initials = professional.name.split(" ").map((part) => part[0]).join("").slice(0, 2);
-  const representativeWork = professional.services.slice(0, 3);
-  const externalPortfolio = professional.portfolioUrl && !professional.portfolioUrl.endsWith("#selected-work")
+  const initials = professional.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+  const location = formatLocation(professional.location);
+  // Only a genuine external portfolio counts. The old code fell back to an
+  // in-page anchor that did not exist unless services were filled in, leaving
+  // a button that went nowhere.
+  const portfolioUrl = professional.portfolioUrl?.trim() && !professional.portfolioUrl.endsWith("#selected-work")
     ? professional.portfolioUrl
     : null;
 
   return (
     <main className="professional-profile-page">
-      <div className="professional-breadcrumbs">
-        <a href="/">Home</a><span>›</span><a href="/professionals">Professionals</a><span>›</span>
-        <a href={`/professionals/${category.slug}`}>{category.title}</a><span>›</span>{professional.name}
-      </div>
+      <nav className="professional-breadcrumbs" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="/professionals">Professionals</a>
+        <span aria-hidden="true">›</span>
+        <a href={`/professionals/${category.slug}`}>{category.title}</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">{professional.name}</span>
+      </nav>
+
       <section className="professional-profile-hero">
         <div className="professional-profile-photo">
-          {professional.photoUrl ? <img src={professional.photoUrl} alt={professional.name} /> : <span>{initials}</span>}
+          {professional.photoUrl
+            ? <img src={professional.photoUrl} alt={`${professional.name}, ${category.singular.toLowerCase()}`} />
+            : <span aria-hidden="true">{initials}</span>}
         </div>
         <div className="professional-profile-intro">
           <p>{category.singular}</p>
           <h1>{professional.name}</h1>
-          <h2>{professional.headline || `Trusted ${category.singular.toLowerCase()}`}</h2>
-          <div><span>⌖ {professional.location}</span><span>◷ {professional.yearsExperience} years of experience</span></div>
-          {professional.featured ? <b>Buildanta featured professional</b> : null}
+          {professional.headline ? <h2>{professional.headline}</h2> : null}
+          <div>
+            {location ? <span>{location}</span> : null}
+            <span>{professional.yearsExperience} {professional.yearsExperience === 1 ? "year" : "years"} of experience</span>
+          </div>
+          {professional.featured ? <b>Featured listing</b> : null}
         </div>
       </section>
+
       <section className="professional-profile-content">
         <article>
-          <p className="profile-kicker">ABOUT THE PROFESSIONAL</p>
-          <h2>Experience you can understand.</h2>
-          <p className="professional-bio">{professional.bio || `${professional.name} is a ${category.singular.toLowerCase()} serving projects in ${professional.location}. Contact the professional directly for capabilities, availability and project details.`}</p>
-          {professional.services.length ? <><h3>Services and specialities</h3><ul className="professional-services">{professional.services.map((service) => <li key={service}>✓ {service}</li>)}</ul></> : null}
+          <p className="profile-kicker">ABOUT THIS PROFESSIONAL</p>
+          <h2>About {professional.name}</h2>
+          {professional.bio
+            ? <p className="professional-bio">{professional.bio}</p>
+            : (
+              <p className="professional-bio">
+                {professional.name} is a {category.singular.toLowerCase()} listed on
+                Buildanta{location ? `, serving projects in ${location}` : ""}. Send an
+                enquiry to ask about capabilities and availability.
+              </p>
+            )}
+
+          {/* Labelled "Services offered", not "projects": these are services the
+              professional lists, not completed work Buildanta can evidence. */}
+          {professional.services.length ? (
+            <>
+              <h3>Services offered</h3>
+              <ul className="professional-services">
+                {professional.services.map((service) => <li key={service}>{service}</li>)}
+              </ul>
+            </>
+          ) : null}
         </article>
+
         <aside>
           <h2>Professional details</h2>
           <dl>
-            <div><dt>Location</dt><dd>{professional.location}</dd></div>
-            <div><dt>Experience</dt><dd>{professional.yearsExperience} years</dd></div>
-            {professional.email ? <div><dt>Email</dt><dd><a href={`mailto:${professional.email}`}>{professional.email}</a></dd></div> : null}
-            {professional.phone ? <div><dt>Phone</dt><dd><a href={`tel:${professional.phone}`}>{professional.phone}</a></dd></div> : null}
+            {location ? <div><dt>Location</dt><dd>{location}</dd></div> : null}
+            <div><dt>Experience</dt><dd>{professional.yearsExperience} {professional.yearsExperience === 1 ? "year" : "years"}</dd></div>
+            <div><dt>Category</dt><dd>{category.singular}</dd></div>
+            <div><dt>Status</dt><dd>Listed on Buildanta</dd></div>
           </dl>
-          <a className="button orange wide" href={externalPortfolio || "#selected-work"} target={externalPortfolio ? "_blank" : undefined} rel={externalPortfolio ? "noreferrer" : undefined}>View past work <span>{externalPortfolio ? "↗" : "↓"}</span></a>
-          {professional.website ? <a className="professional-website" href={professional.website} target="_blank" rel="noreferrer">Visit professional website ↗</a> : null}
+
+          {/* Contact details are not published. Enquiries route through
+              Buildanta so a professional's personal phone and email stay off
+              the open web. */}
+          <a className="button orange wide" href={`/bulk-quotes?professional=${encodeURIComponent(professional.name)}`}>
+            Enquire about this professional <span aria-hidden="true">→</span>
+          </a>
+          <p className="professional-contact-note">
+            Share your requirement and the Buildanta team will connect you with{" "}
+            {professional.name}.
+          </p>
+
+          {portfolioUrl ? (
+            <a className="professional-website" href={portfolioUrl} target="_blank" rel="noreferrer">
+              View portfolio <span aria-hidden="true">↗</span>
+            </a>
+          ) : null}
+          {professional.website ? (
+            <a className="professional-website" href={professional.website} target="_blank" rel="noreferrer">
+              Visit website <span aria-hidden="true">↗</span>
+            </a>
+          ) : null}
         </aside>
       </section>
-      {representativeWork.length ? (
-        <section className="professional-work" id="selected-work" aria-labelledby="selected-work-title">
-          <p className="profile-kicker">SELECTED EXPERIENCE</p>
-          <div className="professional-work-heading">
-            <h2 id="selected-work-title">Representative project capabilities</h2>
-            <p>A snapshot of the services {professional.name} regularly delivers. Ask directly for full project photos and references.</p>
-          </div>
-          <div className="professional-work-grid">
-            {representativeWork.map((service, index) => <article key={service}><span>0{index + 1}</span><h3>{service}</h3><p>Planning, material coordination and delivery support tailored to the project brief.</p></article>)}
-          </div>
-        </section>
-      ) : null}
     </main>
   );
 }

@@ -12,6 +12,9 @@ export const professionalCategories = [
 
 export type ProfessionalType = (typeof professionalCategories)[number]["type"];
 
+// Email and phone are deliberately absent: the public API no longer returns
+// them, so a professional's personal contact details never reach the browser.
+// Enquiries go through Buildanta instead.
 export type PublicProfessional = {
   id: string;
   name: string;
@@ -22,13 +25,39 @@ export type PublicProfessional = {
   photoUrl: string | null;
   location: string;
   yearsExperience: number;
-  email: string | null;
-  phone: string | null;
   website: string | null;
   portfolioUrl: string | null;
   services: string[];
   featured: boolean;
 };
+
+export type ProfessionalCategory = (typeof professionalCategories)[number];
+
+/**
+ * Splits the category list by whether anyone is actually published in it.
+ *
+ * The directory used to render five identical cards, most reading
+ * "0 professionals" — which made an empty network look like a broken one.
+ * Categories with people come first and lead somewhere; the rest are listed
+ * compactly as coming soon.
+ */
+export function splitCategoriesByAvailability(professionals: PublicProfessional[]) {
+  const counts = new Map<ProfessionalType, number>();
+  for (const professional of professionals) {
+    counts.set(professional.type, (counts.get(professional.type) ?? 0) + 1);
+  }
+
+  const available: Array<{ category: ProfessionalCategory; count: number }> = [];
+  const comingSoon: ProfessionalCategory[] = [];
+
+  for (const category of professionalCategories) {
+    const count = counts.get(category.type) ?? 0;
+    if (count > 0) available.push({ category, count });
+    else comingSoon.push(category);
+  }
+
+  return { available, comingSoon };
+}
 
 function apiUrl(path: string) {
   return `${(process.env.INVENTORY_API_URL || DEFAULT_API_URL).replace(/\/$/, "")}/${path}`;

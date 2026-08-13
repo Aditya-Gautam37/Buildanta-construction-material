@@ -37,7 +37,12 @@ export default async function ProfessionalsPage() {
       summary: item.summary,
       ratePerSqFt: item.ratePerSqFt.toString(),
       rateBasis: item.rateBasis,
-      inclusions: item.inclusionItems.map((inclusion) => inclusion.label),
+      inclusions: item.inclusionItems.map((inclusion) => ({
+        category: inclusion.category,
+        label: inclusion.label,
+        allowanceAmount: inclusion.allowanceAmount ? inclusion.allowanceAmount.toString() : null,
+        allowanceUnit: inclusion.allowanceUnit,
+      })),
       bestFor: item.bestFor,
       exclusions: item.exclusions,
       terms: item.terms,

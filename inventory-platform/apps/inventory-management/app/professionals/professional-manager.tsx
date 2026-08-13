@@ -185,6 +185,7 @@ export default function ProfessionalManager({ initialProfessionals, initialPacka
           professionalId={professional.id}
           professionalName={professional.name}
           packages={initialPackages.filter((item) => item.professionalId === professional.id)}
+          canHavePackages={professional.type === "CONTRACTOR"}
         />
       ))}
 

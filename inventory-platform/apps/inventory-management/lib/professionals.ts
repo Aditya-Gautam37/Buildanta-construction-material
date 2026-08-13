@@ -41,6 +41,29 @@ export type ContractorPackageMaterialDraft = {
   substitutionNote: string | null
 }
 
+// The fixed vocabulary that lets two packages be compared row by row. Free
+// text here would make the comparison table impossible to align.
+export const inclusionCategories = [
+  "STRUCTURE", "PLASTER", "ELECTRICAL", "PLUMBING", "FLOORING", "WINDOWS",
+  "DOORS", "KITCHEN", "BATHROOM", "PAINT", "CEILING", "ELEVATION",
+  "WATER_TANK", "RAILING", "OTHER",
+] as const
+
+export type InclusionCategory = (typeof inclusionCategories)[number]
+
+export function inclusionCategoryLabel(category: InclusionCategory) {
+  return category.charAt(0) + category.slice(1).toLowerCase().replace(/_/g, " ")
+}
+
+export type ContractorPackageInclusionDraft = {
+  category: InclusionCategory
+  label: string
+  // Contractors advertise allowances customers compare directly, e.g.
+  // "floor tiles up to Rs 40 per sq ft".
+  allowanceAmount: string | null
+  allowanceUnit: string | null
+}
+
 export type ContractorPackageRecord = {
   id: string
   professionalId: string
@@ -49,7 +72,7 @@ export type ContractorPackageRecord = {
   // Kept as a string end to end: Prisma Decimal does not survive a float
   // round trip intact, and a rate is money.
   ratePerSqFt: string
-  inclusions: string[]
+  inclusions: ContractorPackageInclusionDraft[]
   exclusions: string[]
   slug: string
   summary: string | null
@@ -75,7 +98,7 @@ export function packagePublishIssues(draft: ContractorPackageDraft, now = new Da
   if (!draft.name.trim()) issues.push("a package name")
   const rate = Number(draft.ratePerSqFt)
   if (!Number.isFinite(rate) || rate <= 0) issues.push("a rate above zero")
-  if (!draft.inclusions.filter((item) => item.trim()).length) issues.push("at least one included work")
+  if (!draft.inclusions.filter((item) => item.label.trim()).length) issues.push("at least one included work")
 
   const from = draft.validFrom ? new Date(draft.validFrom) : null
   const until = draft.validUntil ? new Date(draft.validUntil) : null

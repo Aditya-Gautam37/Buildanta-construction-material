@@ -181,7 +181,20 @@ export async function saveContractorPackageAction(input: ContractorPackageDraft)
       .filter((material) => material.category && material.specification)
 
     const inclusions = input.inclusions
-      .map((label, index) => ({ label: label.trim(), sortOrder: index }))
+      .map((item, index) => {
+        const allowance = item.allowanceAmount?.trim()
+        const parsed = allowance ? Number(allowance) : null
+        if (parsed !== null && (!Number.isFinite(parsed) || parsed < 0)) {
+          throw new Error("Allowance amounts must be zero or more.")
+        }
+        return {
+          category: item.category,
+          label: item.label.trim(),
+          allowanceAmount: parsed === null ? null : parsed.toFixed(2),
+          allowanceUnit: optional(item.allowanceUnit),
+          sortOrder: index,
+        }
+      })
       .filter((item) => item.label)
 
     const saved = await prisma.$transaction(async (tx) => {
@@ -228,5 +241,129 @@ export async function deleteContractorPackageAction(id: string) {
     return { ok: true as const }
   } catch (error) {
     return { ok: false as const, error: error instanceof Error ? error.message : "Unable to delete package." }
+  }
+}
+
+/**
+ * Duplicates a package. Economy -> Standard is mostly a copy with a different
+ * rate, so this saves staff retyping a dozen inclusions. The copy always lands
+ * as a DRAFT: publishing is a deliberate act, never a side effect.
+ */
+export async function duplicateContractorPackageAction(id: string) {
+  try {
+    await requireStaff()
+    const source = await prisma.contractorPackage.findUnique({
+      where: { id },
+      include: { inclusionItems: true, materials: true },
+    })
+    if (!source) throw new Error("That package no longer exists.")
+
+    const siblings = await prisma.contractorPackage.count({ where: { professionalId: source.professionalId } })
+
+    // Find a free name and slug rather than failing on the unique constraint.
+    let suffix = 2
+    let name = `${source.name} copy`
+    let slug = `${source.slug}-copy`
+    while (await prisma.contractorPackage.findFirst({
+      where: { professionalId: source.professionalId, OR: [{ name }, { slug }] },
+      select: { id: true },
+    })) {
+      name = `${source.name} copy ${suffix}`
+      slug = `${source.slug}-copy-${suffix}`
+      suffix += 1
+    }
+
+    const created = await prisma.$transaction(async (tx) => {
+      const record = await tx.contractorPackage.create({
+        data: {
+          professionalId: source.professionalId,
+          name,
+          slug,
+          tagline: source.tagline,
+          summary: source.summary,
+          ratePerSqFt: source.ratePerSqFt,
+          rateBasis: source.rateBasis,
+          bestFor: source.bestFor,
+          exclusions: source.exclusions,
+          terms: source.terms,
+          validFrom: source.validFrom,
+          validUntil: source.validUntil,
+          sortOrder: siblings,
+          status: "DRAFT",
+        },
+      })
+      if (source.inclusionItems.length) {
+        await tx.contractorPackageInclusion.createMany({
+          data: source.inclusionItems.map((item) => ({
+            packageId: record.id,
+            category: item.category,
+            label: item.label,
+            description: item.description,
+            allowanceAmount: item.allowanceAmount,
+            allowanceUnit: item.allowanceUnit,
+            sortOrder: item.sortOrder,
+          })),
+        })
+      }
+      if (source.materials.length) {
+        await tx.contractorPackageMaterial.createMany({
+          data: source.materials.map((material) => ({
+            packageId: record.id,
+            category: material.category,
+            specification: material.specification,
+            preferredBrands: material.preferredBrands,
+            substitutionNote: material.substitutionNote,
+            sortOrder: material.sortOrder,
+          })),
+        })
+      }
+      return record
+    })
+
+    revalidatePath("/professionals")
+    return { ok: true as const, packageId: created.id }
+  } catch (error) {
+    return { ok: false as const, error: error instanceof Error ? error.message : "Unable to duplicate package." }
+  }
+}
+
+/** Moves a package one place up or down in the order customers see. */
+export async function reorderContractorPackageAction(id: string, direction: "up" | "down") {
+  try {
+    await requireStaff()
+    const target = await prisma.contractorPackage.findUnique({
+      where: { id },
+      select: { id: true, professionalId: true, sortOrder: true },
+    })
+    if (!target) throw new Error("That package no longer exists.")
+
+    const siblings = await prisma.contractorPackage.findMany({
+      where: { professionalId: target.professionalId },
+      orderBy: { sortOrder: "asc" },
+      select: { id: true },
+    })
+    const index = siblings.findIndex((item) => item.id === id)
+    const swapWith = direction === "up" ? index - 1 : index + 1
+    if (index === -1 || swapWith < 0 || swapWith >= siblings.length) {
+      return { ok: true as const }
+    }
+
+    // Rewrite every sortOrder from the reordered list, so the sequence stays
+    // dense even if it had gaps or duplicates before.
+    const reordered = [...siblings]
+    const moved = reordered[index]!
+    reordered[index] = reordered[swapWith]!
+    reordered[swapWith] = moved
+
+    await prisma.$transaction(
+      reordered.map((item, position) =>
+        prisma.contractorPackage.update({ where: { id: item.id }, data: { sortOrder: position } }),
+      ),
+    )
+
+    revalidatePath("/professionals")
+    return { ok: true as const }
+  } catch (error) {
+    return { ok: false as const, error: error instanceof Error ? error.message : "Unable to reorder packages." }
   }
 }

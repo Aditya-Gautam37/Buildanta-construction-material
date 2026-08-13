@@ -55,3 +55,7 @@
   .range strong{font-size:24px}
   .packages{grid-template-columns:1fr}
 }
+
+.exclusionBlock li:before{content:"×";color:#b4521c}
+.exclusionBlock h5{color:#a3410f}
+.terms{margin:0;color:#46566a;font-size:12px;line-height:1.6}

@@ -112,3 +112,49 @@ describe("ProfessionalCard", () => {
     expect(container.textContent).not.toMatch(/@|\+91|mailto:|tel:/);
   });
 });
+
+describe("ProfessionalCard — package hint", () => {
+  const somePackage = (rate: string) => ({
+    id: `p-${rate}`, name: "Economy", slug: "economy", tagline: null, summary: null,
+    ratePerSqFt: rate, rateBasis: "PLOT_AREA" as const, bestFor: [], exclusions: [],
+    terms: null, validUntil: null, inclusionItems: [], materials: [],
+  });
+
+  it("shows no starting rate when the professional has no packages", () => {
+    const { container } = render(<ProfessionalCard professional={professional()} />);
+    expect(container.textContent).not.toMatch(/Packages from/i);
+  });
+
+  it("advertises the lowest published rate, not an average or the first listed", () => {
+    render(<ProfessionalCard professional={professional({
+      packages: [somePackage("1600"), somePackage("1250"), somePackage("1450")],
+    })} />);
+    expect(screen.getByText("Packages from ₹1,250/sq ft*")).toBeInTheDocument();
+  });
+
+  it("links to the packages section and counts them", () => {
+    render(<ProfessionalCard professional={professional({
+      packages: [somePackage("1250"), somePackage("1450")],
+    })} />);
+    const link = screen.getByRole("link", { name: /View 2 packages/i });
+    expect(link).toHaveAttribute("href", "/professionals/contractors/aditya-gautam#packages");
+  });
+
+  it("uses the singular for one package", () => {
+    render(<ProfessionalCard professional={professional({ packages: [somePackage("1250")] })} />);
+    expect(screen.getByRole("link", { name: /View 1 package$/i })).toBeInTheDocument();
+  });
+
+  // A zero or unparseable rate must not become "Packages from ₹0/sq ft".
+  it("ignores packages whose rate is unusable", () => {
+    const { container } = render(<ProfessionalCard professional={professional({
+      packages: [somePackage("0"), somePackage("not-a-number")],
+    })} />);
+    expect(container.textContent).not.toMatch(/Packages from/i);
+  });
+
+  it("marks the figure as indicative rather than a fixed price", () => {
+    render(<ProfessionalCard professional={professional({ packages: [somePackage("1250")] })} />);
+    expect(screen.getByText(/Packages from ₹1,250\/sq ft\*/)).toBeInTheDocument();
+  });
+});

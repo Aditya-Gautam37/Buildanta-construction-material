@@ -15,10 +15,10 @@ import styles from "./package-calculator.module.css";
 const QUICK_AREAS = [500, 900, 1200, 1800];
 const DEFAULT_AREA = "900";
 
-function InclusionList({ title, items }: { title: string; items: string[] }) {
+function InclusionList({ title, items, tone }: { title: string; items: string[]; tone?: "exclusion" }) {
   if (!items.length) return null;
   return (
-    <div className={styles.block}>
+    <div className={tone === "exclusion" ? `${styles.block} ${styles.exclusionBlock}` : styles.block}>
       <h5>{title}</h5>
       <ul>{items.map((item) => <li key={item}>{item}</li>)}</ul>
     </div>
@@ -128,6 +128,15 @@ export function PackageCalculator({ packages, professionalName, categorySlug, sl
                   <InclusionList title="Included works" items={source.inclusionItems.map((item) => item.label)} />
                   <MaterialList materials={source.materials} />
                   <InclusionList title="Best for" items={source.bestFor} />
+                  {/* Never hidden behind a toggle: what a rate excludes is the
+                      part a customer is most likely to be surprised by. */}
+                  <InclusionList title="Not included" items={source.exclusions} tone="exclusion" />
+                  {source.terms ? (
+                    <div className={styles.block}>
+                      <h5>Terms</h5>
+                      <p className={styles.terms}>{source.terms}</p>
+                    </div>
+                  ) : null}
 
                   <a
                     className={styles.enquire}

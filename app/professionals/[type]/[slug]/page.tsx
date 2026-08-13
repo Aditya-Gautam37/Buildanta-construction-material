@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { categoryBySlug, getProfessional } from "../../../professional-directory";
 import { formatLocation, SERVICE_CITY } from "../../location";
 import { PackageCalculator } from "../../package-calculator";
+import { PackageComparison } from "../../package-comparison-table";
 
 type ProfilePageProps = { params: Promise<{ type: string; slug: string }> };
 
@@ -124,12 +125,15 @@ export default async function ProfessionalProfilePage({ params }: ProfilePagePro
         </aside>
       </section>
 
-      <PackageCalculator
-        packages={professional.packages ?? []}
-        professionalName={professional.name}
-        categorySlug={category.slug}
-        slug={professional.slug}
-      />
+      <div id="packages">
+        <PackageCalculator
+          packages={professional.packages ?? []}
+          professionalName={professional.name}
+          categorySlug={category.slug}
+          slug={professional.slug}
+        />
+        <PackageComparison packages={professional.packages ?? []} />
+      </div>
     </main>
   );
 }

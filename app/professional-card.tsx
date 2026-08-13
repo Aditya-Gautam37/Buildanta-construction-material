@@ -1,5 +1,6 @@
 import { categoryByType, type PublicProfessional } from "./professional-directory";
 import { formatLocation } from "./professionals/location";
+import { formatRupees } from "./professionals/package-estimate";
 
 function initialsOf(name: string) {
   return name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
@@ -12,6 +13,30 @@ function initialsOf(name: string) {
  */
 function FeaturedBadge() {
   return <b className="professional-card-featured">Featured listing</b>;
+}
+
+/**
+ * A "packages from ₹X" line, shown only when the professional actually has
+ * published packages with usable rates. It is the lowest advertised rate, not
+ * an average or a guess, and it is marked as indicative — the card is not the
+ * place to imply a price commitment.
+ */
+function PackageHint({ professional, profileUrl }: { professional: PublicProfessional; profileUrl: string }) {
+  const rates = (professional.packages ?? [])
+    .map((item) => Number(item.ratePerSqFt))
+    .filter((rate) => Number.isFinite(rate) && rate > 0);
+
+  if (!rates.length) return null;
+  const count = rates.length;
+
+  return (
+    <p className="professional-card-packages">
+      <strong>Packages from {formatRupees(Math.min(...rates))}/sq ft*</strong>
+      <a href={`${profileUrl}#packages`}>
+        View {count} {count === 1 ? "package" : "packages"}
+      </a>
+    </p>
+  );
 }
 
 export function ProfessionalCard({ professional, layout = "grid" }: {
@@ -67,6 +92,8 @@ export function ProfessionalCard({ professional, layout = "grid" }: {
             {services.map((service) => <li key={service}>{service}</li>)}
           </ul>
         ) : null}
+
+        <PackageHint professional={professional} profileUrl={profileUrl} />
 
         <a className="professional-profile-link" href={profileUrl}>
           View {professional.name}&rsquo;s profile <span aria-hidden="true">→</span>

@@ -1,0 +1,34 @@
+.comparison{margin-top:26px;padding:26px 28px;border:1px solid var(--border);border-radius:18px;background:#fff;box-shadow:0 12px 32px rgba(31,58,95,.07)}
+.comparison h3{margin:0;color:var(--navy);font-size:20px;letter-spacing:-.03em}
+.intro{max-width:620px;margin:8px 0 18px;color:var(--muted);font-size:13px;line-height:1.6}
+
+.scroller{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+.scroller:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+
+.table{width:100%;min-width:560px;border-collapse:collapse;font-size:13px}
+.table caption{text-align:left}
+
+.table thead th{position:sticky;top:0;padding:14px 16px;border-bottom:1px solid var(--line);background:#f8fafb;color:var(--navy);font-size:14px;font-weight:800;text-align:left;vertical-align:top}
+.table thead th:first-child{width:150px;color:var(--muted);font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.07em}
+.headRate{display:block;margin-top:4px;color:var(--orange);font-size:12px;font-weight:750}
+
+.table tbody th{padding:13px 16px;border-bottom:1px solid var(--line);color:var(--navy);font-size:12px;font-weight:750;text-align:left;vertical-align:top;background:#fcfdfd}
+.table tbody td{padding:13px 16px;border-bottom:1px solid var(--line);color:#46566a;vertical-align:top;line-height:1.55}
+.table tbody tr:last-child th,.table tbody tr:last-child td{border-bottom:0}
+
+.table td ul{list-style:none;display:flex;flex-direction:column;gap:5px;margin:0;padding:0}
+.table td li{position:relative;padding-left:15px}
+.table td li:before{position:absolute;left:0;content:"✓";color:#16805f;font-size:11px;font-weight:800}
+
+.emptyCell{color:#aab4c0;text-align:center}
+
+/* Exclusions are never collapsed away: what a rate does not cover is what a
+   customer is most likely to be surprised by. */
+.exclusionRow th,.exclusionRow td{background:#fff8f4}
+.exclusionRow td li:before{content:"×";color:#b4521c}
+
+@media (max-width:760px){
+  .comparison{padding:20px 16px}
+  .table thead th:first-child{width:110px}
+  .table thead th,.table tbody th,.table tbody td{padding:11px 12px}
+}

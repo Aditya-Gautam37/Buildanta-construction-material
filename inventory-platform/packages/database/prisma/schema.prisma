@@ -415,6 +415,7 @@ model User {
   planningCoefficientsApproved PlanningCoefficient[]    @relation("PlanningCoefficientApprovedBy")
   planningCoefficientsPublished PlanningCoefficient[]   @relation("PlanningCoefficientPublishedBy")
   carts                       Cart[]
+  materialKnowledgeVerified   MaterialKnowledge[] @relation("MaterialKnowledgeVerifiedBy")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -578,12 +579,108 @@ model Product {
   quotationItems    QuotationItem[]
   calculatorMappings CalculatorProductMapping[]
   estimateItems      MaterialEstimateItem[]
+  materialKnowledge  MaterialKnowledge?
+  relatedAsSupportingMaterial MaterialRelatedProduct[] @relation("RelatedProductLink")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([brandId])
   @@index([status, updatedAt])
+}
+
+// ==========================================
+// Know Your Material — verified product knowledge
+// ==========================================
+// One record per Product, not per ProductVariant: the facts that matter here
+// (coverage rate, mixing ratio, curing time, surface compatibility, safety)
+// are chemistry/formulation properties that don't change between pack sizes
+// of the same product. Manufacturer and category are deliberately not
+// duplicated here — they're read from Product.brand / Product.categories at
+// query time, so this table can't drift out of sync with the catalogue.
+enum KnowledgeStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model MaterialKnowledge {
+  id        String  @id @default(cuid())
+  productId String  @unique
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  status KnowledgeStatus @default(DRAFT)
+
+  summary             String?  @db.Text
+  useCases             String[]
+  suitableSurfaces     String[]
+  unsuitableSurfaces   String[]
+  preparationSteps     String[]
+  applicationSteps     String[]
+  sequenceNote         String?  @db.Text // e.g. "Apply after primer, before topcoat" — position in a typical job, not the steps to use this product itself
+  mixingInstructions   String?  @db.Text
+  requiredTools        String[]
+
+  coverageValue      Decimal? @db.Decimal(12, 4)
+  coverageUnit       String? // e.g. "sqft/L", "sqft/kg" — paired with coverageValue, never assumed
+  coverageConditions String?  @db.Text // e.g. "on a smooth, primed surface, single coat"
+  numberOfCoats      Int?
+  dryingCuringInfo   String?  @db.Text // kept as verified free text rather than split fields: manufacturers phrase this too inconsistently (touch-dry/recoat/full-cure, temperature-dependent) to force into rigid columns without losing meaning
+
+  safetyPrecautions String[]
+  commonMistakes    String[]
+  professionalTips  String[]
+
+  technicalDataSheetUrl String?
+  sourceUrl             String?
+  sourceTitle           String?
+  sourceRevision        String? // manufacturer doc version/date, e.g. "Rev 3, Jan 2025" — free text since manufacturers don't use one consistent format
+
+  verifiedById String?
+  verifiedBy   User?     @relation("MaterialKnowledgeVerifiedBy", fields: [verifiedById], references: [id], onDelete: SetNull)
+  verifiedAt   DateTime?
+  reviewNotes  String?   @db.Text // internal only — never returned to a customer-facing request
+
+  relatedMaterials MaterialRelatedProduct[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, updatedAt])
+}
+
+enum RelatedMaterialRole {
+  PRIMER
+  SEALANT
+  ADHESIVE
+  GROUT
+  CLEANER
+  MESH
+  PUTTY
+  WATERPROOFING_LAYER
+  APPLICATION_TOOL
+  PROTECTIVE_EQUIPMENT
+  SUPPORTING_MATERIAL
+  OTHER
+}
+
+// Explicit, admin-curated links only — never inferred from name/category
+// similarity. "reason" is required so every recommendation on the storefront
+// can say *why* it's relevant, not just that it is.
+model MaterialRelatedProduct {
+  id                  String            @id @default(cuid())
+  materialKnowledgeId String
+  materialKnowledge   MaterialKnowledge @relation(fields: [materialKnowledgeId], references: [id], onDelete: Cascade)
+  relatedProductId    String
+  relatedProduct      Product           @relation("RelatedProductLink", fields: [relatedProductId], references: [id], onDelete: Cascade)
+  role                RelatedMaterialRole
+  reason              String            @db.Text
+  sequenceNote        String?           @db.Text // e.g. "Apply before this product", "Only if surface was previously painted"
+  sortOrder           Int               @default(0)
+  createdAt           DateTime          @default(now())
+
+  @@unique([materialKnowledgeId, relatedProductId])
+  @@index([relatedProductId])
 }
 
 model ProductImage {

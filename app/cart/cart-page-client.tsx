@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CartProvider, useCart, useOptionalCart, type CartLine } from "../cart-context";
 import { availabilityStatusLabel } from "../live-catalog";
 import { ConvertToQuoteForm } from "./convert-to-quote-form";
+import { KnowYourMaterialTrigger } from "../material-knowledge/know-your-material";
 import styles from "./cart.module.css";
 
 function LineRow({ line, busy, onUpdate, onRemove }: { line: CartLine; busy: boolean; onUpdate: (quantity: number) => void; onRemove: () => void }) {
@@ -13,6 +14,7 @@ function LineRow({ line, busy, onUpdate, onRemove }: { line: CartLine; busy: boo
       <span>{line.sku} / {line.unit} · {availabilityStatusLabel(line.availability)}</span>
       {line.requiresQuote && <span className={styles.lineTag}>Requires a bulk quote</span>}
       {line.issues.length > 0 && <ul className={styles.lineIssues}>{line.issues.map((issue) => <li key={issue}>{issue}</li>)}</ul>}
+      <KnowYourMaterialTrigger productId={line.productId} productName={line.productName} compact />
     </div>
     <div className={styles.lineActions}>
       <div className={styles.price}>{line.livePrice != null ? `₹${(line.livePrice * line.quantity).toLocaleString("en-IN")}` : "Price on request"}</div>

@@ -6,6 +6,7 @@ import {
   PurchaseMode,
   QuotationApprovalStatus,
   QuotationStatus,
+  RelatedMaterialRole,
   StockCountStatus,
   StockTransactionType,
   StockTransferStatus,
@@ -450,6 +451,56 @@ export const cartConvertToQuoteSchema = z.object({
 // SupplierSubmissionsService) — the format itself isn't secret, this just
 // rejects garbage before it reaches a database write.
 const listingReference = z.string().trim().regex(/^LP-\d{6}-[A-Z0-9]{6}$/, 'Invalid listing reference.');
+
+// "Know Your Material": verified, admin-published product knowledge used to
+// ground the AI assistant. Every list field caps item count and length so a
+// draft can't grow into something unusable in the editor or unsafe to prompt
+// an LLM with.
+const knowledgeText = (max: number) => z.string().trim().max(max);
+const knowledgeList = (maxItems: number, maxLen: number) =>
+  z.array(z.string().trim().min(1).max(maxLen)).max(maxItems);
+
+export const materialKnowledgeUpsertSchema = z.object({
+  summary: knowledgeText(2_000).optional(),
+  useCases: knowledgeList(30, 300).optional(),
+  suitableSurfaces: knowledgeList(30, 200).optional(),
+  unsuitableSurfaces: knowledgeList(30, 200).optional(),
+  preparationSteps: knowledgeList(30, 400).optional(),
+  applicationSteps: knowledgeList(30, 400).optional(),
+  sequenceNote: knowledgeText(500).optional(),
+  mixingInstructions: knowledgeText(2_000).optional(),
+  requiredTools: knowledgeList(30, 200).optional(),
+  coverageValue: z.coerce.number().finite().positive().max(1_000_000).nullable().optional(),
+  coverageUnit: knowledgeText(60).optional(),
+  coverageConditions: knowledgeText(500).optional(),
+  numberOfCoats: z.coerce.number().int().positive().max(20).nullable().optional(),
+  dryingCuringInfo: knowledgeText(1_000).optional(),
+  safetyPrecautions: knowledgeList(30, 300).optional(),
+  commonMistakes: knowledgeList(30, 300).optional(),
+  professionalTips: knowledgeList(30, 300).optional(),
+  technicalDataSheetUrl: z.string().trim().url().max(2_000).optional(),
+  sourceUrl: z.string().trim().url().max(2_000).optional(),
+  sourceTitle: knowledgeText(300).optional(),
+  sourceRevision: knowledgeText(200).optional(),
+  reviewNotes: knowledgeText(2_000).optional(),
+}).strict();
+
+// The question is untrusted visitor input headed for an LLM prompt. Length is
+// capped here as the first of two defences; the prompt builder sanitises and
+// re-caps it independently.
+export const materialKnowledgeAskSchema = z.object({
+  question: z.string().trim().min(1).max(500),
+}).strict();
+
+export const materialRelatedProductsReplaceSchema = z.object({
+  items: z.array(z.object({
+    relatedProductId: id,
+    role: z.nativeEnum(RelatedMaterialRole),
+    reason: z.string().trim().min(1).max(500),
+    sequenceNote: z.string().trim().max(500).optional(),
+    sortOrder: z.number().int().min(0).max(1_000).optional(),
+  }).strict()).max(20),
+}).strict();
 
 export const supplierSubmissionSchema = z.object({
   reference: listingReference,

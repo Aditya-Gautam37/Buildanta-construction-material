@@ -22,9 +22,10 @@ import { FulfilmentOperationsModule } from './fulfilment-operations/fulfilment-o
 import { CustomerPortalModule } from './customer-portal/customer-portal.module';
 import { CalculatorsModule } from './calculators/calculators.module';
 import { CartModule } from './cart/cart.module';
+import { MaterialKnowledgeModule } from './material-knowledge/material-knowledge.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule, AuthModule, ProductsModule, CategoriesModule, StagesModule, RoomsModule, SuppliersModule, BrandsModule, ProductVariantsModule, ProfessionalsModule, HomepageContentModule, QuoteRequestsModule, SupplierSubmissionsModule, StockModule, InventoryLocationsModule, QuotationsModule, FulfilmentOperationsModule, CustomerPortalModule, CalculatorsModule, CartModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule, AuthModule, ProductsModule, CategoriesModule, StagesModule, RoomsModule, SuppliersModule, BrandsModule, ProductVariantsModule, ProfessionalsModule, HomepageContentModule, QuoteRequestsModule, SupplierSubmissionsModule, StockModule, InventoryLocationsModule, QuotationsModule, FulfilmentOperationsModule, CustomerPortalModule, CalculatorsModule, CartModule, MaterialKnowledgeModule],
   controllers: [AppController],
   providers: [AppService],
 })

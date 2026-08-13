@@ -27,3 +27,9 @@ export function requireFinancialAccess(role: UserRole, fields: unknown[], action
     throw new ForbiddenException(`${action} permission is required to set price or stock fields.`);
   }
 }
+
+// Material knowledge (Know Your Material): drafting reuses catalogue-write
+// access, but publishing — the action that makes AI-grounding content
+// customer-visible — is held to the same narrower bar as other
+// customer-facing publication actions.
+export const MATERIAL_KNOWLEDGE_PUBLISH_ROLES: UserRole[] = [UserRole.ADMIN, UserRole.CATALOG_MANAGER];

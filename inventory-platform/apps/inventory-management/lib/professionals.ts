@@ -36,7 +36,9 @@ export type ProfessionalDraft = Omit<ProfessionalRecord, "id" | "updatedAt"> & {
 // set. Rates move with the market, so these are edited routinely.
 export type ContractorPackageMaterialDraft = {
   category: string
-  detail: string
+  specification: string
+  preferredBrands: string | null
+  substitutionNote: string | null
 }
 
 export type ContractorPackageRecord = {
@@ -48,22 +50,48 @@ export type ContractorPackageRecord = {
   // round trip intact, and a rate is money.
   ratePerSqFt: string
   inclusions: string[]
+  exclusions: string[]
+  slug: string
+  summary: string | null
+  terms: string | null
+  rateBasis: "PLOT_AREA" | "BUILT_UP_AREA"
+  validFrom: string | null
+  validUntil: string | null
+  status: "DRAFT" | "UNDER_REVIEW" | "PUBLISHED" | "ARCHIVED"
   bestFor: string[]
   materials: ContractorPackageMaterialDraft[]
   sortOrder: number
-  published: boolean
 }
 
 export type ContractorPackageDraft = Omit<ContractorPackageRecord, "id"> & { id?: string }
 
-/** A package may only be published once it can actually price a job. */
-export function packagePublishIssues(draft: ContractorPackageDraft): string[] {
+/**
+ * A package may only be published once it can actually price a job, and only
+ * while it is still valid. An expired rate card is worse than no rate card:
+ * it advertises a price the contractor has stopped honouring.
+ */
+export function packagePublishIssues(draft: ContractorPackageDraft, now = new Date()): string[] {
   const issues: string[] = []
   if (!draft.name.trim()) issues.push("a package name")
   const rate = Number(draft.ratePerSqFt)
   if (!Number.isFinite(rate) || rate <= 0) issues.push("a rate above zero")
   if (!draft.inclusions.filter((item) => item.trim()).length) issues.push("at least one included work")
+
+  const from = draft.validFrom ? new Date(draft.validFrom) : null
+  const until = draft.validUntil ? new Date(draft.validUntil) : null
+  if (from && Number.isNaN(from.getTime())) issues.push("a valid start date")
+  if (until && Number.isNaN(until.getTime())) issues.push("a valid end date")
+  if (from && until && !Number.isNaN(from.getTime()) && !Number.isNaN(until.getTime()) && until < from) {
+    issues.push("an end date after the start date")
+  }
+  if (until && !Number.isNaN(until.getTime()) && until < now) issues.push("an end date in the future")
+
   return issues
+}
+
+/** Only contractors advertise construction packages in this release. */
+export function canPublishPackages(type: ProfessionalTypeValue): boolean {
+  return type === "CONTRACTOR"
 }
 
 export function professionalTypeLabel(type: ProfessionalTypeValue, singular = false) {

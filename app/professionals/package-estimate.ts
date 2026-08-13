@@ -8,15 +8,44 @@
 // Nothing here is a quote. The output is an estimate built from rates the
 // contractor published, and the UI is required to say so.
 
+export type PackageInclusion = {
+  id: string;
+  category: string;
+  label: string;
+  description: string | null;
+  allowanceAmount: string | number | null;
+  allowanceUnit: string | null;
+};
+
+export type PackageMaterial = {
+  category: string;
+  specification: string;
+  preferredBrands: string | null;
+  substitutionNote: string | null;
+};
+
 export type ContractorPackage = {
   id: string;
   name: string;
+  slug: string;
   tagline: string | null;
+  summary: string | null;
   ratePerSqFt: string | number;
-  inclusions: string[];
+  // Whether the rate is quoted per sq ft of plot or of built-up area. Drives
+  // the calculator's input label so the customer knows which number to enter.
+  rateBasis: "PLOT_AREA" | "BUILT_UP_AREA";
   bestFor: string[];
-  materials: Array<{ category: string; detail: string }>;
+  exclusions: string[];
+  terms: string | null;
+  validUntil: string | null;
+  inclusionItems: PackageInclusion[];
+  materials: PackageMaterial[];
 };
+
+/** The label for the area input, from the package's own rate basis. */
+export function areaLabel(basis: ContractorPackage["rateBasis"]): string {
+  return basis === "BUILT_UP_AREA" ? "Built-up area (sq ft)" : "Plot area (sq ft)";
+}
 
 export type PackageEstimate = {
   packageId: string;

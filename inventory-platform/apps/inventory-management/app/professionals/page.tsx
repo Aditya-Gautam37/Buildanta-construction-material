@@ -11,7 +11,10 @@ export default async function ProfessionalsPage() {
     include: {
       packages: {
         orderBy: { sortOrder: "asc" },
-        include: { materials: { orderBy: { sortOrder: "asc" } } },
+        include: {
+          materials: { orderBy: { sortOrder: "asc" } },
+          inclusionItems: { orderBy: { sortOrder: "asc" } },
+        },
       },
     },
   })
@@ -29,13 +32,25 @@ export default async function ProfessionalsPage() {
       id: item.id,
       professionalId: item.professionalId,
       name: item.name,
+      slug: item.slug,
       tagline: item.tagline,
+      summary: item.summary,
       ratePerSqFt: item.ratePerSqFt.toString(),
-      inclusions: item.inclusions,
+      rateBasis: item.rateBasis,
+      inclusions: item.inclusionItems.map((inclusion) => inclusion.label),
       bestFor: item.bestFor,
-      materials: item.materials.map((material) => ({ category: material.category, detail: material.detail })),
+      exclusions: item.exclusions,
+      terms: item.terms,
+      validFrom: item.validFrom ? item.validFrom.toISOString().slice(0, 10) : null,
+      validUntil: item.validUntil ? item.validUntil.toISOString().slice(0, 10) : null,
+      materials: item.materials.map((material) => ({
+        category: material.category,
+        specification: material.specification,
+        preferredBrands: material.preferredBrands,
+        substitutionNote: material.substitutionNote,
+      })),
       sortOrder: item.sortOrder,
-      published: item.published,
+      status: item.status,
     })),
   )
 

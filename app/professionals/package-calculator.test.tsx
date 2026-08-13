@@ -7,11 +7,20 @@ function pkg(overrides: Partial<ContractorPackage> = {}): ContractorPackage {
   return {
     id: "pkg-economy",
     name: "Economy",
+    slug: "economy",
+    summary: null,
+    rateBasis: "PLOT_AREA" as const,
+    exclusions: [],
+    terms: null,
+    validUntil: null,
     tagline: "Budget friendly",
     ratePerSqFt: "1250",
-    inclusions: ["Structure + Plaster Both Sides", "Basic Electrical Wiring"],
+    inclusionItems: [
+      { id: "i1", category: "STRUCTURE", label: "Structure + Plaster Both Sides", description: null, allowanceAmount: null, allowanceUnit: null },
+      { id: "i2", category: "ELECTRICAL", label: "Basic Electrical Wiring", description: null, allowanceAmount: null, allowanceUnit: null },
+    ],
     bestFor: ["Budget friendly homes"],
-    materials: [{ category: "Cement", detail: "MP Birla / JK Lakshmi" }],
+    materials: [{ category: "Cement", specification: "MP Birla / JK Lakshmi", preferredBrands: null, substitutionNote: null }],
     ...overrides,
   };
 }

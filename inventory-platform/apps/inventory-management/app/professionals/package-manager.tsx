@@ -17,7 +17,14 @@ function emptyDraft(professionalId: string, sortOrder: number): ContractorPackag
     bestFor: [],
     materials: [],
     sortOrder,
-    published: false,
+    status: "DRAFT",
+    slug: "",
+    summary: null,
+    terms: null,
+    rateBasis: "PLOT_AREA",
+    exclusions: [],
+    validFrom: null,
+    validUntil: null,
   }
 }
 
@@ -123,10 +130,10 @@ function PackageForm({ draft, onChange, onSave, onCancel, saving }: {
               />
               <input
                 className={input}
-                value={material.detail}
+                value={material.specification}
                 onChange={(event) => {
                   const materials = [...draft.materials]
-                  materials[index] = { ...material, detail: event.target.value }
+                  materials[index] = { ...material, specification: event.target.value }
                   onChange({ ...draft, materials })
                 }}
                 placeholder="MP Birla / JK Lakshmi"
@@ -145,7 +152,7 @@ function PackageForm({ draft, onChange, onSave, onCancel, saving }: {
         <button
           type="button"
           className="mt-3 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs font-bold text-slate-600 hover:border-emerald-400"
-          onClick={() => onChange({ ...draft, materials: [...draft.materials, { category: "", detail: "" }] })}
+          onClick={() => onChange({ ...draft, materials: [...draft.materials, { category: "", specification: "", preferredBrands: null, substitutionNote: null }] })}
         >
           + Add material
         </button>
@@ -154,13 +161,13 @@ function PackageForm({ draft, onChange, onSave, onCancel, saving }: {
       <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
         <input
           type="checkbox"
-          checked={draft.published}
-          onChange={(event) => onChange({ ...draft, published: event.target.checked })}
+          checked={(draft.status === "PUBLISHED")}
+          onChange={(event) => onChange({ ...draft, status: event.target.checked ? "PUBLISHED" : "DRAFT" })}
         />
         Published — visible to customers
       </label>
 
-      {draft.published && issues.length > 0 ? (
+      {(draft.status === "PUBLISHED") && issues.length > 0 ? (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800" role="alert">
           Cannot publish yet: add {issues.join(", ")}.
         </p>
@@ -261,8 +268,8 @@ export default function PackageManager({ professionalId, professionalName, packa
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4" key={item.id}>
             <div className="min-w-0">
               <strong className="text-sm text-slate-950">{item.name}</strong>
-              <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold ${item.published ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
-                {item.published ? "Published" : "Draft"}
+              <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold ${item.status === "PUBLISHED" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                {item.status === "PUBLISHED" ? "Published" : "Draft"}
               </span>
               <p className="mt-1 text-xs text-slate-500">
                 ₹{item.ratePerSqFt} per sq ft · {item.inclusions.length} included works · {item.materials.length} materials

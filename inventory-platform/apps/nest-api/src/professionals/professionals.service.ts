@@ -1,6 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ProfessionalType } from '@workspace/db';
+import { PackageStatus, ProfessionalType } from '@workspace/db';
 import { PrismaService } from '../database/prisma.service';
+
+// The single definition of "a customer may see this package". Publication is
+// decided here, at the query, so a client can never widen it by asking for
+// more — and an expired rate card stops advertising itself without anyone
+// having to remember to unpublish it.
+export function publishedPackageWhere(now: Date = new Date()) {
+  return {
+    status: PackageStatus.PUBLISHED,
+    AND: [
+      { OR: [{ validFrom: null }, { validFrom: { lte: now } }] },
+      { OR: [{ validUntil: null }, { validUntil: { gte: now } }] },
+    ],
+  };
+}
 
 // This endpoint is unauthenticated: anything listed here is readable by anyone
 // who opens the URL. A professional's email and phone are personal contact
@@ -22,21 +36,41 @@ const publicProfessionalSelect = {
   portfolioUrl: true,
   services: true,
   featured: true,
-  // Published packages only. An unpublished rate card is staff working
-  // material, and must be indistinguishable from having none at all.
+  // Published packages only, and only ones still within their validity window.
+  // A draft, under-review or archived rate card is staff working material and
+  // must be indistinguishable from having none at all.
   packages: {
-    where: { published: true },
+    where: publishedPackageWhere(),
     orderBy: { sortOrder: 'asc' },
     select: {
       id: true,
       name: true,
+      slug: true,
       tagline: true,
+      summary: true,
       ratePerSqFt: true,
-      inclusions: true,
+      rateBasis: true,
+      exampleArea: true,
+      exampleCost: true,
       bestFor: true,
+      exclusions: true,
+      terms: true,
+      validFrom: true,
+      validUntil: true,
+      inclusionItems: {
+        orderBy: { sortOrder: 'asc' },
+        select: {
+          id: true,
+          category: true,
+          label: true,
+          description: true,
+          allowanceAmount: true,
+          allowanceUnit: true,
+        },
+      },
       materials: {
         orderBy: { sortOrder: 'asc' },
-        select: { category: true, detail: true },
+        select: { category: true, specification: true, preferredBrands: true, substitutionNote: true },
       },
     },
   },
@@ -62,12 +96,33 @@ export type PublicProfessional = {
 export type PublicContractorPackage = {
   id: string;
   name: string;
+  slug: string;
   tagline: string | null;
+  summary: string | null;
   // Prisma Decimal; serialises to a string over JSON.
   ratePerSqFt: unknown;
-  inclusions: string[];
+  rateBasis: string;
+  exampleArea: unknown;
+  exampleCost: unknown;
   bestFor: string[];
-  materials: Array<{ category: string; detail: string }>;
+  exclusions: string[];
+  terms: string | null;
+  validFrom: Date | null;
+  validUntil: Date | null;
+  inclusionItems: Array<{
+    id: string;
+    category: string;
+    label: string;
+    description: string | null;
+    allowanceAmount: unknown;
+    allowanceUnit: string | null;
+  }>;
+  materials: Array<{
+    category: string;
+    specification: string;
+    preferredBrands: string | null;
+    substitutionNote: string | null;
+  }>;
 };
 
 @Injectable()

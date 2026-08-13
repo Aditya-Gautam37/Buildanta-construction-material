@@ -1,7 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
-import { ProfessionalType } from '@workspace/db';
+import { PackageStatus, ProfessionalType } from '@workspace/db';
 import type { PrismaService } from '../database/prisma.service';
-import { ProfessionalsService } from './professionals.service';
+import { ProfessionalsService, publishedPackageWhere } from './professionals.service';
 
 function serviceWith(professional: Record<string, unknown>) {
   const findMany = jest.fn().mockResolvedValue([professional]);
@@ -55,11 +55,11 @@ describe('ProfessionalsService', () => {
   });
 
   describe('contractor packages', () => {
-    it('asks for published packages only, so a draft rate card stays internal', async () => {
+    it('asks for PUBLISHED packages only, so drafts and archived cards stay internal', async () => {
       const { service, findMany } = serviceWith(record);
       await service.findAll();
-      const select = (findMany.mock.calls[0] as [{ select: { packages: { where: unknown } } }])[0].select;
-      expect(select.packages.where).toEqual({ published: true });
+      const where = (findMany.mock.calls[0] as [{ select: { packages: { where: { status: string } } } }])[0].select.packages.where;
+      expect(where.status).toBe(PackageStatus.PUBLISHED);
     });
 
     it('returns packages and their materials in the order staff arranged them', async () => {
@@ -70,13 +70,38 @@ describe('ProfessionalsService', () => {
       expect((packages.select as { materials: { orderBy: unknown } }).materials.orderBy).toEqual({ sortOrder: 'asc' });
     });
 
-    it('serves the rate and inclusions the calculator needs', async () => {
+    it('serves everything the calculator and comparison need', async () => {
       const { service, findMany } = serviceWith(record);
       await service.findAll();
       const packageSelect = (findMany.mock.calls[0] as [{ select: { packages: { select: Record<string, unknown> } } }])[0].select.packages.select;
-      for (const field of ['id', 'name', 'tagline', 'ratePerSqFt', 'inclusions', 'bestFor']) {
+      for (const field of ['id', 'name', 'slug', 'ratePerSqFt', 'rateBasis', 'bestFor', 'exclusions', 'terms']) {
         expect(packageSelect).toHaveProperty(field, true);
       }
+      expect(packageSelect).toHaveProperty('inclusionItems');
+    });
+  });
+
+  // An advertised rate with an expiry has to stop advertising itself, without
+  // depending on someone remembering to unpublish it.
+  describe('publishedPackageWhere', () => {
+    const now = new Date('2026-06-15T00:00:00.000Z');
+
+    it('requires PUBLISHED status', () => {
+      expect(publishedPackageWhere(now).status).toBe(PackageStatus.PUBLISHED);
+    });
+
+    it('accepts a package with no validity window at all', () => {
+      const { AND: [from, until] } = publishedPackageWhere(now);
+      if (!from || !until) throw new Error('validity clauses missing');
+      expect(from.OR).toContainEqual({ validFrom: null });
+      expect(until.OR).toContainEqual({ validUntil: null });
+    });
+
+    it('excludes packages that have not started or have expired, relative to now', () => {
+      const { AND: [from, until] } = publishedPackageWhere(now);
+      if (!from || !until) throw new Error('validity clauses missing');
+      expect(from.OR).toContainEqual({ validFrom: { lte: now } });
+      expect(until.OR).toContainEqual({ validUntil: { gte: now } });
     });
   });
 

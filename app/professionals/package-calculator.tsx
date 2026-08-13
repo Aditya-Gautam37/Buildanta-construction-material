@@ -2,11 +2,13 @@
 
 import { useMemo, useState } from "react";
 import {
+  areaLabel,
   estimatePackages,
   formatRange,
   formatRupees,
   MIN_AREA_SQ_FT,
   type ContractorPackage,
+  type PackageMaterial,
 } from "./package-estimate";
 import styles from "./package-calculator.module.css";
 
@@ -23,16 +25,16 @@ function InclusionList({ title, items }: { title: string; items: string[] }) {
   );
 }
 
-function MaterialList({ materials }: { materials: ContractorPackage["materials"] }) {
+function MaterialList({ materials }: { materials: PackageMaterial[] }) {
   if (!materials.length) return null;
   return (
     <div className={styles.block}>
       <h5>Materials used</h5>
       <dl className={styles.materials}>
         {materials.map((material) => (
-          <div key={`${material.category}-${material.detail}`}>
+          <div key={`${material.category}-${material.specification}`}>
             <dt>{material.category}</dt>
-            <dd>{material.detail}</dd>
+            <dd>{material.specification}</dd>
           </div>
         ))}
       </dl>
@@ -68,7 +70,7 @@ export function PackageCalculator({ packages, professionalName, categorySlug, sl
 
       <div className={styles.controls}>
         <label className={styles.areaField} htmlFor="plot-area">
-          <span>Plot area (sq ft)</span>
+          <span>{areaLabel(packages[0]?.rateBasis ?? "PLOT_AREA")}</span>
           <input
             id="plot-area"
             type="number"
@@ -123,7 +125,7 @@ export function PackageCalculator({ packages, professionalName, categorySlug, sl
                     <strong>{formatRupees(estimate.totalCost)}</strong>
                   </p>
 
-                  <InclusionList title="Included works" items={source.inclusions} />
+                  <InclusionList title="Included works" items={source.inclusionItems.map((item) => item.label)} />
                   <MaterialList materials={source.materials} />
                   <InclusionList title="Best for" items={source.bestFor} />
 

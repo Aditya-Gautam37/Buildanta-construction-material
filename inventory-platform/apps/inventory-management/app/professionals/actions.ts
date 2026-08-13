@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { prisma, ProfessionalType, UserRole } from "@workspace/db"
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server"
 import type { ContractorPackageDraft, ProfessionalDraft, ProfessionalRecord, ProfessionalTypeValue } from "@/lib/professionals"
-import { packagePublishIssues } from "@/lib/professionals"
+import { canPublishPackages, packagePublishIssues } from "@/lib/professionals"
 
 async function requireStaff() {
   const supabase = await createSupabaseServerClient()
@@ -113,20 +113,36 @@ export async function deleteProfessionalAction(id: string) {
 // Contractor packages (rate cards)
 // ---------------------------------------------------------------------------
 
+function optionalDate(value: string | null) {
+  if (!value) return null
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) throw new Error("Enter valid validity dates.")
+  return parsed
+}
+
 function cleanPackageDraft(input: ContractorPackageDraft) {
   const rate = Number(input.ratePerSqFt)
   if (!Number.isFinite(rate) || rate <= 0) throw new Error("Enter a rate per sq ft above zero.")
   if (!input.name.trim()) throw new Error("Enter a package name.")
 
+  const slug = slugify(input.slug?.trim() || input.name)
+  if (!slug) throw new Error("Enter a package name that produces a valid web address.")
+
   return {
     professionalId: input.professionalId,
     name: input.name.trim(),
+    slug,
     tagline: optional(input.tagline),
+    summary: optional(input.summary),
     ratePerSqFt: rate.toFixed(2),
-    inclusions: input.inclusions.map((item) => item.trim()).filter(Boolean),
+    rateBasis: input.rateBasis === "BUILT_UP_AREA" ? "BUILT_UP_AREA" as const : "PLOT_AREA" as const,
     bestFor: input.bestFor.map((item) => item.trim()).filter(Boolean),
+    exclusions: (input.exclusions ?? []).map((item) => item.trim()).filter(Boolean),
+    terms: optional(input.terms),
+    validFrom: optionalDate(input.validFrom),
+    validUntil: optionalDate(input.validUntil),
     sortOrder: Number.isInteger(input.sortOrder) ? input.sortOrder : 0,
-    published: Boolean(input.published),
+    status: input.status ?? "DRAFT",
   }
 }
 
@@ -135,9 +151,21 @@ export async function saveContractorPackageAction(input: ContractorPackageDraft)
     await requireStaff()
     const data = cleanPackageDraft(input)
 
+    // Only contractors advertise construction packages in this release, and
+    // the rule is enforced here rather than only in the UI — the action is
+    // callable directly.
+    const owner = await prisma.professional.findUnique({
+      where: { id: data.professionalId },
+      select: { type: true },
+    })
+    if (!owner) throw new Error("That professional no longer exists.")
+    if (!canPublishPackages(owner.type as ProfessionalTypeValue)) {
+      throw new Error("Only contractors can have construction packages.")
+    }
+
     // Publishing is what makes a rate card customer-visible, so an incomplete
-    // one must not slip through even if the UI allowed it.
-    if (data.published) {
+    // or expired one must not slip through even if the UI allowed it.
+    if (data.status === "PUBLISHED") {
       const issues = packagePublishIssues({ ...input, ratePerSqFt: data.ratePerSqFt })
       if (issues.length) throw new Error(`Cannot publish: add ${issues.join(", ")}.`)
     }
@@ -145,22 +173,35 @@ export async function saveContractorPackageAction(input: ContractorPackageDraft)
     const materials = input.materials
       .map((material, index) => ({
         category: material.category.trim(),
-        detail: material.detail.trim(),
+        specification: material.specification.trim(),
+        preferredBrands: optional(material.preferredBrands),
+        substitutionNote: optional(material.substitutionNote),
         sortOrder: index,
       }))
-      .filter((material) => material.category && material.detail)
+      .filter((material) => material.category && material.specification)
+
+    const inclusions = input.inclusions
+      .map((label, index) => ({ label: label.trim(), sortOrder: index }))
+      .filter((item) => item.label)
 
     const saved = await prisma.$transaction(async (tx) => {
       const record = input.id
         ? await tx.contractorPackage.update({ where: { id: input.id }, data })
         : await tx.contractorPackage.create({ data })
 
-      // Materials are a small ordered list edited as a whole, so replacing
-      // them keeps the saved state exactly what the form showed.
+      // Materials and inclusions are small ordered lists edited as a whole, so
+      // replacing them keeps the saved state exactly what the form showed.
       await tx.contractorPackageMaterial.deleteMany({ where: { packageId: record.id } })
       if (materials.length) {
         await tx.contractorPackageMaterial.createMany({
           data: materials.map((material) => ({ ...material, packageId: record.id })),
+        })
+      }
+
+      await tx.contractorPackageInclusion.deleteMany({ where: { packageId: record.id } })
+      if (inclusions.length) {
+        await tx.contractorPackageInclusion.createMany({
+          data: inclusions.map((item) => ({ ...item, packageId: record.id })),
         })
       }
       return record

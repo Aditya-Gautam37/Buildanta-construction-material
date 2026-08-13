@@ -17,7 +17,9 @@ import {
   type ProfessionalRecord,
   type ProfessionalTypeValue,
 } from "@/lib/professionals"
+import type { ContractorPackageRecord } from "@/lib/professionals"
 import { deleteProfessionalAction, saveProfessionalAction } from "./actions"
+import PackageManager from "./package-manager"
 
 function emptyDraft(type: ProfessionalTypeValue = "CONTRACTOR"): ProfessionalDraft {
   return {
@@ -38,7 +40,10 @@ function ProfessionalPhoto({ professional }: { professional: ProfessionalRecord 
   return <img src={professional.photoUrl} alt={professional.name} width={160} height={160} className="size-full object-cover" onError={() => setFailed(true)} />
 }
 
-export default function ProfessionalManager({ initialProfessionals }: { initialProfessionals: ProfessionalRecord[] }) {
+export default function ProfessionalManager({ initialProfessionals, initialPackages = [] }: {
+  initialProfessionals: ProfessionalRecord[]
+  initialPackages?: ContractorPackageRecord[]
+}) {
   const [professionals, setProfessionals] = useState(sortProfessionals(initialProfessionals))
   const [activeType, setActiveType] = useState<"ALL" | ProfessionalTypeValue>("ALL")
   const [query, setQuery] = useState("")
@@ -171,6 +176,17 @@ export default function ProfessionalManager({ initialProfessionals }: { initialP
           {filtered.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-16 text-center"><UsersRound className="mx-auto mb-3 size-8 text-slate-400" /><h3 className="font-semibold text-slate-800">No professionals found</h3><p className="mt-1 text-sm text-slate-500">Add the first person to this category or change your search.</p><Button type="button" onClick={() => openCreate()} className="mt-4 bg-slate-950 text-white hover:bg-slate-800"><Plus className="size-4" /> Add professional</Button></div> : null}
         </section>
       </section>
+
+      {/* Rate cards are saved independently of the profile dialog: a rate
+          changes far more often than a professional's details. */}
+      {filtered.map((professional) => (
+        <PackageManager
+          key={professional.id}
+          professionalId={professional.id}
+          professionalName={professional.name}
+          packages={initialPackages.filter((item) => item.professionalId === professional.id)}
+        />
+      ))}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">

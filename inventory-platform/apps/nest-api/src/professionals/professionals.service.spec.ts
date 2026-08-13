@@ -54,6 +54,32 @@ describe('ProfessionalsService', () => {
     });
   });
 
+  describe('contractor packages', () => {
+    it('asks for published packages only, so a draft rate card stays internal', async () => {
+      const { service, findMany } = serviceWith(record);
+      await service.findAll();
+      const select = (findMany.mock.calls[0] as [{ select: { packages: { where: unknown } } }])[0].select;
+      expect(select.packages.where).toEqual({ published: true });
+    });
+
+    it('returns packages and their materials in the order staff arranged them', async () => {
+      const { service, findMany } = serviceWith(record);
+      await service.findAll();
+      const packages = (findMany.mock.calls[0] as [{ select: { packages: Record<string, unknown> } }])[0].select.packages;
+      expect(packages.orderBy).toEqual({ sortOrder: 'asc' });
+      expect((packages.select as { materials: { orderBy: unknown } }).materials.orderBy).toEqual({ sortOrder: 'asc' });
+    });
+
+    it('serves the rate and inclusions the calculator needs', async () => {
+      const { service, findMany } = serviceWith(record);
+      await service.findAll();
+      const packageSelect = (findMany.mock.calls[0] as [{ select: { packages: { select: Record<string, unknown> } } }])[0].select.packages.select;
+      for (const field of ['id', 'name', 'tagline', 'ratePerSqFt', 'inclusions', 'bestFor']) {
+        expect(packageSelect).toHaveProperty(field, true);
+      }
+    });
+  });
+
   describe('publication', () => {
     it('lists only published professionals', async () => {
       const { service, findMany } = serviceWith(record);

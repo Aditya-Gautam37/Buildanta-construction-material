@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache"
 import { prisma, ProfessionalType, UserRole } from "@workspace/db"
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server"
-import type { ProfessionalDraft, ProfessionalRecord, ProfessionalTypeValue } from "@/lib/professionals"
+import type { ContractorPackageDraft, ProfessionalDraft, ProfessionalRecord, ProfessionalTypeValue } from "@/lib/professionals"
+import { packagePublishIssues } from "@/lib/professionals"
 
 async function requireStaff() {
   const supabase = await createSupabaseServerClient()
@@ -105,5 +106,86 @@ export async function deleteProfessionalAction(id: string) {
     return { ok: true as const }
   } catch (error) {
     return { ok: false as const, error: error instanceof Error ? error.message : "Unable to delete professional." }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Contractor packages (rate cards)
+// ---------------------------------------------------------------------------
+
+function cleanPackageDraft(input: ContractorPackageDraft) {
+  const rate = Number(input.ratePerSqFt)
+  if (!Number.isFinite(rate) || rate <= 0) throw new Error("Enter a rate per sq ft above zero.")
+  if (!input.name.trim()) throw new Error("Enter a package name.")
+
+  return {
+    professionalId: input.professionalId,
+    name: input.name.trim(),
+    tagline: optional(input.tagline),
+    ratePerSqFt: rate.toFixed(2),
+    inclusions: input.inclusions.map((item) => item.trim()).filter(Boolean),
+    bestFor: input.bestFor.map((item) => item.trim()).filter(Boolean),
+    sortOrder: Number.isInteger(input.sortOrder) ? input.sortOrder : 0,
+    published: Boolean(input.published),
+  }
+}
+
+export async function saveContractorPackageAction(input: ContractorPackageDraft) {
+  try {
+    await requireStaff()
+    const data = cleanPackageDraft(input)
+
+    // Publishing is what makes a rate card customer-visible, so an incomplete
+    // one must not slip through even if the UI allowed it.
+    if (data.published) {
+      const issues = packagePublishIssues({ ...input, ratePerSqFt: data.ratePerSqFt })
+      if (issues.length) throw new Error(`Cannot publish: add ${issues.join(", ")}.`)
+    }
+
+    const materials = input.materials
+      .map((material, index) => ({
+        category: material.category.trim(),
+        detail: material.detail.trim(),
+        sortOrder: index,
+      }))
+      .filter((material) => material.category && material.detail)
+
+    const saved = await prisma.$transaction(async (tx) => {
+      const record = input.id
+        ? await tx.contractorPackage.update({ where: { id: input.id }, data })
+        : await tx.contractorPackage.create({ data })
+
+      // Materials are a small ordered list edited as a whole, so replacing
+      // them keeps the saved state exactly what the form showed.
+      await tx.contractorPackageMaterial.deleteMany({ where: { packageId: record.id } })
+      if (materials.length) {
+        await tx.contractorPackageMaterial.createMany({
+          data: materials.map((material) => ({ ...material, packageId: record.id })),
+        })
+      }
+      return record
+    })
+
+    revalidatePath("/professionals")
+    return { ok: true as const, packageId: saved.id }
+  } catch (error) {
+    const code = typeof error === "object" && error && "code" in error ? String(error.code) : ""
+    return {
+      ok: false as const,
+      error: code === "P2002"
+        ? "This contractor already has a package with that name."
+        : error instanceof Error ? error.message : "Unable to save package.",
+    }
+  }
+}
+
+export async function deleteContractorPackageAction(id: string) {
+  try {
+    await requireStaff()
+    await prisma.contractorPackage.delete({ where: { id } })
+    revalidatePath("/professionals")
+    return { ok: true as const }
+  } catch (error) {
+    return { ok: false as const, error: error instanceof Error ? error.message : "Unable to delete package." }
   }
 }

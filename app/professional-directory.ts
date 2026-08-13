@@ -12,6 +12,10 @@ export const professionalCategories = [
 
 export type ProfessionalType = (typeof professionalCategories)[number]["type"];
 
+import type { ContractorPackage } from "./professionals/package-estimate";
+
+export type { ContractorPackage };
+
 // Email and phone are deliberately absent: the public API no longer returns
 // them, so a professional's personal contact details never reach the browser.
 // Enquiries go through Buildanta instead.
@@ -29,6 +33,9 @@ export type PublicProfessional = {
   portfolioUrl: string | null;
   services: string[];
   featured: boolean;
+  // Published rate cards, in the order staff arranged them. Absent on older
+  // API responses, so always treat as optional.
+  packages?: ContractorPackage[];
 };
 
 export type ProfessionalCategory = (typeof professionalCategories)[number];

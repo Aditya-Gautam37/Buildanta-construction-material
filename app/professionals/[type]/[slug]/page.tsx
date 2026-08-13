@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { categoryBySlug, getProfessional } from "../../../professional-directory";
 import { formatLocation, SERVICE_CITY } from "../../location";
+import { PackageCalculator } from "../../package-calculator";
 
 type ProfilePageProps = { params: Promise<{ type: string; slug: string }> };
 
@@ -122,6 +123,13 @@ export default async function ProfessionalProfilePage({ params }: ProfilePagePro
           ) : null}
         </aside>
       </section>
+
+      <PackageCalculator
+        packages={professional.packages ?? []}
+        professionalName={professional.name}
+        categorySlug={category.slug}
+        slug={professional.slug}
+      />
     </main>
   );
 }

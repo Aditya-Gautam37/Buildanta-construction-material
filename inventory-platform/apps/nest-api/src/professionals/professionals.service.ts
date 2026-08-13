@@ -22,6 +22,24 @@ const publicProfessionalSelect = {
   portfolioUrl: true,
   services: true,
   featured: true,
+  // Published packages only. An unpublished rate card is staff working
+  // material, and must be indistinguishable from having none at all.
+  packages: {
+    where: { published: true },
+    orderBy: { sortOrder: 'asc' },
+    select: {
+      id: true,
+      name: true,
+      tagline: true,
+      ratePerSqFt: true,
+      inclusions: true,
+      bestFor: true,
+      materials: {
+        orderBy: { sortOrder: 'asc' },
+        select: { category: true, detail: true },
+      },
+    },
+  },
 } as const;
 
 export type PublicProfessional = {
@@ -38,6 +56,18 @@ export type PublicProfessional = {
   portfolioUrl: string | null;
   services: string[];
   featured: boolean;
+  packages: PublicContractorPackage[];
+};
+
+export type PublicContractorPackage = {
+  id: string;
+  name: string;
+  tagline: string | null;
+  // Prisma Decimal; serialises to a string over JSON.
+  ratePerSqFt: unknown;
+  inclusions: string[];
+  bestFor: string[];
+  materials: Array<{ category: string; detail: string }>;
 };
 
 @Injectable()

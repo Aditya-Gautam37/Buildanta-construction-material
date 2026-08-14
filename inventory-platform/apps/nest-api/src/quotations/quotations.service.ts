@@ -68,7 +68,10 @@ export class QuotationsService {
             orderBy: { number: 'desc' },
           },
           history: { include: { actor: { select: { email: true } } }, orderBy: { createdAt: 'desc' } },
-          salesOrder: { include: { items: { include: { reservation: true, fulfilmentLocation: true, variant: { include: { product: true } } } } } },
+          // Dispatches are what tell staff whether an order is packed, on its way
+          // or delivered — the same signal the customer's tracking page reads, so
+          // the two never disagree.
+          salesOrder: { include: { items: { include: { reservation: true, fulfilmentLocation: true, variant: { include: { product: true } } } }, dispatches: { select: { status: true, dispatchedAt: true, deliveredAt: true, trackingReference: true }, orderBy: { createdAt: 'asc' } } } },
           materialEstimate: {
             select: {
               reference: true,

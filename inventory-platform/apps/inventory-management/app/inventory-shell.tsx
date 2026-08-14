@@ -8,6 +8,7 @@ import {
   BriefcaseBusiness,
   Calculator,
   ChevronRight,
+  ClipboardList,
   FolderTree,
   GalleryHorizontalEnd,
   Inbox,
@@ -39,6 +40,7 @@ const navigationGroups: Array<{ label: string; items: NavigationItem[] }> = [
   {
     label: "Operations",
     items: [
+      { label: "Customer orders", href: "/orders", icon: ClipboardList },
       { label: "Stock & locations", href: "/inventory-locations", icon: MapPinned },
       { label: "Quotations", href: "/quotations", icon: Inbox },
       { label: "Fulfilment", href: "/fulfilment", icon: Truck },

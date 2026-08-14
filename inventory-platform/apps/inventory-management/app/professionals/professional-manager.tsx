@@ -135,7 +135,7 @@ export default function ProfessionalManager({ initialProfessionals, initialPacka
     <main className="relative flex-1 bg-[#f4f7fb]">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_12%_0%,rgba(16,185,129,0.12),transparent_31%),radial-gradient(circle_at_88%_2%,rgba(14,165,233,0.11),transparent_32%)]" />
       <section className="relative mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
-        <div className="overflow-hidden rounded-[2rem] bg-[linear-gradient(118deg,#071a2c_0%,#0b2b3f_58%,#0e4a54_100%)] px-5 py-7 text-white shadow-[0_24px_70px_rgba(7,26,44,0.22)] sm:px-8 sm:py-9">
+        <div className="overflow-hidden rounded-[2rem] bg-[linear-gradient(118deg,#071a2c_0%,#0a2540_58%,#0e4a54_100%)] px-5 py-7 text-white shadow-[0_24px_70px_rgba(7,26,44,0.22)] sm:px-8 sm:py-9">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-xs font-semibold tracking-wide text-emerald-100"><BriefcaseBusiness className="size-3.5" /> PROFESSIONAL DIRECTORY</p>

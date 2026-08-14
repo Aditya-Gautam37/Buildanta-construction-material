@@ -127,3 +127,75 @@
     font-family: var(--font-sans), var(--font-symbols), sans-serif;
     }
 }
+/* ---------------------------------------------------------------------------
+ * Liquid blue glass.
+ *
+ * This is the inventory app's palette, applied by remapping the colour scales
+ * rather than rewriting the markup.
+ *
+ * Read this before a class name confuses you: `emerald-*` renders BLUE here,
+ * and `slate-*` renders blue-tinted rather than neutral grey. The app uses
+ * these two scales roughly two thousand times across every screen. Renaming
+ * each occurrence would be a diff nobody could review, and one missed class
+ * would strand a green button in a blue app. Remapping the scale moves every
+ * screen at once and cannot miss one.
+ *
+ * The cost is real: a name no longer describes its colour. It is paid once,
+ * here, in the open — rather than forever, in a palette that is only mostly
+ * converted.
+ *
+ * To restyle this app, change these values. Do not go hunting through the tsx.
+ * ------------------------------------------------------------------------- */
+@theme {
+  /* Accent — was emerald green, now Buildanta blue. */
+  --color-emerald-50: #eff7fd;
+  --color-emerald-100: #dbedfa;
+  --color-emerald-200: #bcdff5;
+  --color-emerald-300: #8ec9ee;
+  --color-emerald-400: #57ade2;
+  --color-emerald-500: #2e9ce0;
+  --color-emerald-600: #1a83c9;
+  --color-emerald-700: #1573b8;
+  --color-emerald-800: #135f96;
+  --color-emerald-900: #0f4c78;
+  --color-emerald-950: #0a3457;
+
+  /* Neutrals — blue-tinted. Straight grey beside these blues reads as dirty. */
+  --color-slate-50: #f5f9fd;
+  --color-slate-100: #eaf1f9;
+  --color-slate-200: #dbe7f3;
+  --color-slate-300: #c6d7e8;
+  /* Darker than a straight tint of Tailwind's slate-400 would be. That value
+   * scores 2.6 on white, which fails even the 3:1 bar for icons and borders,
+   * and this scale carries small labels and chevrons all over the app. 3.6 on
+   * white clears that while staying clearly lighter than slate-500. */
+  --color-slate-400: #6f8aa5;
+  --color-slate-500: #566d82;
+  --color-slate-600: #455e75;
+  --color-slate-700: #33475b;
+  --color-slate-800: #223b52;
+  --color-slate-900: #142c43;
+  --color-slate-950: #0a2540;
+}
+
+/* Glass surfaces. Opt-in, because backdrop-filter is the expensive part. */
+.glass {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 16px 40px rgba(10, 37, 64, 0.1);
+  backdrop-filter: blur(18px) saturate(1.6);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass { background: #fff; }
+}
+
+/* Motion here is decoration and never the only signal, so it can all go. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

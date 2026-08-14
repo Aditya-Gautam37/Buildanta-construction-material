@@ -35,6 +35,9 @@ const money = (value: string | number) =>
 const day = (value: string) =>
   new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value))
 
+const dayOnly = (value: string) =>
+  new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(value))
+
 /**
  * The customer order queue.
  *
@@ -66,17 +69,26 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
 
   const active = ORDER_STEPS.includes(query.step as OrderStep) ? (query.step as OrderStep) : null
   const visible = sortByAttention(active ? rows.filter((row) => !row.view.stopped && row.view.step === active) : rows)
-  const waiting = rows.filter((row) => row.view.nextAction).length
+
+  // Lead with the oldest thing we have not dealt with, not a count of everything
+  // waiting. Until an order is dispatched every order technically needs an
+  // action, so that count is always the total and tells staff nothing.
+  const unstarted = rows.filter((row) => row.view.step === "PLACED" && !row.view.stopped).length
+  const oldestWaiting = sortByAttention(rows.filter((row) => row.view.nextAction)).at(-1)
 
   return (
     <main className="mx-auto w-full max-w-[1200px] flex-1 space-y-7 px-4 py-8 sm:px-6 lg:px-8">
-      <header className="overflow-hidden rounded-3xl bg-[#0b2b3f] p-6 text-white shadow-xl sm:p-8">
+      <header className="overflow-hidden rounded-3xl bg-[#0a2540] p-6 text-white shadow-xl sm:p-8">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-300">Customer orders</p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Who ordered, and where it is</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-          {waiting > 0
-            ? `${waiting} order${waiting === 1 ? "" : "s"} ${waiting === 1 ? "is" : "are"} waiting on us. Everything here is the same view the customer sees when they track their order.`
-            : "Nothing is waiting on us. This is the same view the customer sees when they track their order."}
+          {unstarted > 0
+            ? `${unstarted} new order${unstarted === 1 ? "" : "s"} not yet confirmed`
+            : "Every order is confirmed"}
+          {oldestWaiting
+            ? `, and the oldest still open was placed ${dayOnly(oldestWaiting.placedAt)}.`
+            : "."}{" "}
+          This is the same view the customer sees when they track their order.
         </p>
       </header>
 
@@ -88,7 +100,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
               key={step}
               href={selected ? "/orders" : `/orders?step=${step}`}
               aria-current={selected ? "true" : undefined}
-              className={`rounded-2xl border p-4 transition ${selected ? "border-[#12344a] bg-[#12344a] text-white shadow-sm" : "border-slate-200 bg-white hover:border-slate-300"}`}
+              className={`rounded-2xl border p-4 transition ${selected ? "border-[#123a5e] bg-[#123a5e] text-white shadow-sm" : "border-slate-200 bg-white hover:border-slate-300"}`}
             >
               <b className="block text-2xl">{counts[step]}</b>
               <small className={selected ? "text-slate-200" : "text-slate-500"}>{STEP_LABELS[step]}</small>
@@ -112,7 +124,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                   <p className="mt-0.5 text-sm text-slate-500">
                     {quotation.customerEmail} · {quotation.customerPhone} · PIN {quotation.deliveryPincode}
                   </p>
-                  <p className="mt-0.5 text-xs text-slate-400">
+                  <p className="mt-0.5 text-xs text-slate-500">
                     Placed {day(quotation.createdAt)} ·{" "}
                     {quotation.customerUserId ? "Signed in to an account" : "Enquiry without an account"}
                   </p>
@@ -141,7 +153,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                 {view.nextAction ? (
                   <Link
                     href={quotation.salesOrder ? "/fulfilment" : "/quotations"}
-                    className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#0b2b3f] px-4 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                    className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#0a2540] px-4 text-sm font-semibold text-white transition hover:bg-emerald-700"
                   >
                     {view.nextAction} →
                   </Link>

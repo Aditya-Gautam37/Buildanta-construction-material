@@ -204,7 +204,7 @@ function EnquiryRow({ enquiry }: { enquiry: PackageEnquiryRecord }) {
             type="button"
             onClick={save}
             disabled={pending}
-            className="min-h-10 rounded-xl bg-[#12344a] px-4 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
+            className="min-h-10 rounded-xl bg-[#123a5e] px-4 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
           >
             {pending ? "Saving..." : "Save"}
           </button>

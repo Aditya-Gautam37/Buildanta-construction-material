@@ -90,7 +90,7 @@ function StatusBadge({ status }: { status: KnowledgeStatus | "NOT_STARTED" }) {
 function SaveButton({ label, pendingLabel, tone = "primary" }: { label: string; pendingLabel: string; tone?: "primary" | "ghost" | "danger" }) {
   const { pending } = useFormStatus()
   const classes = tone === "primary"
-    ? "bg-[#12344a] text-white hover:bg-emerald-700"
+    ? "bg-[#123a5e] text-white hover:bg-emerald-700"
     : tone === "danger"
       ? "border border-rose-300 bg-white text-rose-700 hover:bg-rose-50"
       : "border border-slate-200 bg-white text-slate-700 hover:border-emerald-400"
@@ -135,7 +135,7 @@ export default function MaterialKnowledgeWorkspace({ items, selectedProductId, d
   }), [filter, items, search])
 
   return <main className="mx-auto w-full max-w-[1640px] space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-    <section className="overflow-hidden rounded-[28px] bg-[#12344a] text-white shadow-xl shadow-slate-900/10">
+    <section className="overflow-hidden rounded-[28px] bg-[#123a5e] text-white shadow-xl shadow-slate-900/10">
       <div className="grid gap-6 px-6 py-7 sm:px-8 2xl:grid-cols-[minmax(0,1fr)_auto] 2xl:items-end">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-300">Know Your Material</p>
@@ -158,7 +158,7 @@ export default function MaterialKnowledgeWorkspace({ items, selectedProductId, d
         <label className="relative min-w-0 flex-1"><span className="sr-only">Search products</span><Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search products or brands..." className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10" /></label>
         <div className="flex gap-2 overflow-x-auto pb-1 xl:pb-0" aria-label="Knowledge filters">{[
           ["ALL", "All", items.length], ["PUBLISHED", "Published", counts.published], ["DRAFT", "Drafts", counts.draft], ["NOT_STARTED", "Not started", counts.notStarted],
-        ].map(([value, label, count]) => <button type="button" key={String(value)} onClick={() => setFilter(value as Filter)} className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-xs font-bold transition ${filter === value ? "bg-[#12344a] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{String(label)}<span className={`rounded-full px-1.5 py-0.5 text-[9px] ${filter === value ? "bg-white/15" : "bg-white"}`}>{String(count)}</span></button>)}</div>
+        ].map(([value, label, count]) => <button type="button" key={String(value)} onClick={() => setFilter(value as Filter)} className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-xs font-bold transition ${filter === value ? "bg-[#123a5e] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{String(label)}<span className={`rounded-full px-1.5 py-0.5 text-[9px] ${filter === value ? "bg-white/15" : "bg-white"}`}>{String(count)}</span></button>)}</div>
       </div>
     </section>
 

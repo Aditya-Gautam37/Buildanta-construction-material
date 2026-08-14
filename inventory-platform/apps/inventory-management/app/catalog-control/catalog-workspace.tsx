@@ -81,7 +81,7 @@ function StatusBadge({ status }: { status: ProductStatus }) {
 
 function SaveButton() {
   const { pending } = useFormStatus()
-  return <button disabled={pending} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#12344a] px-5 text-sm font-bold text-white shadow-lg shadow-slate-900/10 transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60">{pending ? "Saving and synchronizing..." : "Save product settings"}</button>
+  return <button disabled={pending} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#123a5e] px-5 text-sm font-bold text-white shadow-lg shadow-slate-900/10 transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60">{pending ? "Saving and synchronizing..." : "Save product settings"}</button>
 }
 
 export default function CatalogWorkspace({ products, savedId, error }: { products: CatalogProduct[]; savedId?: string; error?: string }) {
@@ -111,7 +111,7 @@ export default function CatalogWorkspace({ products, savedId, error }: { product
   }
 
   return <main className="mx-auto w-full max-w-[1640px] space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-    <section className="overflow-hidden rounded-[28px] bg-[#12344a] text-white shadow-xl shadow-slate-900/10">
+    <section className="overflow-hidden rounded-[28px] bg-[#123a5e] text-white shadow-xl shadow-slate-900/10">
       <div className="grid gap-6 px-6 py-7 sm:px-8 2xl:grid-cols-[minmax(0,1fr)_auto] 2xl:items-end">
         <div><p className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-300">Catalogue command centre</p><h2 className="mt-3 text-3xl font-bold tracking-[-0.035em] sm:text-4xl">Keep every product storefront-ready.</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">Review visibility, price, tax, stock and images from one focused workspace. Saved changes continue to synchronize through the Inventory API.</p></div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 2xl:min-w-[500px]">{[
@@ -131,7 +131,7 @@ export default function CatalogWorkspace({ products, savedId, error }: { product
         <label className="relative min-w-0 flex-1"><span className="sr-only">Search catalogue</span><Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search products, brands, categories or SKU..." className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10" /></label>
         <div className="flex gap-2 overflow-x-auto pb-1 xl:pb-0" aria-label="Catalogue filters">{[
           ["ALL", "All", products.length], ["PUBLISHED", "Published", counts.published], ["DRAFT", "Drafts", counts.draft], ["ATTENTION", "Need attention", counts.attention],
-        ].map(([value, label, count]) => <button type="button" key={String(value)} onClick={() => setFilter(value as Filter)} className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-xs font-bold transition ${filter === value ? "bg-[#12344a] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{String(label)}<span className={`rounded-full px-1.5 py-0.5 text-[9px] ${filter === value ? "bg-white/15" : "bg-white"}`}>{String(count)}</span></button>)}</div>
+        ].map(([value, label, count]) => <button type="button" key={String(value)} onClick={() => setFilter(value as Filter)} className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-xs font-bold transition ${filter === value ? "bg-[#123a5e] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{String(label)}<span className={`rounded-full px-1.5 py-0.5 text-[9px] ${filter === value ? "bg-white/15" : "bg-white"}`}>{String(count)}</span></button>)}</div>
       </div>
     </section>
 

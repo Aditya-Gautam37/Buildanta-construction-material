@@ -17,7 +17,7 @@ type Overview = { formulaKeys: string[]; definitions: Definition[]; products: Pr
 const panel = "rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
 const input = "mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
 const textarea = "mt-1.5 min-h-28 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
-const button = "h-11 rounded-xl bg-[#0b2b3f] px-5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+const button = "h-11 rounded-xl bg-[#0a2540] px-5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
 const label = "text-sm font-medium text-slate-700"
 
 export default async function CalculatorsManagementPage({ searchParams }: { searchParams: Promise<{ error?: string; saved?: string }> }) {
@@ -41,7 +41,7 @@ export default async function CalculatorsManagementPage({ searchParams }: { sear
   const converted = estimates.filter((item) => item.quotation).length
 
   return <main className="mx-auto w-full max-w-[1500px] flex-1 space-y-8 px-4 py-8 sm:px-6 lg:px-8">
-    <section className="overflow-hidden rounded-3xl bg-[#0b2b3f] p-6 text-white shadow-xl sm:p-8">
+    <section className="overflow-hidden rounded-3xl bg-[#0a2540] p-6 text-white shadow-xl sm:p-8">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-300">Planning tools</p>
       <div className="mt-3 grid gap-6 xl:grid-cols-[1fr_auto] xl:items-end">
         <div><h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Calculator control centre</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">Manage validated material formulas, publish quantity calculators independently, optionally connect outputs to catalogue variants, and trace every estimate into its quotation.</p></div>

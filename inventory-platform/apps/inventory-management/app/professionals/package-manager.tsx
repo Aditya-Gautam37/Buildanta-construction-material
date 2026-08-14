@@ -285,7 +285,7 @@ function PackageForm({ draft, onChange, onSave, onCancel, saving }: {
       ) : null}
 
       <div className="flex gap-2">
-        <button type="button" onClick={onSave} disabled={saving} className="min-h-11 rounded-xl bg-[#12344a] px-5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60">
+        <button type="button" onClick={onSave} disabled={saving} className="min-h-11 rounded-xl bg-[#123a5e] px-5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60">
           {saving ? "Saving..." : "Save package"}
         </button>
         <button type="button" onClick={onCancel} className="min-h-11 rounded-xl border border-slate-200 px-5 text-sm font-bold text-slate-700 hover:border-slate-400">

@@ -19,7 +19,7 @@ type Overview = { quotations: Quotation[]; salesOrders: SalesOrder[]; fulfilment
 const panel = "rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
 const input = "mt-1.5 h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
 const textarea = "mt-1.5 min-h-20 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
-const button = "min-h-11 rounded-xl bg-[#0b2b3f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+const button = "min-h-11 rounded-xl bg-[#0a2540] px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
 const label = "text-sm font-medium text-slate-700"
 const revisableStatuses: QuotationStatus[] = [QuotationStatus.SUBMITTED, QuotationStatus.REVIEWING, QuotationStatus.QUOTED]
 
@@ -37,7 +37,7 @@ export default async function QuotationsPage({ searchParams }: { searchParams: P
   const awaitingAllocation = data.quotations.filter((item) => item.status === QuotationStatus.ACCEPTED && !item.salesOrder).length
 
   return <main className="mx-auto w-full max-w-[1500px] flex-1 space-y-8 px-4 py-8 sm:px-6 lg:px-8">
-    <section className="overflow-hidden rounded-3xl bg-[#0b2b3f] p-6 text-white shadow-xl sm:p-8"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-300">Quotation operations</p><div className="mt-3 grid gap-6 xl:grid-cols-[1fr_auto] xl:items-end"><div><h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Quote, approve, allocate and reserve</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">Every customer line is priced in a revision, approved, assigned to a serviceable location and converted to reserved stock only when the quotation is accepted.</p></div><div className="grid grid-cols-3 gap-2"><Kpi value={newCount} label="New"/><Kpi value={data.salesOrders.filter((item) => item.status === SalesOrderStatus.CONFIRMED).length} label="Open orders"/><Kpi value={awaitingAllocation} label="Exceptions"/></div></div></section>
+    <section className="overflow-hidden rounded-3xl bg-[#0a2540] p-6 text-white shadow-xl sm:p-8"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-300">Quotation operations</p><div className="mt-3 grid gap-6 xl:grid-cols-[1fr_auto] xl:items-end"><div><h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Quote, approve, allocate and reserve</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">Every customer line is priced in a revision, approved, assigned to a serviceable location and converted to reserved stock only when the quotation is accepted.</p></div><div className="grid grid-cols-3 gap-2"><Kpi value={newCount} label="New"/><Kpi value={data.salesOrders.filter((item) => item.status === SalesOrderStatus.CONFIRMED).length} label="Open orders"/><Kpi value={awaitingAllocation} label="Exceptions"/></div></div></section>
     {query.error && <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{query.error}</p>}
     {query.saved && <p role="status" className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">Workflow operation completed and connected inventory refreshed.</p>}
 

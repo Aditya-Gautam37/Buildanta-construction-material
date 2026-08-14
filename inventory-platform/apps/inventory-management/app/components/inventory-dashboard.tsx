@@ -1432,7 +1432,7 @@ export default function InventoryDashboard({
       <div className="pointer-events-none absolute inset-x-0 top-0 h-96 bg-[radial-gradient(circle_at_12%_0%,rgba(16,185,129,0.13),transparent_30%),radial-gradient(circle_at_88%_5%,rgba(14,165,233,0.12),transparent_32%)]" />
 
       <section className="relative mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
-        <div className="relative overflow-hidden rounded-[2rem] bg-[linear-gradient(118deg,#071a2c_0%,#0b2b3f_58%,#0e4a54_100%)] px-5 py-6 text-white shadow-[0_24px_70px_rgba(7,26,44,0.22)] sm:px-8 sm:py-8">
+        <div className="relative overflow-hidden rounded-[2rem] bg-[linear-gradient(118deg,#071a2c_0%,#0a2540_58%,#0e4a54_100%)] px-5 py-6 text-white shadow-[0_24px_70px_rgba(7,26,44,0.22)] sm:px-8 sm:py-8">
           <div className="pointer-events-none absolute -top-24 right-0 size-72 rounded-full bg-emerald-400/15 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-24 left-1/3 size-64 rounded-full bg-sky-400/10 blur-3xl" />
 

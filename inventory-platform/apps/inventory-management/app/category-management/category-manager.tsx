@@ -365,7 +365,7 @@ export default function CategoryManager({ initialCategories }: { initialCategori
 
   return (
     <main className="mx-auto w-full max-w-[1640px] space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-      <section className="overflow-hidden rounded-[28px] bg-[#12344a] text-white shadow-xl shadow-slate-900/10">
+      <section className="overflow-hidden rounded-[28px] bg-[#123a5e] text-white shadow-xl shadow-slate-900/10">
         <div className="grid gap-6 px-6 py-8 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end xl:px-8">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-300">Simple catalogue structure</p>
@@ -402,7 +402,7 @@ export default function CategoryManager({ initialCategories }: { initialCategori
             />
           </label>
           <div className="flex gap-2 overflow-x-auto" aria-label="Category views">
-            <button type="button" onClick={() => setView("departments")} className={`h-11 shrink-0 rounded-xl px-4 text-sm font-bold ${view === "departments" ? "bg-[#12344a] text-white" : "bg-slate-100 text-slate-600"}`}>
+            <button type="button" onClick={() => setView("departments")} className={`h-11 shrink-0 rounded-xl px-4 text-sm font-bold ${view === "departments" ? "bg-[#123a5e] text-white" : "bg-slate-100 text-slate-600"}`}>
               Departments
             </button>
             <button type="button" onClick={() => setView("cleanup")} className={`inline-flex h-11 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-bold ${view === "cleanup" ? "bg-amber-100 text-amber-900" : "bg-slate-100 text-slate-600"}`}>
@@ -476,7 +476,7 @@ export default function CategoryManager({ initialCategories }: { initialCategori
                 <header className="border-b border-slate-100 p-5 sm:p-6">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex min-w-0 items-start gap-4">
-                      <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#12344a] text-white"><FolderOpen className="size-5" /></span>
+                      <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#123a5e] text-white"><FolderOpen className="size-5" /></span>
                       <div className="min-w-0">
                         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">Step 2 - organize this department</p>
                         <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">{selectedDepartment.name}</h2>
@@ -485,7 +485,7 @@ export default function CategoryManager({ initialCategories }: { initialCategori
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <button type="button" onClick={() => openEdit(selectedDepartment)} className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-3 text-sm font-bold text-slate-700"><Pencil className="size-4" /> Edit department</button>
-                      <button type="button" onClick={() => openNew(selectedDepartment.id)} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#12344a] px-3 text-sm font-bold text-white"><Plus className="size-4" /> Add group</button>
+                      <button type="button" onClick={() => openNew(selectedDepartment.id)} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#123a5e] px-3 text-sm font-bold text-white"><Plus className="size-4" /> Add group</button>
                     </div>
                   </div>
                   <div className="mt-5 grid grid-cols-3 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
@@ -582,7 +582,7 @@ function CategoryForm({ form, categories, paths, blockedParents, saving, uploadi
 
         <div className="mt-6 flex justify-end gap-3">
           <button type="button" onClick={onClose} className="h-11 rounded-xl border border-slate-200 px-5 font-bold">Cancel</button>
-          <button type="button" onClick={() => void onSave()} disabled={saving || uploading || !form.name.trim()} className="h-11 rounded-xl bg-[#12344a] px-5 font-bold text-white disabled:opacity-50">{saving ? "Saving..." : "Save category"}</button>
+          <button type="button" onClick={() => void onSave()} disabled={saving || uploading || !form.name.trim()} className="h-11 rounded-xl bg-[#123a5e] px-5 font-bold text-white disabled:opacity-50">{saving ? "Saving..." : "Save category"}</button>
         </div>
       </div>
     </div>

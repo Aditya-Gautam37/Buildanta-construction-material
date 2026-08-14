@@ -1,0 +1,28 @@
+.panel{margin:34px 0 0;padding-top:28px;border-top:1px solid var(--line)}
+
+.head h2{margin:0;color:var(--navy);font-size:21px;letter-spacing:-.02em}
+.head p{margin:5px 0 0;color:var(--muted);font-size:13px}
+
+.grid{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:14px;margin:18px 0 0;padding:0}
+
+.card{display:flex;flex-direction:column;height:100%;border:1px solid var(--border);border-radius:14px;background:#fff;overflow:hidden;transition:transform .3s var(--ease,cubic-bezier(.22,1,.36,1)),box-shadow .3s var(--ease,cubic-bezier(.22,1,.36,1)),border-color .3s var(--ease,cubic-bezier(.22,1,.36,1))}
+.card:hover{transform:translateY(-3px);border-color:var(--blue);box-shadow:0 16px 34px rgba(10,37,64,.12)}
+
+.thumb{display:grid;place-items:center;height:132px;background:linear-gradient(140deg,#f7fbff,#e6effa)}
+.thumb img{max-height:100%;object-fit:contain;mix-blend-mode:multiply}
+.thumb i{width:38px;height:38px;border-radius:9px;background:var(--panel)}
+
+.body{display:flex;flex-direction:column;gap:4px;padding:13px 14px 15px}
+.body strong{color:var(--navy);font-size:13.5px;line-height:1.35;letter-spacing:-.01em}
+
+.reason{color:var(--muted);font-size:11px;line-height:1.45}
+
+.price{margin-top:auto;padding-top:8px;color:var(--ink);font-size:14px;font-weight:750}
+.price em{color:var(--muted);font-size:11px;font-weight:600;font-style:normal}
+
+.gone{color:#a8442a;font-size:10.5px;font-weight:650}
+
+@media (max-width:600px){
+  .grid{grid-template-columns:repeat(2,1fr);gap:11px}
+  .thumb{height:108px}
+}

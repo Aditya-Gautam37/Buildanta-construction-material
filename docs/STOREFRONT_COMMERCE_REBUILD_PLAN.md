@@ -49,8 +49,22 @@ Each stage ends deployable, tested, and reviewable on its own.
 ### Stage B — orders in the inventory app
 
 6. **Order queue** with the five states, showing which customer placed each
-   order and what they bought.
-7. **Status changes** that the customer sees on their tracking page.
+   order and what they bought. — *Built: `/orders` in the inventory app.*
+7. **Status changes** that the customer sees on their tracking page. —
+   *Built: the queue reads dispatches, exactly as the customer's tracking page
+   does, so an action taken on `/fulfilment` shows up in both places at once.*
+
+The queue does not duplicate the workflow controls. Pricing, approval, picking
+and dispatch stay on `/quotations` and `/fulfilment`, which already write the
+records the queue reads; each row links to whichever of those can move it. Two
+screens owning the same state transition is how staff and customers end up
+seeing different answers, which is exactly the failure this stage exists to
+avoid.
+
+The five-step mapping now exists twice — `app/account/order-progress.ts` in the
+storefront and `lib/customer-orders.ts` in the inventory app. The apps share no
+package today, so this is duplication on purpose, flagged in both files. If the
+steps ever change, change them in both.
 
 ### Stage C — the rebrand
 

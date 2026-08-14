@@ -1,53 +1,66 @@
-/* Buildanta production storefront — consolidated Electro-inspired presentation layer. */
+/* Buildanta production storefront — liquid blue glass presentation layer.
+ *
+ * This block is the whole palette. It is imported after globals.css and
+ * re-declares the shared token names on purpose, so this file wins: change a
+ * value here and every page moves together.
+ *
+ * The neutrals are blue-tinted rather than grey. Straight grey beside these
+ * blues reads as dirty, which is what made the previous charcoal theme feel
+ * flat. Orange is untouched — it is the single warm colour in the system, and
+ * that is precisely what makes it work for actions. Nothing competes with it.
+ */
 :root {
   --e-orange: #f79400;
   --e-orange-dark: #d97900;
   --e-orange-soft: #fff3e1;
   --e-red: #ff2a16;
-  --e-ink: #303030;
-  --e-text: #4a4a4a;
-  --e-muted: #777;
-  --e-line: #e5e5e5;
-  --e-canvas: #f6f6f6;
-  --e-charcoal: #3a3a3a;
-  --e-charcoal-dark: #2d2d2d;
+  --e-ink: #0f2233;
+  --e-text: #33475b;
+  --e-muted: #566d82;
+  --e-line: #dbe7f3;
+  --e-canvas: #eef4fb;
+  --e-charcoal: #0a2540;
+  --e-charcoal-dark: #06192c;
   --e-surface: #fff;
-  --e-shadow-sm: 0 6px 18px rgba(35, 35, 35, .07);
-  --e-shadow-md: 0 18px 45px rgba(35, 35, 35, .11);
-  --e-shadow-lg: 0 28px 70px rgba(35, 35, 35, .16);
+  /* Shadows carry the blue too. A neutral-black shadow over a blue surface
+   * turns muddy; tinting it keeps the depth clean. */
+  --e-shadow-sm: 0 6px 18px rgba(10, 37, 64, .08);
+  --e-shadow-md: 0 18px 45px rgba(10, 37, 64, .12);
+  --e-shadow-lg: 0 28px 70px rgba(10, 37, 64, .18);
   --e-content: 1320px;
-  --b-navy-950: #2d2d2d;
-  --b-navy-900: #3a3a3a;
-  --b-navy-800: #4b4b4b;
+  --b-navy-950: #06192c;
+  --b-navy-900: #0a2540;
+  --b-navy-800: #123a5e;
   --b-green-700: #d97900;
   --b-green-600: #f79400;
   --b-green-100: #fff3e1;
   --b-orange-600: #d97900;
   --b-orange-500: #f79400;
   --b-orange-100: #fff3e1;
-  --b-slate-950: #303030;
-  --b-slate-700: #5c5c5c;
-  --b-slate-500: #777;
-  --b-slate-300: #d7d7d7;
-  --b-slate-200: #e5e5e5;
-  --b-slate-100: #f2f2f2;
-  --b-canvas: #f6f6f6;
+  --b-slate-950: #0f2233;
+  --b-slate-700: #455e75;
+  --b-slate-500: #566d82;
+  --b-slate-300: #c6d7e8;
+  --b-slate-200: #dbe7f3;
+  --b-slate-100: #eaf1f9;
+  --b-canvas: #eef4fb;
   --b-surface: #fff;
   --b-focus: 0 0 0 4px rgba(247, 148, 0, .22);
-  --navy: #3a3a3a;
-  --blue: #d97900;
+  --navy: #0a2540;
+  --blue: #1573b8;
+  --blue-bright: #2e9ce0;
   --orange: #f79400;
-  --ink: #303030;
-  --muted: #777;
-  --panel: #f2f2f2;
-  --soft: #f8f8f8;
-  --line: #e5e5e5;
-  --border: #d9d9d9;
+  --ink: #0f2233;
+  --muted: #566d82;
+  --panel: #eaf1f9;
+  --soft: #f5f9fd;
+  --line: #dbe7f3;
+  --border: #cddced;
 }
 
 html { background: #fff; }
 body { background: #fff; color: var(--e-text); }
-::selection { background: #ffd798; color: #222; }
+::selection { background: #cfe6f8; color: #0a2540; }
 :where(a, button, input, select, textarea, summary):focus-visible {
   outline: 2px solid var(--e-orange) !important;
   outline-offset: 3px !important;
@@ -69,7 +82,7 @@ body { background: #fff; color: var(--e-text); }
 .button.orange:hover, .signup-button:hover, .small-quote:hover,
 .workflow-form > button:hover, .empty-panel button:hover { background: var(--e-orange-dark); }
 .button.navy { border-color: var(--e-charcoal); background: var(--e-charcoal); color: #fff; }
-.button.navy:hover { background: #222; }
+.button.navy:hover { background: #06192c; }
 input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea {
   border-color: var(--e-line);
   border-radius: 6px;
@@ -85,17 +98,23 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
   top: 0;
   z-index: 50;
   border: 0;
-  background: #fff;
-  box-shadow: 0 4px 20px rgba(28, 28, 28, .08);
-  backdrop-filter: none;
+  /* Glass, not white. The blur needs something behind it to be worth having,
+   * which is why the page canvas below is tinted rather than pure white. */
+  background: rgba(247, 251, 255, .78);
+  box-shadow: 0 4px 24px rgba(10, 37, 64, .09);
+  backdrop-filter: blur(18px) saturate(1.8);
+  -webkit-backdrop-filter: blur(18px) saturate(1.8);
 }
-.header-utility { border-bottom: 1px solid #eee; background: #fafafa; color: #737373; }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .site-header { background: #f7fbff; }
+}
+.header-utility { border-bottom: 1px solid var(--e-line); background: rgba(234, 241, 249, .6); color: #56708a; }
 .header-utility > div { height: 28px; }
 .header-utility p { font-size: 9px; }
 .header-utility p span { background: var(--e-orange); box-shadow: 0 0 0 3px rgba(247, 148, 0, .12); }
-.header-utility a, .header-location { color: #6e6e6e; font-size: 9px; }
+.header-utility a, .header-location { color: #56708a; font-size: 9px; }
 .header-utility a:hover, .header-location:hover, .header-location b { color: var(--e-orange-dark); }
-.header-main { height: 72px; gap: 30px; background: #fff; }
+.header-main { height: 72px; gap: 30px; background: transparent; }
 .header-main .wordmark { min-width: 215px; }
 .header-main .wordmark img { width: 50px; height: 50px; }
 .header-main .wordmark strong { color: var(--e-orange); font-size: 25px; letter-spacing: -.045em; }
@@ -237,7 +256,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
   padding: 0;
   border: 0;
   background: transparent;
-  color: #777;
+  color: var(--e-muted);
   font-size: 8px;
 }
 .live-catalog-pill span { background: var(--e-orange); box-shadow: 0 0 0 4px rgba(247,148,0,.14); }
@@ -292,7 +311,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
   letter-spacing: -.045em;
 }
 .section-heading-row h2, .brands-section h2 { font-size: clamp(28px, 3vw, 40px); }
-.section-heading-row > div > span, .section-subtitle { color: #777; }
+.section-heading-row > div > span, .section-subtitle { color: var(--e-muted); }
 .view-all { color: var(--e-orange-dark); font-weight: 800; }
 .section-title { grid-template-columns: 42px auto 1fr; text-align: left; }
 .section-title span:first-child { height: 4px; background: var(--e-orange); }
@@ -325,7 +344,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
 .discovery-card strong { left: 30px; bottom: 27px; color: var(--e-orange-dark); font-size: 10px; }
 .discovery-card > img { padding: 20px 12px 18px 0; object-fit: contain; }
 .discovery-card.image > img { padding: 0; object-fit: cover; }
-.discovery-card.dark { border-color: #353535; background: linear-gradient(135deg, #303030, #474747); }
+.discovery-card.dark { border-color: #16456e; background: linear-gradient(135deg, #0a2540, #17517f); }
 .discovery-card.dark small, .discovery-card.dark strong { color: #ffb548; }
 
 /* Brand strip */
@@ -389,7 +408,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
   margin-top: 72px;
   padding-top: 72px;
   padding-bottom: 76px;
-  box-shadow: 0 0 0 100vmax #f6f6f6;
+  box-shadow: 0 0 0 100vmax #eef4fb;
   clip-path: inset(0 -100vmax);
 }
 .homepage-products-grid, .products-grid { gap: 14px; }
@@ -417,7 +436,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
 .product-visual, .homepage-product-card .product-visual { height: 215px; background: #fff; }
 .product-visual > img { padding: 14px; object-fit: contain; background: #fff; }
 .product-brand { border-radius: 3px; background: var(--e-orange) !important; color: #fff; }
-.product-visual > i { border: 1px solid #eee; color: #505050; }
+.product-visual > i { border: 1px solid var(--e-line); color: #4a637c; }
 .product-body { padding: 15px; }
 .product-body > p:first-child { color: var(--e-orange-dark); }
 .product-body h2 { min-height: 40px; margin: 8px 0; color: var(--e-ink); font-size: 15px; }
@@ -435,7 +454,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
   padding: 16px;
   border: 1px solid var(--e-line);
   border-radius: 5px;
-  background: linear-gradient(135deg, #fafafa, #f0f0f0);
+  background: linear-gradient(135deg, #f7fbff, #e6effa);
 }
 .stage-item {
   width: auto;
@@ -458,7 +477,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
   margin-top: 72px;
   padding-top: 72px;
   padding-bottom: 76px;
-  box-shadow: 0 0 0 100vmax #f6f6f6;
+  box-shadow: 0 0 0 100vmax #eef4fb;
   clip-path: inset(0 -100vmax);
 }
 .category-showcase-grid { gap: 14px; }
@@ -493,7 +512,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
   overflow: hidden;
   border: 0;
   border-radius: 6px;
-  background: radial-gradient(circle at 15% 0, rgba(247,148,0,.2), transparent 30%), linear-gradient(125deg, #2d2d2d, #444 67%, #343434);
+  background: radial-gradient(circle at 15% 0, rgba(247,148,0,.2), transparent 30%), linear-gradient(125deg, #06192c, #14486f 67%, #0b2c49);
   box-shadow: var(--e-shadow-lg);
 }
 .project-planner-card::before { position: absolute; inset: 0 auto 0 0; width: 6px; content: ""; background: var(--e-orange); }
@@ -529,7 +548,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
 .commerce-path-scroll button.selected { border-color: var(--e-orange); background: var(--e-orange); }
 .commerce-path-scroll button > span { border-radius: 50%; color: var(--e-orange-dark); }
 .commerce-paths > div:first-child span, .commerce-products-heading span, .commerce-finder-title span { color: var(--e-orange-dark); }
-.commerce-hero, .stage-context { border-radius: 6px; background: linear-gradient(125deg, #303030, #505050); box-shadow: var(--e-shadow-md); }
+.commerce-hero, .stage-context { border-radius: 6px; background: linear-gradient(125deg, #0a2540, #1a5989); box-shadow: var(--e-shadow-md); }
 .commerce-hero-copy > p { color: #ffb64a; }
 .commerce-hero-actions button { border-color: var(--e-orange); background: var(--e-orange); }
 .commerce-hero-actions button:hover { background: var(--e-orange-dark); }
@@ -553,9 +572,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
 /* Forms, auth, cart and workflows */
 .workflow-page, .auth-page, .customer-operation-page { background: #f7f7f7; }
 .form-card, .auth-page > section { border-top: 4px solid var(--e-orange); }
-.workflow-form fieldset { border-radius: 6px; background: #fafafa; }
+.workflow-form fieldset { border-radius: 6px; background: #f5f9fd; }
 .quote-basket-heading button:hover { border-color: var(--e-orange); background: var(--e-orange-soft); }
-.empty-panel, .customer-operation-empty, .homepage-products-empty, .professional-empty { border-radius: 6px; background: #fafafa; }
+.empty-panel, .customer-operation-empty, .homepage-products-empty, .professional-empty { border-radius: 6px; background: #f5f9fd; }
 
 /* Production footer */
 .site-footer { margin-top: 88px; background: var(--e-charcoal); }
@@ -2011,3 +2030,70 @@ input:focus, select:focus, textarea:focus { border-color: var(--e-orange); }
   .product-card:hover,
   .product-card:focus-within { transform: none; }
 }
+
+/* ---------------------------------------------------------------------------
+ * Motion layer.
+ *
+ * Attached to selectors the markup already has, so none of this required a
+ * component change. Scroll-driven animation runs entirely on the compositor —
+ * there is no scroll listener and no IntersectionObserver, so it cannot jank
+ * the main thread. Browsers without animation-timeline simply show the content,
+ * which is why the resting state is the visible one and the @supports block
+ * only ever hides things where it can also bring them back.
+ * ------------------------------------------------------------------------- */
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .home-section,
+    .room-shopping-section .room-card,
+    .homepage-product-card {
+      animation: rise-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 22%;
+    }
+  }
+}
+
+/* Glass panels lift toward the pointer. One curve, one distance, everywhere —
+ * consistency is what reads as considered rather than decorated. */
+.product-card,
+.homepage-product-card,
+.brand-card,
+.discovery-card {
+  transition: transform var(--dur, .3s) var(--ease, cubic-bezier(.22,1,.36,1)),
+              box-shadow var(--dur, .3s) var(--ease, cubic-bezier(.22,1,.36,1)),
+              border-color var(--dur, .3s) var(--ease, cubic-bezier(.22,1,.36,1));
+}
+.product-card:hover,
+.homepage-product-card:hover,
+.brand-card:hover,
+.discovery-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--e-shadow-md);
+  border-color: var(--b-slate-300);
+}
+
+/* A light sweeps across the primary action on hover. Clipped to the button and
+ * skipped when the pointer cannot hover, so it never fires on touch. */
+@media (hover: hover) {
+  .button.orange, .button.navy { position: relative; overflow: hidden; }
+  .button.orange::after, .button.navy::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 -60%;
+    width: 45%;
+    transform: skewX(-18deg);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.34), transparent);
+    transition: left var(--dur-slow, .6s) var(--ease, cubic-bezier(.22,1,.36,1));
+    pointer-events: none;
+  }
+  .button.orange:hover::after, .button.navy:hover::after { left: 115%; }
+}
+
+/* Pressing anything should feel physical. */
+.button:active, .product-card:active { transform: translateY(1px) scale(.995); }

@@ -11,7 +11,7 @@ type RequestUser={user:{id:string;email:string}};
 @UseGuards(CustomerJwtAuthGuard)
 export class CustomerPortalController{
   constructor(private readonly service:CustomerPortalService){}
-  @Get() overview(@Req() request:RequestUser):Promise<unknown>{return this.service.overview(request.user.email)}
+  @Get() overview(@Req() request:RequestUser):Promise<unknown>{return this.service.overview(request.user.email,request.user.id)}
   @Post('quotations/:id/book') book(@Param('id') id:string,@Req() request:RequestUser){return this.service.bookQuotation(id,request.user.id,request.user.email)}
   @Post('quotations/:id/accept') accept(@Param('id') id:string,@Req() request:RequestUser){return this.service.acceptQuotation(id,request.user.id,request.user.email)}
   @Post('sales-orders/:id/cancel') cancel(@Param('id') id:string,@Body(new ZodValidationPipe(reasonSchema)) input:z.infer<typeof reasonSchema>,@Req() request:RequestUser){return this.service.cancelOrder(id,input.reason,request.user.id,request.user.email)}

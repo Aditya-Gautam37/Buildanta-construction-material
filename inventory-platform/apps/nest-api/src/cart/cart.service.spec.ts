@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { CartStatus, ProductStatus, PurchaseMode, VariantStatus } from '@workspace/db';
 import { CartService } from './cart.service';
 import { createFakePrisma, fakePrismaError, makeVariant } from './cart.test-support';
@@ -357,9 +357,9 @@ describe('CartService', () => {
       variants.set('variant-1', makeVariant({ price: 414, unit: 'bag', product: { id: 'product-1', name: 'Cement', status: ProductStatus.PUBLISHED, sellingPrice: 414, images: [] } }));
       seedServiceable('208001', 'loc-1');
       seedBalance('variant-1', 'loc-1', 500, 0);
-      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 10 });
+      await service.addItem({ customerId: 'customer-1' }, { variantId: 'variant-1', quantity: 10 });
 
-      const result = await service.checkout({ guestToken: 'guest-1' }, address);
+      const result = await service.checkout({ customerId: 'customer-1' }, address);
 
       expect(result.existing).toBe(false);
       expect(result.orderReference).toMatch(/^SO-/);
@@ -372,7 +372,7 @@ describe('CartService', () => {
       expect(reservations[0]).toMatchObject({ quantity: 10, fulfilmentLocationId: 'loc-1' });
       expect(salesOrders.size).toBe(1);
 
-      const cartAfter = await service.getSummary({ guestToken: 'guest-1' });
+      const cartAfter = await service.getSummary({ customerId: 'customer-1' });
       expect(cartAfter.cartId).toBeNull(); // cart converted, not left dangling
     });
 
@@ -384,9 +384,9 @@ describe('CartService', () => {
       }));
       seedServiceable('208001', 'loc-1');
       seedBalance('variant-1', 'loc-1', 100, 0);
-      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 2 });
+      await service.addItem({ customerId: 'customer-1' }, { variantId: 'variant-1', quantity: 2 });
 
-      const result = await service.checkout({ guestToken: 'guest-1' }, { ...address, deliveryMethod: 'EXPRESS' });
+      const result = await service.checkout({ customerId: 'customer-1' }, { ...address, deliveryMethod: 'EXPRESS' });
 
       // 2 x 1000 = 2000 subtotal, 18% GST = 360, + 400 express = 2760
       expect(result.deliveryCharge).toBe(400);
@@ -397,9 +397,9 @@ describe('CartService', () => {
       const { service, variants, seedBalance } = setup();
       variants.set('variant-1', makeVariant());
       seedBalance('variant-1', 'loc-1', 100, 0);
-      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 1 });
+      await service.addItem({ customerId: 'customer-1' }, { variantId: 'variant-1', quantity: 1 });
 
-      await expect(service.checkout({ guestToken: 'guest-1' }, { ...address, pincode: '999999' }))
+      await expect(service.checkout({ customerId: 'customer-1' }, { ...address, pincode: '999999' }))
         .rejects.toBeInstanceOf(ConflictException);
     });
 
@@ -408,9 +408,9 @@ describe('CartService', () => {
       variants.set('variant-1', makeVariant());
       seedServiceable('208001', 'loc-1');
       seedBalance('variant-1', 'loc-1', 5, 0); // only 5 physically on the shelf
-      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 20 });
+      await service.addItem({ customerId: 'customer-1' }, { variantId: 'variant-1', quantity: 20 });
 
-      await expect(service.checkout({ guestToken: 'guest-1' }, address)).rejects.toThrow(/only 5 .* available/i);
+      await expect(service.checkout({ customerId: 'customer-1' }, address)).rejects.toThrow(/only 5 .* available/i);
       expect(reservations).toHaveLength(0); // nothing reserved on a failed checkout
     });
 
@@ -419,9 +419,9 @@ describe('CartService', () => {
       variants.set('variant-1', makeVariant());
       seedServiceable('208001', 'loc-1');
       seedBalance('variant-1', 'loc-1', 10, 8); // 10 physical, 8 already reserved -> 2 available
-      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 5 });
+      await service.addItem({ customerId: 'customer-1' }, { variantId: 'variant-1', quantity: 5 });
 
-      await expect(service.checkout({ guestToken: 'guest-1' }, address)).rejects.toThrow(/only 2 .* available/i);
+      await expect(service.checkout({ customerId: 'customer-1' }, address)).rejects.toThrow(/only 2 .* available/i);
     });
 
     it('rejects all-or-nothing when a line needs a bulk quote instead of dropping it', async () => {
@@ -433,10 +433,10 @@ describe('CartService', () => {
       seedServiceable('208001', 'loc-1');
       seedBalance('variant-direct', 'loc-1', 100, 0);
       seedBalance('variant-bulk', 'loc-1', 100, 0);
-      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-direct', quantity: 1 });
-      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-bulk', quantity: 15 });
+      await service.addItem({ customerId: 'customer-1' }, { variantId: 'variant-direct', quantity: 1 });
+      await service.addItem({ customerId: 'customer-1' }, { variantId: 'variant-bulk', quantity: 15 });
 
-      await expect(service.checkout({ guestToken: 'guest-1' }, address)).rejects.toBeInstanceOf(ConflictException);
+      await expect(service.checkout({ customerId: 'customer-1' }, address)).rejects.toBeInstanceOf(ConflictException);
       expect(salesOrders.size).toBe(0); // the eligible line was not silently checked out alone
     });
 
@@ -445,14 +445,14 @@ describe('CartService', () => {
       variants.set('variant-1', makeVariant());
       seedServiceable('208001', 'loc-1');
       seedBalance('variant-1', 'loc-1', 100, 0);
-      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 3 });
+      await service.addItem({ customerId: 'customer-1' }, { variantId: 'variant-1', quantity: 3 });
 
-      const first = await service.checkout({ guestToken: 'guest-1' }, address);
+      const first = await service.checkout({ customerId: 'customer-1' }, address);
       for (const row of carts.values()) {
         row.quotation = { reference: first.quotationReference, salesOrder: { reference: first.orderReference, grandTotal: first.grandTotal, freightTotal: 0 } };
       }
 
-      const retry = await service.checkout({ guestToken: 'guest-1' }, address);
+      const retry = await service.checkout({ customerId: 'customer-1' }, address);
 
       expect(retry).toMatchObject({ orderReference: first.orderReference, existing: true });
       expect(reservations).toHaveLength(1); // the retry did not create a second reservation
@@ -460,7 +460,33 @@ describe('CartService', () => {
 
     it('rejects checking out an empty cart', async () => {
       const { service } = setup();
-      await expect(service.checkout({ guestToken: 'guest-none' }, address)).rejects.toBeInstanceOf(BadRequestException);
+      await expect(service.checkout({ customerId: 'customer-none' }, address)).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    // Browsing and building a cart stay open to guests. Only placing the order
+    // needs an account, so the customer can find the order again afterwards.
+    it('refuses to place an order for a signed-out visitor', async () => {
+      const { service, variants, seedServiceable, seedBalance } = setup();
+      variants.set('variant-1', makeVariant({ price: 414, unit: 'bag', product: { id: 'product-1', name: 'Cement', status: ProductStatus.PUBLISHED, sellingPrice: 414, images: [] } }));
+      seedServiceable('208001', 'loc-1');
+      seedBalance('variant-1', 'loc-1', 500, 0);
+      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 10 });
+
+      await expect(service.checkout({ guestToken: 'guest-1' }, address))
+        .rejects.toBeInstanceOf(UnauthorizedException);
+    });
+
+    // The account the order belongs to, so it can be shown back to them.
+    it('records the signed-in account on the order', async () => {
+      const { service, variants, seedServiceable, seedBalance, quotations } = setup();
+      variants.set('variant-1', makeVariant({ price: 414, unit: 'bag', product: { id: 'product-1', name: 'Cement', status: ProductStatus.PUBLISHED, sellingPrice: 414, images: [] } }));
+      seedServiceable('208001', 'loc-1');
+      seedBalance('variant-1', 'loc-1', 500, 0);
+      await service.addItem({ customerId: 'customer-1' }, { variantId: 'variant-1', quantity: 10 });
+
+      await service.checkout({ customerId: 'customer-1' }, address);
+
+      expect([...quotations.values()][0]?.customerUserId).toBe('customer-1');
     });
 
     it('prevents a second buyer from also getting the final unit', async () => {
@@ -468,8 +494,8 @@ describe('CartService', () => {
       variants.set('variant-1', makeVariant());
       seedServiceable('208001', 'loc-1');
       seedBalance('variant-1', 'loc-1', 1, 0); // exactly one unit left
-      await service.addItem({ guestToken: 'buyer-a' }, { variantId: 'variant-1', quantity: 1 });
-      await service.addItem({ guestToken: 'buyer-b' }, { variantId: 'variant-1', quantity: 1 });
+      await service.addItem({ customerId: 'buyer-a' }, { variantId: 'variant-1', quantity: 1 });
+      await service.addItem({ customerId: 'buyer-b' }, { variantId: 'variant-1', quantity: 1 });
 
       // The fake has no equivalent of Postgres's own serialization-conflict
       // detection for two truly concurrent transactions, so this drives the
@@ -477,10 +503,10 @@ describe('CartService', () => {
       // whichever checkout is ordered second sees the balance the first one
       // already reserved, caught by the point-of-write recheck rather than a
       // stale earlier read.
-      const first = await service.checkout({ guestToken: 'buyer-a' }, address);
+      const first = await service.checkout({ customerId: 'buyer-a' }, address);
       expect(first.existing).toBe(false);
 
-      await expect(service.checkout({ guestToken: 'buyer-b' }, address)).rejects.toThrow(/out of stock/i);
+      await expect(service.checkout({ customerId: 'buyer-b' }, address)).rejects.toThrow(/out of stock/i);
 
       expect(balances.get('variant-1:loc-1').reservedQuantity).toBe(1); // not double-booked
     });
@@ -490,7 +516,7 @@ describe('CartService', () => {
       variants.set('variant-1', makeVariant());
       seedServiceable('208001', 'loc-1');
       seedBalance('variant-1', 'loc-1', 100, 0);
-      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 1 });
+      await service.addItem({ customerId: 'customer-1' }, { variantId: 'variant-1', quantity: 1 });
 
       const realTransaction = client.$transaction.getMockImplementation()!;
       let attempts = 0;
@@ -500,7 +526,7 @@ describe('CartService', () => {
         return realTransaction(callback);
       });
 
-      const result = await service.checkout({ guestToken: 'guest-1' }, address);
+      const result = await service.checkout({ customerId: 'customer-1' }, address);
 
       expect(attempts).toBe(2); // failed once, retried, succeeded
       expect(result.existing).toBe(false);
@@ -512,13 +538,13 @@ describe('CartService', () => {
       variants.set('variant-1', makeVariant());
       seedServiceable('208001', 'loc-1');
       seedBalance('variant-1', 'loc-1', 100, 0);
-      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-1', quantity: 1 });
+      await service.addItem({ customerId: 'customer-1' }, { variantId: 'variant-1', quantity: 1 });
 
       // P2028 (transaction timeout) is not retryable, unlike P2034 above — it
       // should surface once, translated, never as the raw Prisma error.
       client.$transaction.mockImplementation(() => Promise.reject(fakePrismaError('P2028')));
 
-      const error: unknown = await service.checkout({ guestToken: 'guest-1' }, address).catch((caught) => caught);
+      const error: unknown = await service.checkout({ customerId: 'customer-1' }, address).catch((caught) => caught);
 
       expect(error).toBeInstanceOf(ServiceUnavailableException);
       expect((error as ServiceUnavailableException).message).toMatch(/try again/i);
@@ -532,8 +558,8 @@ describe('CartService', () => {
       seedServiceable('208001', 'loc-1');
       seedBalance('variant-ok', 'loc-1', 100, 0);
       seedBalance('variant-short', 'loc-1', 5, 0);
-      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-ok', quantity: 1 });
-      await service.addItem({ guestToken: 'guest-1' }, { variantId: 'variant-short', quantity: 5 });
+      await service.addItem({ customerId: 'customer-1' }, { variantId: 'variant-ok', quantity: 1 });
+      await service.addItem({ customerId: 'customer-1' }, { variantId: 'variant-short', quantity: 5 });
 
       // Simulate a concurrent reservation landing on variant-short's stock
       // right after variant-ok's line has already been written in this same
@@ -545,7 +571,7 @@ describe('CartService', () => {
         return realReservationCreate(args);
       });
 
-      await expect(service.checkout({ guestToken: 'guest-1' }, address)).rejects.toThrow(/sold out/i);
+      await expect(service.checkout({ customerId: 'customer-1' }, address)).rejects.toThrow(/sold out/i);
 
       expect(salesOrders.size).toBe(0);
       expect(reservations).toHaveLength(0); // variant-ok's reservation was rolled back, not left dangling

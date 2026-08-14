@@ -78,3 +78,51 @@ describe("CustomerAuthForm", () => {
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Invalid credentials."));
   });
 });
+
+// A visitor sent to sign in from checkout must come back to a cart that still
+// has their items, or asking them to sign in has cost them the order.
+describe("CustomerAuthForm — cart carried through sign-in", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  function stubLocation() {
+    const assignSpy = vi.fn();
+    // @ts-expect-error -- jsdom's window.location.assign isn't implemented; stub it for this test.
+    delete window.location;
+    window.location = { ...window.location, assign: assignSpy, search: "?redirect=%2Fcheckout" } as unknown as Location;
+    return assignSpy;
+  }
+
+  async function signIn() {
+    fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "a@b.com" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "password123" } });
+    fireEvent.click(screen.getByText("Sign in to Buildanta"));
+  }
+
+  it("merges the signed-out cart into the account after signing in", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({}) });
+    vi.stubGlobal("fetch", fetchMock);
+    const assignSpy = stubLocation();
+
+    render(<CustomerAuthForm mode="login" />);
+    await signIn();
+
+    await waitFor(() => expect(assignSpy).toHaveBeenCalledWith("/checkout"));
+    expect(fetchMock).toHaveBeenCalledWith("/api/cart/merge", { method: "POST" });
+  });
+
+  it("still completes sign-in when the cart merge fails", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({}) })
+      .mockRejectedValueOnce(new Error("merge unavailable"));
+    vi.stubGlobal("fetch", fetchMock);
+    const assignSpy = stubLocation();
+
+    render(<CustomerAuthForm mode="login" />);
+    await signIn();
+
+    await waitFor(() => expect(assignSpy).toHaveBeenCalledWith("/checkout"));
+  });
+});

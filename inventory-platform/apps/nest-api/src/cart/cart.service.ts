@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import {
   CartStatus,
   InventoryLedgerType,
@@ -455,8 +455,15 @@ export class CartService {
     const scope = identityScope(identity);
     if (!scope) throw new BadRequestException('Unable to identify the cart owner.');
 
+    // Ordering requires an account. Browsing and building a cart stay open to
+    // guests, but an order with no account behind it is one the customer can
+    // never find again: the portal has no way to show it back to them.
+    if (!identity.customerId) {
+      throw new UnauthorizedException('Please sign in to place your order. Your cart is saved.');
+    }
+
     try {
-      return await this.runCheckoutTransaction(scope, input);
+      return await this.runCheckoutTransaction(scope, input, identity.customerId);
     } catch (error) {
       // Exceptions thrown deliberately above (bad PIN, out of stock, cart
       // state conflicts, etc.) are already customer-safe — pass them through
@@ -474,7 +481,7 @@ export class CartService {
     }
   }
 
-  private async runCheckoutTransaction(scope: NonNullable<ReturnType<typeof identityScope>>, input: CartCheckoutInput): Promise<CartCheckoutResult> {
+  private async runCheckoutTransaction(scope: NonNullable<ReturnType<typeof identityScope>>, input: CartCheckoutInput, customerUserId: string): Promise<CartCheckoutResult> {
     return withSerializableRetry(() =>
       this.prisma.client.$transaction(async (tx) => {
         const cart = await tx.cart.findFirst({
@@ -609,6 +616,10 @@ export class CartService {
           data: {
             reference,
             sourceCartId: cart.id,
+            // The account the order belongs to. Email is what the customer
+            // typed and can differ from their login, so matching on it alone
+            // hid orders from the people who placed them.
+            customerUserId,
             customerName: input.name,
             customerEmail: input.email.toLowerCase(),
             customerPhone: input.phone,

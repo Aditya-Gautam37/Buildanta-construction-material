@@ -298,6 +298,6 @@ export function createFakePrisma() {
 
   return {
     client, carts, cartItems, variants,
-    seedServiceable, seedBalance, balances, reservations, ledgerEntries, salesOrders, salesOrderItems,
+    seedServiceable, seedBalance, balances, reservations, ledgerEntries, salesOrders, salesOrderItems, quotations,
   };
 }

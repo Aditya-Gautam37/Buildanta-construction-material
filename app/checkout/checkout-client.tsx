@@ -122,6 +122,15 @@ export function CheckoutClient() {
         body: JSON.stringify(payload),
       });
       const body = await response.json() as Partial<CheckoutResult> & { error?: string };
+
+      // Ordering needs an account so the customer can find the order again.
+      // Send them to sign in and straight back here; the cart is merged into
+      // their account on the way, so nothing they picked is lost.
+      if (response.status === 401) {
+        window.location.assign(`/login?redirect=${encodeURIComponent("/checkout")}`);
+        return;
+      }
+
       if (!response.ok || !body.orderReference) throw new Error(body.error ?? "We could not place your order.");
       setResult(body as CheckoutResult);
     } catch (cause) {

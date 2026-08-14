@@ -35,6 +35,17 @@ export function CustomerAuthForm({ mode }: { mode: "login" | "signup" }) {
         formElement.reset();
         return;
       }
+      // Carry any cart built while signed out into the account. Without this a
+      // visitor sent here from checkout returns to an empty cart, which is a
+      // worse experience than not asking them to sign in at all.
+      // A failure here must not block the sign-in that already succeeded.
+      try {
+        await fetch("/api/cart/merge", { method: "POST" });
+      } catch {
+        // Ignored deliberately: they are signed in, and their guest cart is
+        // still recoverable on the next merge attempt.
+      }
+
       const requested = new URLSearchParams(window.location.search).get("redirect");
       const destination = requested?.startsWith("/") && !requested.startsWith("//") ? requested : "/account";
       window.location.assign(destination);

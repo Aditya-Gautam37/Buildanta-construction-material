@@ -51,12 +51,17 @@ describe('CartController (e2e)', () => {
     expect(response.body.requestId).toEqual(expect.any(String)); // AllExceptionsFilter wiring
   });
 
-  it('completes a real checkout through guards, pipe and service together, and reserves stock', async () => {
+  // A guest can fill a cart but not place the order. Asserted through the real
+  // guard, pipe and service stack, because this is the rule that decides
+  // whether a customer can ever find their order again.
+  it('lets a guest build a cart but refuses to place the order without an account', async () => {
     fake.variants.set('variant-1', makeVariant({ price: 414, unit: 'bag', product: { id: 'product-1', name: 'Cement', status: 'PUBLISHED' as never, sellingPrice: 414, images: [] } }));
     fake.seedServiceable('208001', 'loc-1');
     fake.seedBalance('variant-1', 'loc-1', 500, 0);
 
     const server = request(app.getHttpServer());
+
+    // Building the cart is open to everyone.
     await server
       .post('/cart/items')
       .set('x-buildanta-guest-cart', 'e2e-guest-checkout')
@@ -71,10 +76,11 @@ describe('CartController (e2e)', () => {
         addressLine1: '12 Test Road', city: 'Kanpur', state: 'Uttar Pradesh', pincode: '208001',
         deliveryMethod: 'STANDARD', idempotencyKey: 'e2e-checkout-key-1',
       })
-      .expect(201);
+      .expect(401);
 
-    expect(checkoutResponse.body).toMatchObject({ existing: false, grandTotal: 4140 });
-    expect(fake.balances.get('variant-1:loc-1').reservedQuantity).toBe(10); // stock actually moved
+    expect(checkoutResponse.body.message).toMatch(/sign in/i);
+    // Crucially, nothing was reserved: a refused checkout must not move stock.
+    expect(fake.balances.get('variant-1:loc-1').reservedQuantity).toBe(0);
   });
 
   it('rate-limits repeated checkout attempts (throttle wiring)', async () => {

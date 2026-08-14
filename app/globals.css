@@ -900,3 +900,6 @@ img { max-width: 100%; display: block; }
 .professional-card-packages{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;margin:0 0 14px;padding:11px 13px;border:1px solid #cfe0da;border-radius:10px;background:#f4faf7}
 .professional-card-packages strong{color:#0f5c3f;font-size:13px}
 .professional-card-packages a{color:var(--blue);font-size:12px;font-weight:700}
+
+.customer-track-link{display:inline-flex;align-items:center;gap:7px;margin:2px 0 14px;padding:9px 14px;border:1px solid #cfd8e3;border-radius:10px;background:#fff;color:var(--blue);font-size:13px;font-weight:700;text-decoration:none}
+.customer-track-link:hover{border-color:var(--orange);color:var(--orange)}

@@ -1,0 +1,32 @@
+.summary{padding:26px 28px;border:1px solid var(--border);border-radius:18px;background:#fff;box-shadow:0 12px 32px rgba(31,58,95,.07)}
+
+.identity{display:flex;align-items:center;gap:16px}
+.avatar{width:56px;height:56px;flex:none;display:grid;place-items:center;border-radius:50%;background:linear-gradient(135deg,#12344a,#1d5f7f);color:#fff;font-size:19px;font-weight:800;letter-spacing:.02em}
+.identity h2{margin:0;color:var(--navy);font-size:20px;letter-spacing:-.03em}
+.email{margin:3px 0 0;color:var(--muted);font-size:13px;word-break:break-all}
+
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:22px 0 0;padding-top:18px;border-top:1px solid var(--line)}
+.facts dt{color:var(--muted);font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.06em}
+.facts dd{margin:5px 0 0;color:var(--navy);font-size:20px;font-weight:800}
+
+.note{margin:18px 0 18px;color:var(--muted);font-size:12.5px;line-height:1.6}
+
+.orders{list-style:none;display:flex;flex-direction:column;gap:12px;margin:0 0 26px;padding:0}
+.order{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;padding:20px 22px;border:1px solid var(--border);border-radius:15px;background:#fff;transition:.18s ease}
+.order:hover{border-color:#9faabd;box-shadow:0 10px 26px rgba(31,58,95,.08)}
+.orderStopped{background:#fafbfc}
+
+.orderMain{min-width:0}
+.orderRef{margin:0;color:var(--muted);font-size:11px;font-weight:750;letter-spacing:.06em;font-family:ui-monospace,monospace}
+.orderMain h3{margin:5px 0 0;color:var(--navy);font-size:17px;letter-spacing:-.02em}
+.orderItems{margin:5px 0 0;color:#46566a;font-size:13px;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.orderMeta{margin:6px 0 0;color:var(--muted);font-size:12px}
+
+.orderAction{flex:none;display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 18px;border-radius:11px;background:var(--orange);color:#fff;font-size:13px;font-weight:750;text-decoration:none}
+.orderAction:hover{background:#d8620f}
+
+@media (max-width:760px){
+  .summary{padding:20px 17px}
+  .order{padding:17px 16px}
+  .orderAction{width:100%;justify-content:center}
+}

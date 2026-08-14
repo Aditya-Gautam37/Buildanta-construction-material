@@ -32,7 +32,7 @@
 .total strong{color:#0f5c3f;font-size:25px;letter-spacing:-.03em}
 
 .block{margin-bottom:15px}
-.block h5{margin:0 0 7px;color:var(--navy);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em}
+.block h4{margin:0 0 7px;color:var(--navy);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em}
 .block ul{list-style:none;display:flex;flex-direction:column;gap:5px;margin:0;padding:0}
 .block li{position:relative;padding-left:16px;color:#46566a;font-size:12.5px;line-height:1.5}
 .block li:before{position:absolute;left:0;content:"✓";color:#16805f;font-size:11px;font-weight:800}
@@ -57,5 +57,5 @@
 }
 
 .exclusionBlock li:before{content:"×";color:#b4521c}
-.exclusionBlock h5{color:#a3410f}
+.exclusionBlock h4{color:#a3410f}
 .terms{margin:0;color:#46566a;font-size:12px;line-height:1.6}

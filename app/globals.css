@@ -202,9 +202,11 @@ img { max-width: 100%; display: block; }
 .professional-card:hover { transform: translateY(-4px); box-shadow: 0 17px 38px rgba(31,58,95,.11); }
 .professional-card-photo { height: 245px; display: grid; place-items: center; position: relative; overflow: hidden; background: linear-gradient(145deg,#dfe5ec,#f7f8fa); color: var(--navy); font-size: 42px; font-weight: 750; }
 .professional-card-photo img { width: 100%; height: 100%; object-fit: cover; }
-.professional-card-photo b { position: absolute; top: 14px; left: 14px; padding: 6px 9px; border-radius: 6px; background: var(--orange); color: white; font-size: 9px; }
+/* Superseded by .professional-card-featured below. The old selector outranked
+   it (0,1,1 vs 0,1,0), pinning the badge at an unreadable 9px. */
 .professional-card-body { padding: 20px; }
-.professional-card-body > p { margin: 0; color: var(--orange); text-transform: uppercase; letter-spacing: .1em; font-size: 8px; font-weight: 750; }
+/* Superseded by .professional-card-category below, which the old selector
+   outranked (0,1,1 vs 0,1,0), pinning the category at an unreadable 8px. */
 .professional-card-body h2 { margin: 8px 0 5px; color: var(--navy); font-size: 20px; letter-spacing: -.03em; }
 .professional-card-body > span { min-height: 38px; display: block; color: var(--muted); font-size: 10px; line-height: 1.55; }
 .professional-card-meta { display: flex; justify-content: space-between; gap: 10px; margin: 16px 0 13px; padding-top: 13px; border-top: 1px solid var(--line); color: #59677b; font-size: 9px; }

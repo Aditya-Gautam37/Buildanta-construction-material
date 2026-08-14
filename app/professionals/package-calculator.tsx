@@ -20,7 +20,7 @@ function InclusionList({ title, items, tone }: { title: string; items: string[];
   if (!items.length) return null;
   return (
     <div className={tone === "exclusion" ? `${styles.block} ${styles.exclusionBlock}` : styles.block}>
-      <h5>{title}</h5>
+      <h4>{title}</h4>
       <ul>{items.map((item) => <li key={item}>{item}</li>)}</ul>
     </div>
   );
@@ -30,7 +30,7 @@ function MaterialList({ materials }: { materials: PackageMaterial[] }) {
   if (!materials.length) return null;
   return (
     <div className={styles.block}>
-      <h5>Materials used</h5>
+      <h4>Materials used</h4>
       <dl className={styles.materials}>
         {materials.map((material) => (
           <div key={`${material.category}-${material.specification}`}>
@@ -134,7 +134,7 @@ export function PackageCalculator({ packages, professionalName, slug }: {
                   <InclusionList title="Not included" items={source.exclusions} tone="exclusion" />
                   {source.terms ? (
                     <div className={styles.block}>
-                      <h5>Terms</h5>
+                      <h4>Terms</h4>
                       <p className={styles.terms}>{source.terms}</p>
                     </div>
                   ) : null}

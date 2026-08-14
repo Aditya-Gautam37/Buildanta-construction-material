@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { buildRequirementBrief } from "@/lib/requirement-brief"
 import { updatePackageEnquiryAction, type PackageEnquiryStatusValue } from "./actions"
 
 export type PackageEnquiryRecord = {
@@ -19,6 +20,7 @@ export type PackageEnquiryRecord = {
   requirement: string | null
   packageNameSnapshot: string
   rateSnapshot: string
+  rateBasisSnapshot: "PLOT_AREA" | "BUILT_UP_AREA"
   amountSnapshot: string
   status: PackageEnquiryStatusValue
   internalNotes: string | null
@@ -55,6 +57,51 @@ function Detail({ label, value }: { label: string; value: string | null }) {
       <dt className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{label}</dt>
       <dd className="mt-0.5 text-slate-800">{value}</dd>
     </div>
+  )
+}
+
+/**
+ * The brief a contractor can be sent.
+ *
+ * It carries the project, not the person. The customer agreed to Buildanta
+ * contacting them — not to a contractor receiving their name and number — so
+ * Buildanta stays the intermediary and the brief says so.
+ */
+function ContractorBrief({ enquiry }: { enquiry: PackageEnquiryRecord }) {
+  const [copied, setCopied] = useState(false)
+  const brief = buildRequirementBrief(enquiry)
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(brief)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2500)
+    } catch {
+      setCopied(false)
+    }
+  }
+
+  return (
+    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <summary className="cursor-pointer text-xs font-bold text-slate-700">
+        Requirement brief for the contractor
+      </summary>
+      <p className="mt-2 text-[11px] leading-5 text-slate-500">
+        Send this to the contractor. It deliberately leaves out the customer&rsquo;s
+        name and phone number — they consented to Buildanta contacting them, not to
+        their details being passed on.
+      </p>
+      <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-white p-3 text-[11px] leading-5 text-slate-800">
+        {brief}
+      </pre>
+      <button
+        type="button"
+        onClick={copy}
+        className="mt-2 min-h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 hover:border-emerald-400"
+      >
+        {copied ? "Copied" : "Copy brief"}
+      </button>
+    </details>
   )
 }
 
@@ -147,6 +194,8 @@ function EnquiryRow({ enquiry }: { enquiry: PackageEnquiryRecord }) {
               />
             </label>
           </div>
+
+          <ContractorBrief enquiry={enquiry} />
 
           {error ? <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700" role="alert">{error}</p> : null}
           {saved ? <p className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800" role="status">Saved.</p> : null}

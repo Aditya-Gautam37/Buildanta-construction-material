@@ -82,6 +82,7 @@ export default async function ProfessionalsPage() {
     requirement: row.requirement,
     packageNameSnapshot: row.packageNameSnapshot,
     rateSnapshot: row.rateSnapshot.toString(),
+    rateBasisSnapshot: row.rateBasisSnapshot,
     amountSnapshot: row.amountSnapshot.toString(),
     status: row.status,
     internalNotes: row.internalNotes,

@@ -28,6 +28,12 @@ const storageHostnames = Array.from(
 
 const nextConfig: NextConfig = {
   distDir: process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
+  // Dev only. Without this, opening the app on 127.0.0.1 or the LAN address
+  // silently blocks the client bundle: pages still render, but nothing is
+  // interactive, so sign-in degrades to a plain form post and just reloads the
+  // login page with no error shown. Easier to allow the hosts than to debug it
+  // again.
+  allowedDevOrigins: ["127.0.0.1", "192.168.1.39"],
   transpilePackages: ["@workspace/ui", "@workspace/db"],
   turbopack: {
     root: monorepoRoot,
